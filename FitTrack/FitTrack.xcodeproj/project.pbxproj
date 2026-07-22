@@ -1,0 +1,769 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 56;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		B10000000000000000000001 /* FitTrackApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = B20000000000000000000001 /* FitTrackApp.swift */; };
+		B10000000000000000000002 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B20000000000000000000002 /* ContentView.swift */; };
+		B10000000000000000000003 /* Theme.swift in Sources */ = {isa = PBXBuildFile; fileRef = B20000000000000000000003 /* Theme.swift */; };
+		B10000000000000000000004 /* DataModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = B20000000000000000000004 /* DataModels.swift */; };
+		B10000000000000000000017 /* SeedData.swift in Sources */ = {isa = PBXBuildFile; fileRef = B20000000000000000000017 /* SeedData.swift */; };
+		B1000000000000000000000E /* WorkoutSessionManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2000000000000000000000E /* WorkoutSessionManager.swift */; };
+		B1000000000000000000000F /* HealthKitManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2000000000000000000000F /* HealthKitManager.swift */; };
+		B10000000000000000000010 /* OnboardingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B20000000000000000000010 /* OnboardingView.swift */; };
+		B10000000000000000000011 /* ActiveWorkoutView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B20000000000000000000011 /* ActiveWorkoutView.swift */; };
+		B10000000000000000000012 /* WorkoutSummaryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B20000000000000000000012 /* WorkoutSummaryView.swift */; };
+		B10000000000000000000013 /* EditProgramView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B20000000000000000000013 /* EditProgramView.swift */; };
+		B10000000000000000000015 /* SetValueField.swift in Sources */ = {isa = PBXBuildFile; fileRef = B20000000000000000000018 /* SetValueField.swift */; };
+		B10000000000000000000016 /* WorkoutLibraryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B20000000000000000000019 /* WorkoutLibraryView.swift */; };
+		B10000000000000000000018 /* ExerciseCatalogData.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2000000000000000000001A /* ExerciseCatalogData.swift */; };
+		B10000000000000000000019 /* ExercisePickerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2000000000000000000001B /* ExercisePickerView.swift */; };
+		B1000000000000000000001A /* WatchDemoButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2000000000000000000001C /* WatchDemoButton.swift */; };
+		B1000000000000000000001B /* WorkoutAnalytics.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2000000000000000000001D /* WorkoutAnalytics.swift */; };
+		B1000000000000000000001C /* RestTimerManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2000000000000000000001E /* RestTimerManager.swift */; };
+		B1000000000000000000001D /* NotificationManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2000000000000000000001F /* NotificationManager.swift */; };
+		B1000000000000000000001E /* RestTimerBar.swift in Sources */ = {isa = PBXBuildFile; fileRef = B20000000000000000000020 /* RestTimerBar.swift */; };
+		B1000000000000000000001F /* PostWorkoutCheckInView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B20000000000000000000021 /* PostWorkoutCheckInView.swift */; };
+		B10000000000000000000020 /* SessionDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B20000000000000000000022 /* SessionDetailView.swift */; };
+		B10000000000000000000021 /* StrengthChartView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B20000000000000000000023 /* StrengthChartView.swift */; };
+		B10000000000000000000022 /* ScheduleSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B20000000000000000000024 /* ScheduleSettingsView.swift */; };
+		B10000000000000000000023 /* ActiveWorkoutSections.swift in Sources */ = {isa = PBXBuildFile; fileRef = B20000000000000000000025 /* ActiveWorkoutSections.swift */; };
+		B10000000000000000000005 /* StepRingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B20000000000000000000005 /* StepRingView.swift */; };
+		B10000000000000000000006 /* ActivityRingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B20000000000000000000006 /* ActivityRingsView.swift */; };
+		B10000000000000000000007 /* ExerciseCardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B20000000000000000000007 /* ExerciseCardView.swift */; };
+		B10000000000000000000008 /* HomeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B20000000000000000000008 /* HomeView.swift */; };
+		B10000000000000000000009 /* WorkoutsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B20000000000000000000009 /* WorkoutsView.swift */; };
+		B1000000000000000000000A /* HealthView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2000000000000000000000A /* HealthView.swift */; };
+		B1000000000000000000000B /* ProgressView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2000000000000000000000B /* ProgressView.swift */; };
+		B1000000000000000000000C /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = B2000000000000000000000C /* Assets.xcassets */; };
+		B10000000000000000000024 /* BadgeSystem.swift in Sources */ = {isa = PBXBuildFile; fileRef = B20000000000000000000026 /* BadgeSystem.swift */; };
+		B10000000000000000000025 /* BadgeService.swift in Sources */ = {isa = PBXBuildFile; fileRef = B20000000000000000000027 /* BadgeService.swift */; };
+		B10000000000000000000026 /* WidgetSnapshotStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = B20000000000000000000028 /* WidgetSnapshotStore.swift */; };
+		B10000000000000000000042 /* FitTrackExport.swift in Sources */ = {isa = PBXBuildFile; fileRef = B20000000000000000000045 /* FitTrackExport.swift */; };
+		B10000000000000000000027 /* PhoneWatchSync.swift in Sources */ = {isa = PBXBuildFile; fileRef = B20000000000000000000029 /* PhoneWatchSync.swift */; };
+		B10000000000000000000028 /* BadgesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2000000000000000000002A /* BadgesView.swift */; };
+		B10000000000000000000029 /* AddCustomExerciseView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2000000000000000000002B /* AddCustomExerciseView.swift */; };
+		B1000000000000000000002A /* SessionShareCardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2000000000000000000002C /* SessionShareCardView.swift */; };
+		B1000000000000000000002B /* FitTrackWidget.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2000000000000000000002D /* FitTrackWidget.swift */; };
+		B1000000000000000000002C /* FitTrackWidget.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = B30000000000000000000002 /* FitTrackWidget.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		B1000000000000000000002D /* DailyTracker.swift in Sources */ = {isa = PBXBuildFile; fileRef = B20000000000000000000030 /* DailyTracker.swift */; };
+		B1000000000000000000002E /* NutritionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B20000000000000000000031 /* NutritionView.swift */; };
+		B1000000000000000000002F /* ProtocolView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B20000000000000000000032 /* ProtocolView.swift */; };
+		B10000000000000000000030 /* CoachingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B20000000000000000000033 /* CoachingView.swift */; };
+		B10000000000000000000031 /* CoachView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B20000000000000000000034 /* CoachView.swift */; };
+		B10000000000000000000032 /* FoodDatabaseService.swift in Sources */ = {isa = PBXBuildFile; fileRef = B20000000000000000000035 /* FoodDatabaseService.swift */; };
+		B10000000000000000000033 /* ProgressAnalytics.swift in Sources */ = {isa = PBXBuildFile; fileRef = B20000000000000000000036 /* ProgressAnalytics.swift */; };
+		B10000000000000000000034 /* BarcodeScannerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B20000000000000000000037 /* BarcodeScannerView.swift */; };
+		B10000000000000000000035 /* BodyWeightChartView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B20000000000000000000038 /* BodyWeightChartView.swift */; };
+		B10000000000000000000036 /* BodyRecompDiagramView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B20000000000000000000039 /* BodyRecompDiagramView.swift */; };
+		B10000000000000000000037 /* DexaScanView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2000000000000000000003A /* DexaScanView.swift */; };
+		B10000000000000000000038 /* NutritionGoalPreset.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2000000000000000000003B /* NutritionGoalPreset.swift */; };
+		B10000000000000000000039 /* LocalFoodCatalog.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2000000000000000000003C /* LocalFoodCatalog.swift */; };
+		B1000000000000000000003A /* DocumentOCRService.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2000000000000000000003D /* DocumentOCRService.swift */; };
+		B1000000000000000000003B /* MealPhotoScanView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2000000000000000000003E /* MealPhotoScanView.swift */; };
+		B1000000000000000000003C /* MuscleProgressAnalytics.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2000000000000000000003F /* MuscleProgressAnalytics.swift */; };
+		B1000000000000000000003D /* BodyMuscleMapView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B20000000000000000000040 /* BodyMuscleMapView.swift */; };
+		B1000000000000000000003F /* PhysiqueAnalysisService.swift in Sources */ = {isa = PBXBuildFile; fileRef = B20000000000000000000042 /* PhysiqueAnalysisService.swift */; };
+		B10000000000000000000040 /* EAComponents.swift in Sources */ = {isa = PBXBuildFile; fileRef = B20000000000000000000043 /* EAComponents.swift */; };
+		B10000000000000000000041 /* ExerciseIconView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B20000000000000000000044 /* ExerciseIconView.swift */; };
+		B10000000000000000000043 /* PhotoProgressTimelineView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B20000000000000000000046 /* PhotoProgressTimelineView.swift */; };
+		B10000000000000000000044 /* PlateCalculator.swift in Sources */ = {isa = PBXBuildFile; fileRef = B20000000000000000000047 /* PlateCalculator.swift */; };
+		B10000000000000000000045 /* CelebrationToast.swift in Sources */ = {isa = PBXBuildFile; fileRef = B20000000000000000000048 /* CelebrationToast.swift */; };
+		B10000000000000000000046 /* CameraPicker.swift in Sources */ = {isa = PBXBuildFile; fileRef = B20000000000000000000049 /* CameraPicker.swift */; };
+		B10000000000000000000047 /* DailyCoachBrief.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2000000000000000000004A /* DailyCoachBrief.swift */; };
+		B10000000000000000000048 /* CoachBriefCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2000000000000000000004B /* CoachBriefCard.swift */; };
+		B10000000000000000000049 /* ProtocolInsights.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2000000000000000000004C /* ProtocolInsights.swift */; };
+		B1000000000000000000004A /* ProtocolInsightsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2000000000000000000004D /* ProtocolInsightsView.swift */; };
+		B1000000000000000000004B /* AthleteLevel.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2000000000000000000004E /* AthleteLevel.swift */; };
+		B1000000000000000000004C /* AthleteLevelCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2000000000000000000004F /* AthleteLevelCard.swift */; };
+		B1000000000000000000004D /* RestTimerAttributes.swift in Sources */ = {isa = PBXBuildFile; fileRef = B20000000000000000000050 /* RestTimerAttributes.swift */; };
+		B1000000000000000000004E /* RestTimerAttributes.swift in Sources */ = {isa = PBXBuildFile; fileRef = B20000000000000000000050 /* RestTimerAttributes.swift */; };
+		B1000000000000000000004F /* RestTimerLiveActivityController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B20000000000000000000051 /* RestTimerLiveActivityController.swift */; };
+		B10000000000000000000050 /* RestTimerLiveActivity.swift in Sources */ = {isa = PBXBuildFile; fileRef = B20000000000000000000052 /* RestTimerLiveActivity.swift */; };
+		B10000000000000000000051 /* MissedDayRecovery.swift in Sources */ = {isa = PBXBuildFile; fileRef = B20000000000000000000053 /* MissedDayRecovery.swift */; };
+		B10000000000000000000052 /* WeeklyRecap.swift in Sources */ = {isa = PBXBuildFile; fileRef = B20000000000000000000054 /* WeeklyRecap.swift */; };
+		B10000000000000000000053 /* WeeklyRecapCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = B20000000000000000000055 /* WeeklyRecapCard.swift */; };
+		BB1000000000000000000001 /* MuscleMap in Frameworks */ = {isa = PBXBuildFile; productRef = BB0000000000000000000002 /* MuscleMap */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXFileReference section */
+		B20000000000000000000001 /* FitTrackApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FitTrackApp.swift; sourceTree = "<group>"; };
+		B20000000000000000000002 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
+		B20000000000000000000003 /* Theme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Theme.swift; sourceTree = "<group>"; };
+		B20000000000000000000004 /* DataModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DataModels.swift; sourceTree = "<group>"; };
+		B20000000000000000000017 /* SeedData.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SeedData.swift; sourceTree = "<group>"; };
+		B2000000000000000000000E /* WorkoutSessionManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkoutSessionManager.swift; sourceTree = "<group>"; };
+		B2000000000000000000000F /* HealthKitManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HealthKitManager.swift; sourceTree = "<group>"; };
+		B20000000000000000000010 /* OnboardingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingView.swift; sourceTree = "<group>"; };
+		B20000000000000000000011 /* ActiveWorkoutView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActiveWorkoutView.swift; sourceTree = "<group>"; };
+		B20000000000000000000012 /* WorkoutSummaryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkoutSummaryView.swift; sourceTree = "<group>"; };
+		B20000000000000000000013 /* EditProgramView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EditProgramView.swift; sourceTree = "<group>"; };
+		B20000000000000000000018 /* SetValueField.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SetValueField.swift; sourceTree = "<group>"; };
+		B20000000000000000000019 /* WorkoutLibraryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkoutLibraryView.swift; sourceTree = "<group>"; };
+		B2000000000000000000001A /* ExerciseCatalogData.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExerciseCatalogData.swift; sourceTree = "<group>"; };
+		B2000000000000000000001B /* ExercisePickerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExercisePickerView.swift; sourceTree = "<group>"; };
+		B2000000000000000000001C /* WatchDemoButton.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WatchDemoButton.swift; sourceTree = "<group>"; };
+		B2000000000000000000001D /* WorkoutAnalytics.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkoutAnalytics.swift; sourceTree = "<group>"; };
+		B2000000000000000000001E /* RestTimerManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RestTimerManager.swift; sourceTree = "<group>"; };
+		B2000000000000000000001F /* NotificationManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationManager.swift; sourceTree = "<group>"; };
+		B20000000000000000000020 /* RestTimerBar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RestTimerBar.swift; sourceTree = "<group>"; };
+		B20000000000000000000021 /* PostWorkoutCheckInView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PostWorkoutCheckInView.swift; sourceTree = "<group>"; };
+		B20000000000000000000022 /* SessionDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SessionDetailView.swift; sourceTree = "<group>"; };
+		B20000000000000000000023 /* StrengthChartView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StrengthChartView.swift; sourceTree = "<group>"; };
+		B20000000000000000000024 /* ScheduleSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScheduleSettingsView.swift; sourceTree = "<group>"; };
+		B20000000000000000000025 /* ActiveWorkoutSections.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActiveWorkoutSections.swift; sourceTree = "<group>"; };
+		B20000000000000000000016 /* FitTrack.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = FitTrack.entitlements; sourceTree = "<group>"; };
+		B20000000000000000000005 /* StepRingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StepRingView.swift; sourceTree = "<group>"; };
+		B20000000000000000000006 /* ActivityRingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActivityRingsView.swift; sourceTree = "<group>"; };
+		B20000000000000000000007 /* ExerciseCardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExerciseCardView.swift; sourceTree = "<group>"; };
+		B20000000000000000000008 /* HomeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeView.swift; sourceTree = "<group>"; };
+		B20000000000000000000009 /* WorkoutsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkoutsView.swift; sourceTree = "<group>"; };
+		B2000000000000000000000A /* HealthView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HealthView.swift; sourceTree = "<group>"; };
+		B2000000000000000000000B /* ProgressView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProgressView.swift; sourceTree = "<group>"; };
+		B2000000000000000000000C /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		B2000000000000000000000D /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		B20000000000000000000026 /* BadgeSystem.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BadgeSystem.swift; sourceTree = "<group>"; };
+		B20000000000000000000027 /* BadgeService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BadgeService.swift; sourceTree = "<group>"; };
+		B20000000000000000000028 /* WidgetSnapshotStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WidgetSnapshotStore.swift; sourceTree = "<group>"; };
+		B20000000000000000000045 /* FitTrackExport.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FitTrackExport.swift; sourceTree = "<group>"; };
+		B20000000000000000000029 /* PhoneWatchSync.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PhoneWatchSync.swift; sourceTree = "<group>"; };
+		B2000000000000000000002A /* BadgesView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BadgesView.swift; sourceTree = "<group>"; };
+		B2000000000000000000002B /* AddCustomExerciseView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AddCustomExerciseView.swift; sourceTree = "<group>"; };
+		B2000000000000000000002C /* SessionShareCardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SessionShareCardView.swift; sourceTree = "<group>"; };
+		B2000000000000000000002D /* FitTrackWidget.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FitTrackWidget.swift; sourceTree = "<group>"; };
+		B2000000000000000000002E /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		B2000000000000000000002F /* FitTrackWidget.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = FitTrackWidget.entitlements; sourceTree = "<group>"; };
+		B20000000000000000000030 /* DailyTracker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DailyTracker.swift; sourceTree = "<group>"; };
+		B20000000000000000000031 /* NutritionView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NutritionView.swift; sourceTree = "<group>"; };
+		B20000000000000000000032 /* ProtocolView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProtocolView.swift; sourceTree = "<group>"; };
+		B20000000000000000000033 /* CoachingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CoachingView.swift; sourceTree = "<group>"; };
+		B20000000000000000000034 /* CoachView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CoachView.swift; sourceTree = "<group>"; };
+		B20000000000000000000035 /* FoodDatabaseService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FoodDatabaseService.swift; sourceTree = "<group>"; };
+		B20000000000000000000036 /* ProgressAnalytics.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProgressAnalytics.swift; sourceTree = "<group>"; };
+		B20000000000000000000037 /* BarcodeScannerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BarcodeScannerView.swift; sourceTree = "<group>"; };
+		B20000000000000000000038 /* BodyWeightChartView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BodyWeightChartView.swift; sourceTree = "<group>"; };
+		B20000000000000000000039 /* BodyRecompDiagramView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BodyRecompDiagramView.swift; sourceTree = "<group>"; };
+		B2000000000000000000003A /* DexaScanView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DexaScanView.swift; sourceTree = "<group>"; };
+		B2000000000000000000003B /* NutritionGoalPreset.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NutritionGoalPreset.swift; sourceTree = "<group>"; };
+		B2000000000000000000003C /* LocalFoodCatalog.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocalFoodCatalog.swift; sourceTree = "<group>"; };
+		B2000000000000000000003D /* DocumentOCRService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DocumentOCRService.swift; sourceTree = "<group>"; };
+		B2000000000000000000003E /* MealPhotoScanView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MealPhotoScanView.swift; sourceTree = "<group>"; };
+		B2000000000000000000003F /* MuscleProgressAnalytics.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MuscleProgressAnalytics.swift; sourceTree = "<group>"; };
+		B20000000000000000000040 /* BodyMuscleMapView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BodyMuscleMapView.swift; sourceTree = "<group>"; };
+		B20000000000000000000042 /* PhysiqueAnalysisService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PhysiqueAnalysisService.swift; sourceTree = "<group>"; };
+		B20000000000000000000043 /* EAComponents.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EAComponents.swift; sourceTree = "<group>"; };
+		B20000000000000000000044 /* ExerciseIconView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExerciseIconView.swift; sourceTree = "<group>"; };
+		B20000000000000000000046 /* PhotoProgressTimelineView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PhotoProgressTimelineView.swift; sourceTree = "<group>"; };
+		B20000000000000000000047 /* PlateCalculator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlateCalculator.swift; sourceTree = "<group>"; };
+		B20000000000000000000048 /* CelebrationToast.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CelebrationToast.swift; sourceTree = "<group>"; };
+		B20000000000000000000049 /* CameraPicker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CameraPicker.swift; sourceTree = "<group>"; };
+		B2000000000000000000004A /* DailyCoachBrief.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DailyCoachBrief.swift; sourceTree = "<group>"; };
+		B2000000000000000000004B /* CoachBriefCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CoachBriefCard.swift; sourceTree = "<group>"; };
+		B2000000000000000000004C /* ProtocolInsights.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProtocolInsights.swift; sourceTree = "<group>"; };
+		B2000000000000000000004D /* ProtocolInsightsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProtocolInsightsView.swift; sourceTree = "<group>"; };
+		B2000000000000000000004E /* AthleteLevel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AthleteLevel.swift; sourceTree = "<group>"; };
+		B2000000000000000000004F /* AthleteLevelCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AthleteLevelCard.swift; sourceTree = "<group>"; };
+		B20000000000000000000050 /* RestTimerAttributes.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RestTimerAttributes.swift; sourceTree = "<group>"; };
+		B20000000000000000000051 /* RestTimerLiveActivityController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RestTimerLiveActivityController.swift; sourceTree = "<group>"; };
+		B20000000000000000000052 /* RestTimerLiveActivity.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RestTimerLiveActivity.swift; sourceTree = "<group>"; };
+		B20000000000000000000053 /* MissedDayRecovery.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MissedDayRecovery.swift; sourceTree = "<group>"; };
+		B20000000000000000000054 /* WeeklyRecap.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WeeklyRecap.swift; sourceTree = "<group>"; };
+		B20000000000000000000055 /* WeeklyRecapCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WeeklyRecapCard.swift; sourceTree = "<group>"; };
+		B30000000000000000000001 /* FitTrack.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = FitTrack.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		B30000000000000000000002 /* FitTrackWidget.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = FitTrackWidget.appex; sourceTree = BUILT_PRODUCTS_DIR; };
+/* End PBXFileReference section */
+
+/* Begin PBXContainerItemProxy section */
+		BA0000000000000000000001 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = B80000000000000000000001 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = B60000000000000000000004;
+			remoteInfo = FitTrackWidget;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		B60000000000000000000008 /* Embed Foundation Extensions */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 13;
+			files = (
+				B1000000000000000000002C /* FitTrackWidget.appex in Embed Foundation Extensions */,
+			);
+			name = "Embed Foundation Extensions";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		B40000000000000000000002 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		B40000000000000000000001 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				BB1000000000000000000001 /* MuscleMap in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		B50000000000000000000001 = {
+			isa = PBXGroup;
+			children = (
+				B50000000000000000000002 /* FitTrack */,
+				B50000000000000000000008 /* FitTrackWidget */,
+				B50000000000000000000003 /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		B50000000000000000000002 /* FitTrack */ = {
+			isa = PBXGroup;
+			children = (
+				B20000000000000000000001 /* FitTrackApp.swift */,
+				B20000000000000000000002 /* ContentView.swift */,
+				B20000000000000000000003 /* Theme.swift */,
+				B50000000000000000000004 /* Models */,
+				B50000000000000000000007 /* Services */,
+				B50000000000000000000005 /* Components */,
+				B50000000000000000000006 /* Views */,
+				B2000000000000000000000C /* Assets.xcassets */,
+				B2000000000000000000000D /* Info.plist */,
+				B20000000000000000000016 /* FitTrack.entitlements */,
+			);
+			path = FitTrack;
+			sourceTree = "<group>";
+		};
+		B50000000000000000000003 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				B30000000000000000000001 /* FitTrack.app */,
+				B30000000000000000000002 /* FitTrackWidget.appex */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		B50000000000000000000008 /* FitTrackWidget */ = {
+			isa = PBXGroup;
+			children = (
+				B2000000000000000000002D /* FitTrackWidget.swift */,
+				B20000000000000000000052 /* RestTimerLiveActivity.swift */,
+				B2000000000000000000002E /* Info.plist */,
+				B2000000000000000000002F /* FitTrackWidget.entitlements */,
+			);
+			path = FitTrackWidget;
+			sourceTree = "<group>";
+		};
+		B50000000000000000000004 /* Models */ = {
+			isa = PBXGroup;
+			children = (
+				B20000000000000000000004 /* DataModels.swift */,
+				B20000000000000000000017 /* SeedData.swift */,
+				B20000000000000000000047 /* PlateCalculator.swift */,
+				B2000000000000000000001A /* ExerciseCatalogData.swift */,
+				B2000000000000000000001D /* WorkoutAnalytics.swift */,
+				B20000000000000000000026 /* BadgeSystem.swift */,
+				B20000000000000000000030 /* DailyTracker.swift */,
+				B20000000000000000000036 /* ProgressAnalytics.swift */,
+				B2000000000000000000003B /* NutritionGoalPreset.swift */,
+				B2000000000000000000003C /* LocalFoodCatalog.swift */,
+				B2000000000000000000003F /* MuscleProgressAnalytics.swift */,
+				B2000000000000000000004A /* DailyCoachBrief.swift */,
+				B2000000000000000000004C /* ProtocolInsights.swift */,
+				B2000000000000000000004E /* AthleteLevel.swift */,
+				B20000000000000000000050 /* RestTimerAttributes.swift */,
+				B20000000000000000000053 /* MissedDayRecovery.swift */,
+				B20000000000000000000054 /* WeeklyRecap.swift */,
+			);
+			path = Models;
+			sourceTree = "<group>";
+		};
+		B50000000000000000000007 /* Services */ = {
+			isa = PBXGroup;
+			children = (
+				B2000000000000000000000E /* WorkoutSessionManager.swift */,
+				B2000000000000000000000F /* HealthKitManager.swift */,
+				B2000000000000000000001E /* RestTimerManager.swift */,
+				B20000000000000000000051 /* RestTimerLiveActivityController.swift */,
+				B2000000000000000000001F /* NotificationManager.swift */,
+				B20000000000000000000027 /* BadgeService.swift */,
+				B20000000000000000000028 /* WidgetSnapshotStore.swift */,
+				B20000000000000000000045 /* FitTrackExport.swift */,
+				B20000000000000000000029 /* PhoneWatchSync.swift */,
+				B20000000000000000000035 /* FoodDatabaseService.swift */,
+				B2000000000000000000003D /* DocumentOCRService.swift */,
+				B20000000000000000000042 /* PhysiqueAnalysisService.swift */,
+			);
+			path = Services;
+			sourceTree = "<group>";
+		};
+		B50000000000000000000005 /* Components */ = {
+			isa = PBXGroup;
+			children = (
+				B20000000000000000000005 /* StepRingView.swift */,
+				B20000000000000000000006 /* ActivityRingsView.swift */,
+				B20000000000000000000007 /* ExerciseCardView.swift */,
+				B20000000000000000000018 /* SetValueField.swift */,
+				B2000000000000000000001C /* WatchDemoButton.swift */,
+				B20000000000000000000020 /* RestTimerBar.swift */,
+				B20000000000000000000048 /* CelebrationToast.swift */,
+				B20000000000000000000049 /* CameraPicker.swift */,
+				B2000000000000000000004B /* CoachBriefCard.swift */,
+				B2000000000000000000004F /* AthleteLevelCard.swift */,
+				B20000000000000000000055 /* WeeklyRecapCard.swift */,
+				B20000000000000000000025 /* ActiveWorkoutSections.swift */,
+			);
+			path = Components;
+			sourceTree = "<group>";
+		};
+		B50000000000000000000006 /* Views */ = {
+			isa = PBXGroup;
+			children = (
+				B20000000000000000000008 /* HomeView.swift */,
+				B20000000000000000000009 /* WorkoutsView.swift */,
+				B2000000000000000000000A /* HealthView.swift */,
+				B2000000000000000000000B /* ProgressView.swift */,
+				B20000000000000000000010 /* OnboardingView.swift */,
+				B20000000000000000000011 /* ActiveWorkoutView.swift */,
+				B20000000000000000000012 /* WorkoutSummaryView.swift */,
+				B20000000000000000000013 /* EditProgramView.swift */,
+				B20000000000000000000019 /* WorkoutLibraryView.swift */,
+				B2000000000000000000001B /* ExercisePickerView.swift */,
+				B20000000000000000000021 /* PostWorkoutCheckInView.swift */,
+				B20000000000000000000022 /* SessionDetailView.swift */,
+				B20000000000000000000023 /* StrengthChartView.swift */,
+				B20000000000000000000024 /* ScheduleSettingsView.swift */,
+				B2000000000000000000002A /* BadgesView.swift */,
+				B2000000000000000000002B /* AddCustomExerciseView.swift */,
+				B2000000000000000000002C /* SessionShareCardView.swift */,
+				B20000000000000000000031 /* NutritionView.swift */,
+				B20000000000000000000032 /* ProtocolView.swift */,
+				B20000000000000000000033 /* CoachingView.swift */,
+				B20000000000000000000034 /* CoachView.swift */,
+				B2000000000000000000004D /* ProtocolInsightsView.swift */,
+				B20000000000000000000037 /* BarcodeScannerView.swift */,
+				B20000000000000000000038 /* BodyWeightChartView.swift */,
+				B20000000000000000000039 /* BodyRecompDiagramView.swift */,
+				B2000000000000000000003A /* DexaScanView.swift */,
+				B2000000000000000000003E /* MealPhotoScanView.swift */,
+				B20000000000000000000040 /* BodyMuscleMapView.swift */,
+				B20000000000000000000043 /* EAComponents.swift */,
+				B20000000000000000000044 /* ExerciseIconView.swift */,
+				B20000000000000000000046 /* PhotoProgressTimelineView.swift */,
+			);
+			path = Views;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		B60000000000000000000001 /* FitTrack */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = B70000000000000000000003 /* Build configuration list for PBXNativeTarget "FitTrack" */;
+			buildPhases = (
+				B60000000000000000000002 /* Sources */,
+				B40000000000000000000001 /* Frameworks */,
+				B60000000000000000000003 /* Resources */,
+				B60000000000000000000008 /* Embed Foundation Extensions */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				B60000000000000000000009 /* PBXTargetDependency */,
+			);
+			name = FitTrack;
+			packageProductDependencies = (
+				BB0000000000000000000002 /* MuscleMap */,
+			);
+			productName = FitTrack;
+			productReference = B30000000000000000000001 /* FitTrack.app */;
+			productType = "com.apple.product-type.application";
+		};
+		B60000000000000000000004 /* FitTrackWidget */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = B70000000000000000000004 /* Build configuration list for PBXNativeTarget "FitTrackWidget" */;
+			buildPhases = (
+				B60000000000000000000005 /* Sources */,
+				B40000000000000000000002 /* Frameworks */,
+				B60000000000000000000007 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = FitTrackWidget;
+			productName = FitTrackWidget;
+			productReference = B30000000000000000000002 /* FitTrackWidget.appex */;
+			productType = "com.apple.product-type.app-extension";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXTargetDependency section */
+		B60000000000000000000009 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = B60000000000000000000004 /* FitTrackWidget */;
+			targetProxy = BA0000000000000000000001 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
+/* Begin PBXProject section */
+		B80000000000000000000001 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = 1;
+				LastSwiftUpdateCheck = 1600;
+				LastUpgradeCheck = 1600;
+				TargetAttributes = {
+					B60000000000000000000001 = {
+						CreatedOnToolsVersion = 16.0;
+					};
+					B60000000000000000000004 = {
+						CreatedOnToolsVersion = 16.0;
+					};
+				};
+			};
+			buildConfigurationList = B70000000000000000000001 /* Build configuration list for PBXProject "FitTrack" */;
+			compatibilityVersion = "Xcode 14.0";
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				en,
+				Base,
+			);
+			mainGroup = B50000000000000000000001;
+			packageReferences = (
+				BB0000000000000000000001 /* XCRemoteSwiftPackageReference "MuscleMap" */,
+			);
+			productRefGroup = B50000000000000000000003 /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				B60000000000000000000001 /* FitTrack */,
+				B60000000000000000000004 /* FitTrackWidget */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		B60000000000000000000003 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				B1000000000000000000000C /* Assets.xcassets in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		B60000000000000000000007 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		B60000000000000000000002 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				B10000000000000000000001 /* FitTrackApp.swift in Sources */,
+				B10000000000000000000002 /* ContentView.swift in Sources */,
+				B10000000000000000000003 /* Theme.swift in Sources */,
+				B10000000000000000000004 /* DataModels.swift in Sources */,
+				B10000000000000000000017 /* SeedData.swift in Sources */,
+				B1000000000000000000000E /* WorkoutSessionManager.swift in Sources */,
+				B1000000000000000000000F /* HealthKitManager.swift in Sources */,
+				B10000000000000000000010 /* OnboardingView.swift in Sources */,
+				B10000000000000000000011 /* ActiveWorkoutView.swift in Sources */,
+				B10000000000000000000012 /* WorkoutSummaryView.swift in Sources */,
+				B10000000000000000000013 /* EditProgramView.swift in Sources */,
+				B10000000000000000000015 /* SetValueField.swift in Sources */,
+				B10000000000000000000016 /* WorkoutLibraryView.swift in Sources */,
+				B10000000000000000000018 /* ExerciseCatalogData.swift in Sources */,
+				B10000000000000000000019 /* ExercisePickerView.swift in Sources */,
+				B1000000000000000000001A /* WatchDemoButton.swift in Sources */,
+				B1000000000000000000001B /* WorkoutAnalytics.swift in Sources */,
+				B1000000000000000000001C /* RestTimerManager.swift in Sources */,
+				B1000000000000000000001D /* NotificationManager.swift in Sources */,
+				B1000000000000000000001E /* RestTimerBar.swift in Sources */,
+				B1000000000000000000001F /* PostWorkoutCheckInView.swift in Sources */,
+				B10000000000000000000020 /* SessionDetailView.swift in Sources */,
+				B10000000000000000000021 /* StrengthChartView.swift in Sources */,
+				B10000000000000000000022 /* ScheduleSettingsView.swift in Sources */,
+				B10000000000000000000023 /* ActiveWorkoutSections.swift in Sources */,
+				B10000000000000000000005 /* StepRingView.swift in Sources */,
+				B10000000000000000000006 /* ActivityRingsView.swift in Sources */,
+				B10000000000000000000007 /* ExerciseCardView.swift in Sources */,
+				B10000000000000000000008 /* HomeView.swift in Sources */,
+				B10000000000000000000009 /* WorkoutsView.swift in Sources */,
+				B1000000000000000000000A /* HealthView.swift in Sources */,
+				B1000000000000000000000B /* ProgressView.swift in Sources */,
+				B10000000000000000000024 /* BadgeSystem.swift in Sources */,
+				B10000000000000000000025 /* BadgeService.swift in Sources */,
+				B10000000000000000000026 /* WidgetSnapshotStore.swift in Sources */,
+				B10000000000000000000042 /* FitTrackExport.swift in Sources */,
+				B10000000000000000000027 /* PhoneWatchSync.swift in Sources */,
+				B10000000000000000000028 /* BadgesView.swift in Sources */,
+				B10000000000000000000029 /* AddCustomExerciseView.swift in Sources */,
+				B1000000000000000000002A /* SessionShareCardView.swift in Sources */,
+				B1000000000000000000002D /* DailyTracker.swift in Sources */,
+				B1000000000000000000002E /* NutritionView.swift in Sources */,
+				B1000000000000000000002F /* ProtocolView.swift in Sources */,
+				B10000000000000000000030 /* CoachingView.swift in Sources */,
+				B10000000000000000000031 /* CoachView.swift in Sources */,
+				B10000000000000000000032 /* FoodDatabaseService.swift in Sources */,
+				B10000000000000000000033 /* ProgressAnalytics.swift in Sources */,
+				B10000000000000000000034 /* BarcodeScannerView.swift in Sources */,
+				B10000000000000000000035 /* BodyWeightChartView.swift in Sources */,
+				B10000000000000000000036 /* BodyRecompDiagramView.swift in Sources */,
+				B10000000000000000000037 /* DexaScanView.swift in Sources */,
+				B10000000000000000000038 /* NutritionGoalPreset.swift in Sources */,
+				B10000000000000000000039 /* LocalFoodCatalog.swift in Sources */,
+				B1000000000000000000003A /* DocumentOCRService.swift in Sources */,
+				B1000000000000000000003B /* MealPhotoScanView.swift in Sources */,
+				B1000000000000000000003C /* MuscleProgressAnalytics.swift in Sources */,
+				B1000000000000000000003D /* BodyMuscleMapView.swift in Sources */,
+				B10000000000000000000040 /* EAComponents.swift in Sources */,
+				B10000000000000000000041 /* ExerciseIconView.swift in Sources */,
+				B10000000000000000000043 /* PhotoProgressTimelineView.swift in Sources */,
+				B10000000000000000000044 /* PlateCalculator.swift in Sources */,
+				B10000000000000000000045 /* CelebrationToast.swift in Sources */,
+				B10000000000000000000046 /* CameraPicker.swift in Sources */,
+				B10000000000000000000047 /* DailyCoachBrief.swift in Sources */,
+				B10000000000000000000048 /* CoachBriefCard.swift in Sources */,
+				B10000000000000000000049 /* ProtocolInsights.swift in Sources */,
+				B1000000000000000000004A /* ProtocolInsightsView.swift in Sources */,
+				B1000000000000000000004B /* AthleteLevel.swift in Sources */,
+				B1000000000000000000004C /* AthleteLevelCard.swift in Sources */,
+				B1000000000000000000004D /* RestTimerAttributes.swift in Sources */,
+				B1000000000000000000004F /* RestTimerLiveActivityController.swift in Sources */,
+				B10000000000000000000051 /* MissedDayRecovery.swift in Sources */,
+				B10000000000000000000052 /* WeeklyRecap.swift in Sources */,
+				B10000000000000000000053 /* WeeklyRecapCard.swift in Sources */,
+				B1000000000000000000003F /* PhysiqueAnalysisService.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		B60000000000000000000005 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				B1000000000000000000002B /* FitTrackWidget.swift in Sources */,
+				B1000000000000000000004E /* RestTimerAttributes.swift in Sources */,
+				B10000000000000000000050 /* RestTimerLiveActivity.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin XCBuildConfiguration section */
+		B90000000000000000000001 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ENABLE_MODULES = YES;
+				CODE_SIGN_STYLE = Automatic;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_TESTABILITY = YES;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"DEBUG=1",
+					"$(inherited)",
+				);
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				ONLY_ACTIVE_ARCH = YES;
+				SDKROOT = iphoneos;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG $(inherited)";
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+			};
+			name = Debug;
+		};
+		B90000000000000000000002 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ENABLE_MODULES = YES;
+				CODE_SIGN_STYLE = Automatic;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				SDKROOT = iphoneos;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				VALIDATE_PRODUCT = YES;
+			};
+			name = Release;
+		};
+		B90000000000000000000003 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = FitTrack/FitTrack.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 66TJD7TX77;
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = FitTrack/Info.plist;
+				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
+				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations = UIInterfaceOrientationPortrait;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.brandonperalta.fittrack;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 1;
+			};
+			name = Debug;
+		};
+		B90000000000000000000004 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = FitTrack/FitTrack.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 66TJD7TX77;
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = FitTrack/Info.plist;
+				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
+				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations = UIInterfaceOrientationPortrait;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.brandonperalta.fittrack;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 1;
+			};
+			name = Release;
+		};
+		B90000000000000000000005 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_ENTITLEMENTS = FitTrackWidget/FitTrackWidget.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 66TJD7TX77;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = FitTrackWidget/Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.brandonperalta.fittrack.widget;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 1;
+			};
+			name = Debug;
+		};
+		B90000000000000000000006 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_ENTITLEMENTS = FitTrackWidget/FitTrackWidget.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 66TJD7TX77;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = FitTrackWidget/Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.brandonperalta.fittrack.widget;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 1;
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		B70000000000000000000001 /* Build configuration list for PBXProject "FitTrack" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				B90000000000000000000001 /* Debug */,
+				B90000000000000000000002 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		B70000000000000000000003 /* Build configuration list for PBXNativeTarget "FitTrack" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				B90000000000000000000003 /* Debug */,
+				B90000000000000000000004 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		B70000000000000000000004 /* Build configuration list for PBXNativeTarget "FitTrackWidget" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				B90000000000000000000005 /* Debug */,
+				B90000000000000000000006 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+/* End XCConfigurationList section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		BB0000000000000000000001 /* XCRemoteSwiftPackageReference "MuscleMap" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/melihcolpan/MuscleMap.git";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 1.6.4;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		BB0000000000000000000002 /* MuscleMap */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = BB0000000000000000000001 /* XCRemoteSwiftPackageReference "MuscleMap" */;
+			productName = MuscleMap;
+		};
+/* End XCSwiftPackageProductDependency section */
+	};
+	rootObject = B80000000000000000000001 /* Project object */;
+}
