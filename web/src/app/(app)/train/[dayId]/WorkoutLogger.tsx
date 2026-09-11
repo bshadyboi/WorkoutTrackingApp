@@ -15,6 +15,7 @@ import {
 import { formatPrescription, setTargetLabel } from "@/lib/workouts";
 import { IconCheck, IconMore, IconPlayCircle, IconSwap, IconX } from "@/components/icons";
 import { splitWarmupBlock } from "@/lib/prehab";
+import { suggestOverload } from "@/lib/overload";
 import { renameExerciseEverywhere } from "@/lib/exerciseRename";
 import {
   isOfflineError,
@@ -1205,9 +1206,29 @@ export function WorkoutLogger({
                       activeRest?.exerciseId === ex.id &&
                       activeRest.afterSet === i &&
                       activeRestLeft > 0;
+                    const prevList =
+                      previousByExercise[name] ?? previousByExercise[ex.name] ?? [];
+                    const prevRaw = prevList[i] ?? prevList[prevList.length - 1];
+                    // Crown sets carry their own range; everything else uses the
+                    // working range for the movement.
+                    const suggestion =
+                      set.isWarmup || isCardio
+                        ? null
+                        : suggestOverload({
+                            previous: prevRaw,
+                            repRange:
+                              ex.has_crown_set && i === 0
+                                ? ex.crown_rep_range
+                                : ex.working_rep_range,
+                          });
                     const targetLabel = set.isWarmup
                       ? "Warm-up"
-                      : setTargetLabel(ex, i);
+                      : (suggestion?.label ?? setTargetLabel(ex, i));
+                    const canApply =
+                      !set.completed &&
+                      suggestion != null &&
+                      suggestion.kind !== "open" &&
+                      suggestion.reps != null;
 
                     return (
                       <div key={set.setNumber}>
@@ -1255,15 +1276,34 @@ export function WorkoutLogger({
                             ) : (
                               <p className="truncate text-[13px] text-[var(--muted)]">—</p>
                             )}
-                            <p
-                              className={`truncate text-[11px] font-bold ${
-                                set.isWarmup
-                                  ? "text-[var(--yellow)]"
-                                  : "text-[var(--blue)]"
-                              }`}
-                            >
-                              {targetLabel}
-                            </p>
+                            {canApply ? (
+                              <button
+                                type="button"
+                                title={suggestion?.detail}
+                                onClick={() =>
+                                  updateSet(ex.id, i, {
+                                    weight:
+                                      suggestion?.weight != null
+                                        ? String(suggestion.weight)
+                                        : set.weight,
+                                    reps: String(suggestion?.reps ?? ""),
+                                  })
+                                }
+                                className="block w-full truncate text-left text-[11px] font-bold text-[var(--blue)] underline decoration-dotted underline-offset-2 active:text-[var(--green)]"
+                              >
+                                {targetLabel}
+                              </button>
+                            ) : (
+                              <p
+                                className={`truncate text-[11px] font-bold ${
+                                  set.isWarmup
+                                    ? "text-[var(--yellow)]"
+                                    : "text-[var(--blue)]"
+                                }`}
+                              >
+                                {targetLabel}
+                              </p>
+                            )}
                           </div>
                           <input
                             className="h-11 w-full rounded-xl border border-[var(--border-solid)] bg-[var(--field)] px-1 text-center text-[15px] font-bold text-white outline-none focus:border-[var(--blue)]"
