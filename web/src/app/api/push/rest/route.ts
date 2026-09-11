@@ -91,8 +91,9 @@ export async function POST(req: Request) {
     // ---- Primary: QStash delayed delivery ----
     const notBefore = Math.max(Math.ceil(endsAt / 1000), Math.ceil(Date.now() / 1000));
     const target = `${appUrl.replace(/\/$/, "")}/api/push/fire`;
+    const qstashUrl = (process.env.QSTASH_URL ?? "https://qstash.upstash.io").replace(/\/$/, "");
     try {
-      const res = await fetch(`https://qstash.upstash.io/v2/publish/${target}`, {
+      const res = await fetch(`${qstashUrl}/v2/publish/${target}`, {
         method: "POST",
         headers: {
           Authorization: `Bearer ${qstashToken}`,
