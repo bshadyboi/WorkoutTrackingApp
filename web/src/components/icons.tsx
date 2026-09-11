@@ -91,6 +91,41 @@ export function IconChevronRight({ size = 18, strokeWidth = 2, className }: Icon
   );
 }
 
+export function IconChevronLeft({ size = 20, strokeWidth = 2, className }: IconProps) {
+  return (
+    <svg {...base(size)} strokeWidth={strokeWidth} className={className}>
+      <path d="M15 6l-6 6 6 6" />
+    </svg>
+  );
+}
+
+export function IconChevronDown({ size = 18, strokeWidth = 2, className }: IconProps) {
+  return (
+    <svg {...base(size)} strokeWidth={strokeWidth} className={className}>
+      <path d="M6 9l6 6 6-6" />
+    </svg>
+  );
+}
+
+export function IconPencil({ size = 20, strokeWidth = 2, className }: IconProps) {
+  return (
+    <svg {...base(size)} strokeWidth={strokeWidth} className={className}>
+      <path d="M4 20h4l10-10-4-4L4 16v4z" />
+      <path d="M13.5 6.5l4 4" />
+    </svg>
+  );
+}
+
+export function IconHistory({ size = 20, strokeWidth = 2, className }: IconProps) {
+  return (
+    <svg {...base(size)} strokeWidth={strokeWidth} className={className}>
+      <path d="M3.5 12a8.5 8.5 0 1 0 2.6-6.1" />
+      <path d="M3 4v4.5h4.5" />
+      <path d="M12 7.5V12l3 1.8" />
+    </svg>
+  );
+}
+
 export function IconCheck({ size = 18, strokeWidth = 3, className }: IconProps) {
   return (
     <svg {...base(size)} strokeWidth={strokeWidth} className={className}>

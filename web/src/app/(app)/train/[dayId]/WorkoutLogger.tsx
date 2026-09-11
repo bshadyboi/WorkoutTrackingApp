@@ -14,6 +14,7 @@ import {
 } from "@/lib/sessionDraft";
 import { formatPrescription, setTargetLabel } from "@/lib/workouts";
 import { IconCheck, IconMore, IconPlayCircle, IconSwap, IconX } from "@/components/icons";
+import { splitWarmupBlock } from "@/lib/prehab";
 import {
   cancelRestAlert,
   ensureRestNotifyPermission,
@@ -223,9 +224,27 @@ export function WorkoutLogger({
     );
   }, [setsByExercise]);
 
-  const totalSetCount = useMemo(() => {
-    return Object.values(setsByExercise).reduce((n, sets) => n + sets.length, 0);
-  }, [setsByExercise]);
+  /** Leading shoulder-prehab movements render as a checklist, not set grids. */
+  const { warmups, main } = useMemo(() => splitWarmupBlock(sorted), [sorted]);
+
+  /** Header progress tracks working sets only — prehab has its own checklist. */
+  const mainProgress = useMemo(() => {
+    let done = 0;
+    let total = 0;
+    for (const ex of main) {
+      const sets = setsByExercise[ex.id] ?? [];
+      total += sets.length;
+      done += sets.filter((s) => s.completed).length;
+    }
+    return { done, total };
+  }, [main, setsByExercise]);
+
+  const warmupsDone = useMemo(() => {
+    return warmups.filter((ex) => {
+      const sets = setsByExercise[ex.id] ?? [];
+      return sets.length > 0 && sets.every((s) => s.completed);
+    }).length;
+  }, [warmups, setsByExercise]);
 
   // Autosave draft when there's real progress (crash recovery)
   useEffect(() => {
@@ -401,6 +420,23 @@ export function WorkoutLogger({
       list[setIndex] = { ...list[setIndex], ...patch };
       return { ...prev, [exerciseId]: list };
     });
+  }
+
+  /**
+   * Tick a prehab movement off the warm-up checklist: marks every one of its
+   * sets complete and flagged as warm-up, so it lands in history without
+   * counting toward working volume or PRs. No rest timer — it's a warm-up.
+   */
+  function setWarmupDone(exerciseId: string, done: boolean) {
+    setSetsByExercise((prev) => {
+      const list = (prev[exerciseId] ?? []).map((s) => ({
+        ...s,
+        completed: done,
+        isWarmup: true,
+      }));
+      return { ...prev, [exerciseId]: list };
+    });
+    if (activeRest?.exerciseId === exerciseId) clearActiveRest();
   }
 
   function fillFromPrevious(ex: Exercise, setIndex: number) {
@@ -805,12 +841,12 @@ export function WorkoutLogger({
             <div
               className="h-full rounded-full bg-[var(--green)] transition-[width]"
               style={{
-                width: `${totalSetCount ? Math.round((completedSetCount / totalSetCount) * 100) : 0}%`,
+                width: `${mainProgress.total ? Math.round((mainProgress.done / mainProgress.total) * 100) : 0}%`,
               }}
             />
           </div>
           <p className="shrink-0 text-[11px] font-bold tabular-nums text-[var(--muted)]">
-            {completedSetCount} of {totalSetCount} sets
+            {mainProgress.done} of {mainProgress.total} sets
           </p>
         </div>
       </div>
@@ -849,7 +885,90 @@ export function WorkoutLogger({
       </div>
 
       <div className="mt-4 space-y-4 px-4">
-        {sorted.map((ex) => {
+        {warmups.length ? (
+          <section className="space-y-3 rounded-[18px] border border-[var(--yellow)]/20 bg-[var(--card)] p-4">
+            <div className="flex items-center justify-between gap-3">
+              <div className="min-w-0">
+                <h2 className="text-[17px] font-bold">Warm-up</h2>
+                <p className="mt-0.5 text-[12.5px] text-[var(--muted)]">
+                  Shoulder prehab · {warmupsDone} of {warmups.length} done
+                </p>
+              </div>
+              <button
+                type="button"
+                className="shrink-0 rounded-[10px] bg-[#1c212b] px-3 py-2 text-[12.5px] font-bold text-[var(--muted)] active:text-white"
+                onClick={() => {
+                  const allDone = warmupsDone === warmups.length;
+                  for (const ex of warmups) setWarmupDone(ex.id, !allDone);
+                }}
+              >
+                {warmupsDone === warmups.length ? "Clear" : "Check all"}
+              </button>
+            </div>
+
+            <div className="space-y-1">
+              {warmups.map((ex) => {
+                const sets = setsByExercise[ex.id] ?? [];
+                const done = sets.length > 0 && sets.every((s) => s.completed);
+                const name = displayName(ex);
+                const cat = catalogEntry(name) ?? catalogEntry(ex.name);
+                return (
+                  <div key={ex.id} className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setWarmupDone(ex.id, !done)}
+                      className="flex min-w-0 flex-1 items-center gap-3 rounded-xl px-1.5 py-2.5 text-left active:bg-white/5"
+                      aria-pressed={done}
+                    >
+                      <span
+                        className={`flex h-[26px] w-[26px] shrink-0 items-center justify-center rounded-lg border-2 ${
+                          done
+                            ? "border-[var(--green)] bg-[var(--green)] text-[#06120a]"
+                            : "border-[#5a6578] bg-[#1c212b] text-transparent"
+                        }`}
+                      >
+                        <IconCheck size={15} />
+                      </span>
+                      <span className="min-w-0 flex-1">
+                        <span
+                          className={`block truncate text-[14.5px] font-semibold ${
+                            done ? "text-[var(--muted)] line-through" : "text-white"
+                          }`}
+                        >
+                          {name}
+                        </span>
+                        <span className="block truncate text-[12px] text-[var(--muted)]">
+                          {ex.working_rep_range || `${ex.default_sets} sets`}
+                        </span>
+                      </span>
+                    </button>
+                    {cat?.youtubeUrl ? (
+                      <a
+                        href={cat.youtubeUrl}
+                        target="_blank"
+                        rel="noreferrer"
+                        aria-label={`Form video for ${name}`}
+                        className="flex h-[34px] w-[34px] shrink-0 items-center justify-center rounded-[10px] bg-[#1c212b] text-[var(--muted)] active:text-white"
+                      >
+                        <IconPlayCircle size={17} />
+                      </a>
+                    ) : null}
+                    <button
+                      type="button"
+                      aria-label={`Options for ${name}`}
+                      className="flex h-[34px] w-[34px] shrink-0 items-center justify-center rounded-[10px] bg-[#1c212b] text-[var(--muted)] active:text-white"
+                      onClick={() => openEdit(ex)}
+                    >
+                      <IconMore size={17} />
+                    </button>
+                  </div>
+                );
+              })}
+            </div>
+          </section>
+        ) : null}
+
+        {main.map((ex) => {
           const sets = setsByExercise[ex.id] ?? [];
           const name = displayName(ex);
           const cat = catalogEntry(name) ?? catalogEntry(ex.name);
