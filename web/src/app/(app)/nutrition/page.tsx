@@ -513,7 +513,7 @@ export default function NutritionPage() {
                 type="button"
                 className={`rounded-full px-2 py-1.5 text-[12px] font-semibold ${
                   planTab === t
-                    ? "border border-[var(--blue)] bg-[#123240] text-white"
+                    ? "border border-[var(--blue)] bg-[#1a3050] text-white"
                     : "bg-[var(--card-2)] text-[var(--muted)]"
                 }`}
                 onClick={() => setPlanTab(t)}

@@ -162,7 +162,7 @@ export function TrainTabs({
             type="button"
             className={`h-9 flex-1 rounded-[18px] text-[14px] ${
               tab === key
-                ? "bg-[#13323f] font-bold text-white"
+                ? "bg-[#253449] font-bold text-white"
                 : "font-semibold text-[var(--muted)]"
             }`}
             onClick={() => setTab(key)}
@@ -440,7 +440,7 @@ function WorkoutsTab({
               <Link
                 href={`/train/${todayDay.id}/session`}
                 prefetch={false}
-                className="glow-green flex h-[52px] flex-1 items-center justify-center gap-2 rounded-[15px] bg-[var(--green)] text-[16px] font-extrabold text-[var(--on-green)] active:scale-[0.98]"
+                className="flex h-[52px] flex-1 items-center justify-center gap-2 rounded-[15px] bg-[var(--green)] text-[16px] font-extrabold text-[var(--on-green)] active:scale-[0.98]"
               >
                 <IconPlay size={15} />
                 {todayDone ? "Train again" : "Start workout"}

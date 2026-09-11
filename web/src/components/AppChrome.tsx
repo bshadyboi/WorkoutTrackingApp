@@ -75,11 +75,7 @@ function Nav({ pathname }: { pathname: string }) {
               style={{ WebkitTapHighlightColor: "transparent" }}
             >
               <span className="pointer-events-none" aria-hidden>
-                <l.Icon
-                  size={22}
-                  strokeWidth={active ? 2.2 : 2}
-                  className={active ? "glow-ink" : undefined}
-                />
+                <l.Icon size={22} strokeWidth={active ? 2.2 : 2} />
               </span>
               <span className="pointer-events-none text-[10.5px] font-semibold leading-none">
                 {l.label}
@@ -107,10 +103,10 @@ export function AppChrome({
   const isDayPreview = /^\/train\/[^/]+\/?$/.test(pathname);
 
   return (
-    <div className="aurora relative mx-auto min-h-dvh max-w-lg bg-[var(--bg)]">
+    <div className="mx-auto min-h-dvh max-w-lg bg-[var(--bg)]">
       {!isSession && !isDayPreview ? (
         <header
-          className="sticky top-0 z-20 border-b border-[var(--border)] bg-[var(--bg)]/85 px-4 py-3 backdrop-blur-md"
+          className="sticky top-0 z-20 border-b border-[var(--border)] bg-[var(--bg)] px-4 py-3"
           style={{ paddingTop: "max(12px, env(safe-area-inset-top, 0px))" }}
         >
           <div className="flex items-center justify-between gap-3">
@@ -135,7 +131,7 @@ export function AppChrome({
       ) : null}
 
       <main
-        className={isSession || isDayPreview ? "relative z-10" : "relative z-10 px-4 pt-4"}
+        className={isSession || isDayPreview ? "" : "px-4 pt-4"}
         style={
           isSession
             ? undefined

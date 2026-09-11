@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
-import { catalogEntry, youtubeThumb } from "@/lib/exerciseCatalog";
+import { catalogEntry, formVideoUrl, youtubeThumb } from "@/lib/exerciseCatalog";
 import { clearDraft, loadDraft } from "@/lib/sessionDraft";
 import { splitWarmupBlock } from "@/lib/prehab";
 import {
@@ -326,7 +326,6 @@ export function WorkoutPreview({
             </p>
             <ul className="mt-3 space-y-1">
               {warmups.map((ex) => {
-                const cat = catalogEntry(ex.name);
                 return (
                   <li key={ex.id} className="flex items-center gap-3 py-1.5">
                     <span className="h-[22px] w-[22px] shrink-0 rounded-md border-2 border-[var(--dim)]" />
@@ -338,17 +337,15 @@ export function WorkoutPreview({
                         {ex.working_rep_range || `${ex.default_sets} sets`}
                       </span>
                     </span>
-                    {cat?.youtubeUrl ? (
-                      <a
-                        href={cat.youtubeUrl}
-                        target="_blank"
-                        rel="noreferrer"
-                        aria-label={`Form video for ${ex.name}`}
-                        className="flex h-[32px] w-[32px] shrink-0 items-center justify-center rounded-[10px] bg-[var(--card-2)] text-[var(--muted)] active:text-white"
-                      >
-                        <IconPlayCircle size={16} />
-                      </a>
-                    ) : null}
+                    <a
+                      href={formVideoUrl(ex.name)}
+                      target="_blank"
+                      rel="noreferrer"
+                      aria-label={`Form video for ${ex.name}`}
+                      className="flex h-[32px] w-[32px] shrink-0 items-center justify-center rounded-[10px] bg-[var(--card-2)] text-[var(--muted)] active:text-white"
+                    >
+                      <IconPlayCircle size={16} />
+                    </a>
                   </li>
                 );
               })}
@@ -374,31 +371,29 @@ export function WorkoutPreview({
                   <span className="mt-0.5 w-4 shrink-0 text-[13px] font-bold tabular-nums text-[var(--dim)]">
                     {i + 1}
                   </span>
-                  {cat?.youtubeUrl ? (
-                    <a
-                      href={cat.youtubeUrl}
-                      target="_blank"
-                      rel="noreferrer"
-                      aria-label={`Form video for ${ex.name}`}
-                      className="relative h-[52px] w-[52px] shrink-0 overflow-hidden rounded-[10px] bg-[var(--card-2)]"
+                  <a
+                    href={formVideoUrl(ex.name)}
+                    target="_blank"
+                    rel="noreferrer"
+                    aria-label={`Form video for ${ex.name}`}
+                    className="relative h-[52px] w-[52px] shrink-0 overflow-hidden rounded-[10px] bg-[var(--card-2)]"
+                  >
+                    {thumb ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img
+                        src={thumb}
+                        alt=""
+                        className="h-full w-full object-cover opacity-80"
+                      />
+                    ) : null}
+                    <span
+                      className={`absolute inset-0 flex items-center justify-center ${
+                        thumb ? "text-white" : "text-[var(--dim)]"
+                      }`}
                     >
-                      {thumb ? (
-                        // eslint-disable-next-line @next/next/no-img-element
-                        <img
-                          src={thumb}
-                          alt=""
-                          className="h-full w-full object-cover opacity-80"
-                        />
-                      ) : null}
-                      <span className="absolute inset-0 flex items-center justify-center text-white">
-                        <IconPlayCircle size={20} />
-                      </span>
-                    </a>
-                  ) : (
-                    <div className="flex h-[52px] w-[52px] shrink-0 items-center justify-center rounded-[10px] bg-[var(--card-2)] text-[var(--dim)]">
                       <IconPlayCircle size={20} />
-                    </div>
-                  )}
+                    </span>
+                  </a>
                   <div className="min-w-0 flex-1">
                     <p className="text-[15px] font-bold leading-snug text-white">
                       {ex.name}
@@ -436,16 +431,14 @@ export function WorkoutPreview({
                 </div>
                 {openMenuId === ex.id ? (
                   <div className="space-y-1.5 px-4 pb-3.5 pl-[76px] text-[12.5px]">
-                    {cat?.youtubeUrl ? (
-                      <a
-                        href={cat.youtubeUrl}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="block font-bold text-white"
-                      >
-                        Watch form video
-                      </a>
-                    ) : null}
+                    <a
+                      href={formVideoUrl(ex.name)}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="block font-bold text-white"
+                    >
+                      {cat?.youtubeUrl ? "Watch form video" : "Find a form video"}
+                    </a>
                     <Link
                       href={startHref}
                       prefetch={false}
@@ -498,7 +491,7 @@ export function WorkoutPreview({
         <Link
           href={startHref}
           prefetch={false}
-          className="glow-green flex min-h-[54px] w-full items-center justify-center gap-2 rounded-2xl bg-[var(--green)] text-[16px] font-extrabold text-[var(--on-green)] active:scale-[0.99]"
+          className="flex min-h-[54px] w-full items-center justify-center gap-2 rounded-2xl bg-[var(--green)] text-[16px] font-extrabold text-[var(--on-green)] active:scale-[0.99]"
         >
           <IconPlay size={15} />
           {hasDraft ? "Resume Workout" : "Start Workout"}

@@ -1794,6 +1794,29 @@ const ALIASES: Record<string, string> = {
   "skullcrushers": "Incline DB Skull Crushers",
   "military press": "Barbell Medium Grip Military Press",
   "scott curl": "Single Arm Neutral DB Scott Curl",
+
+  // —— Derrick Recomp program names → existing catalog entries ——
+  // The catalog grew around the earlier PPL program, so these movements had
+  // cues, swaps and form videos already; they were simply filed under other
+  // names and every lookup missed.
+  "chest-supported db row": "Chest-Supported Row",
+  "1-arm cable / db row": "Single Arm DB Row",
+  "machine / cable chest press": "Chest Press",
+  "cable pushdown": "Triceps Pushdown",
+  "overhead rope extension": "Overhead Cable Tricep Extensions (Rope)",
+  "overhead rope / db extension": "Overhead Cable Tricep Extensions (Rope)",
+  "close-grip / neutral db press": "Close Grip Barbell Bench Press",
+  "landmine press / 30° incline db press": "Incline DB Bench",
+  "neutral pulldown / assisted chin": "Lat Pulldown",
+  "rear-delt fly": "Rear Delt Raise",
+  "rear delt fly / face pull": "Rear Delt Raise",
+  "leg curl": "Lying Leg Curl",
+  "calf raise": "Standing Calf Raise",
+  "walking lunge / split squat": "DB Walking Lunges",
+  "goblet / safety-bar / hack squat": "Hack Squat / Barbell Squat",
+  "hip thrust / glute bridge": "Hip Thrust",
+  "leg extension": "Leg Extension",
+  "seated cable row": "Seated Cable Row",
 };
 
 const byName = new Map(EXERCISE_CATALOG.map((e) => [e.name.toLowerCase(), e]));
@@ -1831,6 +1854,26 @@ export function catalogEntry(name: string) {
   }
 
   return undefined;
+}
+
+/**
+ * A form-video link for any exercise, curated or not.
+ *
+ * The catalog only covers movements someone has filed; a program can always
+ * name one it has never seen (prehab work, carries, a gym-specific machine).
+ * Rather than leave those with no Form button, fall back to a YouTube search
+ * for the movement — it never 404s and needs no upkeep as the library grows.
+ */
+export function formVideoUrl(name: string): string {
+  const curated = catalogEntry(name)?.youtubeUrl;
+  if (curated) return curated;
+  const query = `${name.replace(/\s*\/\s*/g, " or ").trim()} exercise form`;
+  return `https://www.youtube.com/results?search_query=${encodeURIComponent(query)}`;
+}
+
+/** True when the link is a curated demo rather than a search fallback. */
+export function hasCuratedVideo(name: string): boolean {
+  return Boolean(catalogEntry(name)?.youtubeUrl);
 }
 
 export function findAlternatives(name: string) {

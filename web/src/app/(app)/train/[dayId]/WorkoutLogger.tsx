@@ -3,7 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useRef, useState, useTransition } from "react";
 import { createClient } from "@/lib/supabase/client";
-import { catalogEntry } from "@/lib/exerciseCatalog";
+import { catalogEntry, formVideoUrl } from "@/lib/exerciseCatalog";
 import { SwapExerciseSheet } from "@/components/SwapExerciseSheet";
 import {
   clearDraft,
@@ -951,7 +951,7 @@ export function WorkoutLogger({
             type="button"
             onClick={requestFinish}
             disabled={saving}
-            className="glow-green flex h-[42px] items-center rounded-full bg-[var(--green)] px-5 text-[14.5px] font-extrabold text-[var(--on-green)]"
+            className="flex h-[42px] items-center rounded-full bg-[var(--green)] px-5 text-[14.5px] font-extrabold text-[var(--on-green)]"
           >
             {saving ? "…" : "Finish"}
           </button>
@@ -1031,7 +1031,6 @@ export function WorkoutLogger({
                 const sets = setsByExercise[ex.id] ?? [];
                 const done = sets.length > 0 && sets.every((s) => s.completed);
                 const name = displayName(ex);
-                const cat = catalogEntry(name) ?? catalogEntry(ex.name);
                 return (
                   <div key={ex.id} className="flex items-center gap-2">
                     <button
@@ -1062,17 +1061,15 @@ export function WorkoutLogger({
                         </span>
                       </span>
                     </button>
-                    {cat?.youtubeUrl ? (
-                      <a
-                        href={cat.youtubeUrl}
-                        target="_blank"
-                        rel="noreferrer"
-                        aria-label={`Form video for ${name}`}
-                        className="flex h-[34px] w-[34px] shrink-0 items-center justify-center rounded-[10px] bg-[var(--card-2)] text-[var(--muted)] active:text-white"
-                      >
-                        <IconPlayCircle size={17} />
-                      </a>
-                    ) : null}
+                    <a
+                      href={formVideoUrl(name)}
+                      target="_blank"
+                      rel="noreferrer"
+                      aria-label={`Form video for ${name}`}
+                      className="flex h-[34px] w-[34px] shrink-0 items-center justify-center rounded-[10px] bg-[var(--card-2)] text-[var(--muted)] active:text-white"
+                    >
+                      <IconPlayCircle size={17} />
+                    </a>
                     <button
                       type="button"
                       aria-label={`Options for ${name}`}
@@ -1134,17 +1131,15 @@ export function WorkoutLogger({
                   ) : null}
                 </div>
                 <div className="flex shrink-0 gap-1.5">
-                  {cat?.youtubeUrl ? (
-                    <a
-                      href={cat.youtubeUrl}
-                      target="_blank"
-                      rel="noreferrer"
-                      aria-label="Form video"
-                      className="flex h-[34px] w-[34px] items-center justify-center rounded-[10px] bg-[var(--card-2)] text-[var(--muted)] active:text-white"
-                    >
-                      <IconPlayCircle size={17} />
-                    </a>
-                  ) : null}
+                  <a
+                    href={formVideoUrl(name)}
+                    target="_blank"
+                    rel="noreferrer"
+                    aria-label="Form video"
+                    className="flex h-[34px] w-[34px] items-center justify-center rounded-[10px] bg-[var(--card-2)] text-[var(--muted)] active:text-white"
+                  >
+                    <IconPlayCircle size={17} />
+                  </a>
                   <button
                     type="button"
                     aria-label="Swap exercise"
@@ -1292,7 +1287,7 @@ export function WorkoutLogger({
                             onClick={() => toggleComplete(ex, i)}
                             className={`mx-auto flex h-10 w-10 items-center justify-center rounded-xl ${
                               set.completed
-                                ? "bg-[var(--green)] text-[var(--on-green)] shadow-[0_0_14px_rgba(43,245,160,0.45)]"
+                                ? "bg-[var(--green)] text-[var(--on-green)]"
                                 : "bg-[var(--card-2)] text-[var(--dim)]"
                             }`}
                           >
