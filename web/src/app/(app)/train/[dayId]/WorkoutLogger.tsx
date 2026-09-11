@@ -1,8 +1,59 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState, useTransition } from "react";
 import { createClient } from "@/lib/supabase/client";
+import { catalogEntry } from "@/lib/exerciseCatalog";
+import { SwapExerciseSheet } from "@/components/SwapExerciseSheet";
+import {
+  clearDraft,
+  loadDraft,
+  saveDraft,
+  isWarmupExerciseName,
+  type DraftSet,
+} from "@/lib/sessionDraft";
+import { formatPrescription, setTargetLabel } from "@/lib/workouts";
+import {
+  cancelRestAlert,
+  ensureRestNotifyPermission,
+  fireRestDoneAlert,
+  loadPersistedRest,
+  restSecondsLeft,
+  scheduleRestAlert,
+  shouldFireRestAlert,
+} from "@/lib/restAlert";
+import {
+  formatRestClock,
+  getRestPref,
+  REST_PRESETS,
+  setRestPref,
+} from "@/lib/restPrefs";
+import {
+  formatPlateLoad,
+  isBarbellLoadable,
+  plateLoadForWeight,
+} from "@/lib/plates";
+import {
+  estimateRemainingSeconds,
+  formatEstimateMinutes,
+} from "@/lib/sessionEstimate";
+import {
+  BAR_OPTIONS,
+  getBarLb,
+  setBarLb,
+  suggestedBarLb,
+  type BarLb,
+} from "@/lib/barPrefs";
+import type { BestSet } from "@/lib/wins";
+
+function setScore(weight: number, reps: number) {
+  return weight * 1000 + reps;
+}
+
+function fmtSet(weight: number, reps: number) {
+  const w = Number.isInteger(weight) ? String(weight) : weight.toFixed(1);
+  return `${w} × ${reps}`;
+}
 
 type Exercise = {
   id: string;
@@ -15,238 +66,1410 @@ type Exercise = {
   sort_order: number;
 };
 
-type ActiveSet = {
-  setNumber: number;
-  weight: string;
-  reps: string;
-  completed: boolean;
-  previous?: string;
-};
+function defaultRestSeconds(ex: Exercise, setIndex: number) {
+  if (ex.muscle === "Cardio") return 0;
+  if (ex.has_crown_set && setIndex === 0) return 240;
+  return 180;
+}
+
+function formatRest(seconds: number) {
+  return formatRestClock(seconds);
+}
 
 export function WorkoutLogger({
   dayId,
   dayName,
   exercises,
   previousByExercise,
+  bestByExercise = {},
+  logDate,
 }: {
   dayId: string;
   dayName: string;
   exercises: Exercise[];
   previousByExercise: Record<string, { weight: number; reps: number }[]>;
+  /** All-time best working set per exercise name */
+  bestByExercise?: Record<string, BestSet>;
+  /** YYYY-MM-DD when backfilling a past workout */
+  logDate?: string;
 }) {
   const router = useRouter();
+  const supabaseRef = useRef(createClient());
+  const [, startTransition] = useTransition();
+
   const sorted = useMemo(
     () => [...exercises].sort((a, b) => a.sort_order - b.sort_order),
     [exercises]
   );
 
-  const [index, setIndex] = useState(0);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
-  const [startedAt] = useState(() => new Date().toISOString());
+  const [startedAt, setStartedAt] = useState(() => Date.now());
+  const [elapsed, setElapsed] = useState(0);
+  const [notes, setNotes] = useState<Record<string, string>>({});
+  const [nameOverrides, setNameOverrides] = useState<Record<string, string>>({});
+  const [restByExercise, setRestByExercise] = useState<Record<string, number>>(() => {
+    const init: Record<string, number> = {};
+    for (const ex of sorted) {
+      init[ex.id] = getRestPref(ex.name, defaultRestSeconds(ex, 0));
+    }
+    return init;
+  });
+  const [sessionDayName, setSessionDayName] = useState(dayName);
+  const [showLeaveConfirm, setShowLeaveConfirm] = useState(false);
+  const [editForId, setEditForId] = useState<string | null>(null);
+  const [swapForId, setSwapForId] = useState<string | null>(null);
+  const [editNameDraft, setEditNameDraft] = useState("");
+  const [draftReady, setDraftReady] = useState(false);
+  const [draftBanner, setDraftBanner] = useState(false);
+  const [activeRest, setActiveRest] = useState<{
+    exerciseId: string;
+    afterSet: number;
+    endsAt: number;
+  } | null>(null);
+  const [restTick, setRestTick] = useState(0);
+  const [restEditExerciseId, setRestEditExerciseId] = useState<string | null>(null);
+  const [ratingSessionId, setRatingSessionId] = useState<string | null>(null);
+  const [ratingSaving, setRatingSaving] = useState(false);
+  const [showFinishConfirm, setShowFinishConfirm] = useState(false);
+  const pendingFinishRef = useRef<{
+    sessionId: string;
+    snapshot: {
+      dayId: string;
+      dayName: string;
+      startedAt: number;
+      setsByExercise: Record<string, DraftSet[]>;
+      notes: Record<string, string>;
+      nameOverrides: Record<string, string>;
+      restByExercise: Record<string, number>;
+    };
+  } | null>(null);
+  const [prToast, setPrToast] = useState<{
+    title: string;
+    detail: string;
+  } | null>(null);
+  const [barLb, setBarLbState] = useState<BarLb>(45);
+  const [barByExercise, setBarByExercise] = useState<Record<string, BarLb>>({});
+  const sessionBestRef = useRef<Record<string, BestSet>>({ ...bestByExercise });
+  const prToastTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const [setsByExercise, setSetsByExercise] = useState<Record<string, ActiveSet[]>>(() => {
-    const init: Record<string, ActiveSet[]> = {};
+  const [setsByExercise, setSetsByExercise] = useState<Record<string, DraftSet[]>>(() => {
+    const init: Record<string, DraftSet[]> = {};
     for (const ex of sorted) {
       const prev = previousByExercise[ex.name] ?? [];
+      const warmEx = isWarmupExerciseName(ex.name);
       init[ex.id] = Array.from({ length: ex.default_sets }, (_, i) => {
         const p = prev[i] ?? prev[prev.length - 1];
         return {
           setNumber: i + 1,
           weight: p ? String(p.weight) : "",
-          reps: p ? String(p.reps) : "",
+          reps: "",
           completed: false,
+          isWarmup: warmEx,
           previous: p
-            ? `${Number.isInteger(p.weight) ? p.weight : p.weight.toFixed(1)}×${p.reps}`
-            : undefined,
+            ? `${Number.isInteger(p.weight) ? p.weight : p.weight.toFixed(1)} × ${p.reps}`
+            : "—",
         };
       });
     }
     return init;
   });
 
-  const current = sorted[index];
-  const sets = setsByExercise[current?.id] ?? [];
+  // Resume draft after mount (crash / save & leave)
+  useEffect(() => {
+    const draft = loadDraft(dayId, logDate);
+    if (draft?.setsByExercise) {
+      const overrides = draft.nameOverrides ?? {};
+      const normalized: Record<string, DraftSet[]> = {};
+      for (const [id, sets] of Object.entries(draft.setsByExercise)) {
+        const ex = sorted.find((e) => e.id === id);
+        const label = overrides[id] ?? ex?.name ?? "";
+        const warmEx = isWarmupExerciseName(label);
+        normalized[id] = sets.map((s) => ({
+          ...s,
+          isWarmup: s.isWarmup ?? warmEx,
+        }));
+      }
+      setSetsByExercise(normalized);
+      setNotes(draft.notes ?? {});
+      setNameOverrides(overrides);
+      if (draft.restByExercise) setRestByExercise(draft.restByExercise);
+      if (draft.dayName) setSessionDayName(draft.dayName);
+      setStartedAt(draft.startedAt);
+      setDraftBanner(true);
+    }
+    setDraftReady(true);
+  }, [dayId, logDate, sorted]);
 
-  function updateSet(setIndex: number, patch: Partial<ActiveSet>) {
-    if (!current) return;
+  useEffect(() => {
+    setBarLbState(getBarLb());
+  }, []);
+
+  useEffect(() => {
+    sessionBestRef.current = { ...bestByExercise };
+  }, [bestByExercise]);
+
+  const hasProgress = useMemo(() => {
+    return Object.values(setsByExercise).some((sets) =>
+      sets.some((s) => s.completed || s.reps !== "")
+    );
+  }, [setsByExercise]);
+
+  const completedSetCount = useMemo(() => {
+    return Object.values(setsByExercise).reduce(
+      (n, sets) => n + sets.filter((s) => s.completed).length,
+      0
+    );
+  }, [setsByExercise]);
+
+  // Autosave draft when there's real progress (crash recovery)
+  useEffect(() => {
+    if (!draftReady) return;
+    if (!hasProgress) return;
+    saveDraft({
+      dayId,
+      dayName: sessionDayName,
+      startedAt,
+      savedAt: Date.now(),
+      setsByExercise,
+      notes,
+      nameOverrides,
+      restByExercise,
+    }, logDate);
+  }, [
+    draftReady,
+    hasProgress,
+    dayId,
+    sessionDayName,
+    startedAt,
+    setsByExercise,
+    notes,
+    nameOverrides,
+    restByExercise,
+    logDate,
+  ]);
+
+  useEffect(() => {
+    const t = setInterval(() => setElapsed(Math.floor((Date.now() - startedAt) / 1000)), 1000);
+    return () => clearInterval(t);
+  }, [startedAt]);
+
+  // Resume an in-progress rest after reload / return to app
+  useEffect(() => {
+    const persisted = loadPersistedRest();
+    if (!persisted) return;
+    if (restSecondsLeft(persisted.endsAt) <= 0) {
+      if (shouldFireRestAlert(persisted.endsAt)) {
+        void fireRestDoneAlert(persisted.label);
+      }
+      cancelRestAlert();
+      return;
+    }
+    setActiveRest({
+      exerciseId: persisted.exerciseId,
+      afterSet: persisted.afterSet,
+      endsAt: persisted.endsAt,
+    });
+    void scheduleRestAlert(persisted);
+  }, []);
+
+  // Absolute-time rest countdown (keeps working after backgrounding)
+  useEffect(() => {
+    if (!activeRest) return;
+
+    const sync = () => {
+      const left = restSecondsLeft(activeRest.endsAt);
+      setRestTick((n) => n + 1);
+      if (left <= 0) {
+        if (shouldFireRestAlert(activeRest.endsAt)) {
+          const ex = sorted.find((e) => e.id === activeRest.exerciseId);
+          const label = ex ? displayName(ex) : undefined;
+          cancelRestAlert();
+          void fireRestDoneAlert(label);
+        } else {
+          cancelRestAlert();
+        }
+        setActiveRest(null);
+      }
+    };
+
+    sync();
+    const t = setInterval(sync, 250);
+    const onVis = () => {
+      if (document.visibilityState === "visible") sync();
+    };
+    document.addEventListener("visibilitychange", onVis);
+    window.addEventListener("focus", onVis);
+    return () => {
+      clearInterval(t);
+      document.removeEventListener("visibilitychange", onVis);
+      window.removeEventListener("focus", onVis);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeRest?.endsAt, activeRest?.exerciseId]);
+
+  const activeRestLeft = activeRest ? restSecondsLeft(activeRest.endsAt) : 0;
+  void restTick; // re-render tick
+
+  function displayName(ex: Exercise) {
+    return nameOverrides[ex.id] ?? ex.name;
+  }
+
+  function clearActiveRest() {
+    cancelRestAlert();
+    setActiveRest(null);
+  }
+
+  async function startRest(ex: Exercise, setIndex: number, seconds: number) {
+    const endsAt = Date.now() + seconds * 1000;
+    const setsLen = setsByExercise[ex.id]?.length ?? 1;
+    const isLastSet = setIndex >= setsLen - 1;
+    const exIdx = sorted.findIndex((e) => e.id === ex.id);
+    const nextEx = isLastSet && exIdx >= 0 ? sorted[exIdx + 1] : null;
+    const label = isLastSet
+      ? nextEx
+        ? `Next · ${displayName(nextEx)}`
+        : `${displayName(ex)} · done`
+      : displayName(ex);
+    const state = {
+      exerciseId: ex.id,
+      afterSet: setIndex,
+      endsAt,
+      label,
+      url: window.location.pathname,
+    };
+    setActiveRest({ exerciseId: ex.id, afterSet: setIndex, endsAt });
+    void ensureRestNotifyPermission();
+    await scheduleRestAlert(state);
+  }
+
+  function requestLeave() {
+    setShowLeaveConfirm(true);
+  }
+
+  function saveAndLeave() {
+    saveDraft({
+      dayId,
+      dayName: sessionDayName,
+      startedAt,
+      savedAt: Date.now(),
+      setsByExercise,
+      notes,
+      nameOverrides,
+      restByExercise,
+    }, logDate);
+    setShowLeaveConfirm(false);
+    router.push(`/train/${dayId}`);
+  }
+
+  function discardAndLeave() {
+    clearDraft(dayId, logDate);
+    setShowLeaveConfirm(false);
+    router.push(`/train/${dayId}`);
+  }
+
+  // Warn on tab close / refresh while in session
+  useEffect(() => {
+    const onBeforeUnload = (e: BeforeUnloadEvent) => {
+      if (!hasProgress && elapsed < 15) return;
+      e.preventDefault();
+      e.returnValue = "";
+    };
+    window.addEventListener("beforeunload", onBeforeUnload);
+    return () => window.removeEventListener("beforeunload", onBeforeUnload);
+  }, [hasProgress, elapsed]);
+
+  // Intercept browser back → same leave modal
+  useEffect(() => {
+    const onPopState = () => {
+      window.history.pushState({ fittrackSession: true }, "");
+      setShowLeaveConfirm(true);
+    };
+    window.history.pushState({ fittrackSession: true }, "");
+    window.addEventListener("popstate", onPopState);
+    return () => window.removeEventListener("popstate", onPopState);
+  }, []);
+
+  function updateSet(exerciseId: string, setIndex: number, patch: Partial<DraftSet>) {
     setSetsByExercise((prev) => {
-      const copy = { ...prev };
-      const list = [...(copy[current.id] ?? [])];
+      const list = [...(prev[exerciseId] ?? [])];
       list[setIndex] = { ...list[setIndex], ...patch };
-      copy[current.id] = list;
-      return copy;
+      return { ...prev, [exerciseId]: list };
     });
   }
 
-  async function finish() {
-    setSaving(true);
-    setError("");
-    const supabase = createClient();
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-    if (!user) {
-      setError("Not signed in");
-      setSaving(false);
-      return;
+  function fillFromPrevious(ex: Exercise, setIndex: number) {
+    const name = displayName(ex);
+    const prev =
+      previousByExercise[name] ?? previousByExercise[ex.name] ?? [];
+    const p = prev[setIndex] ?? prev[prev.length - 1];
+    if (!p) return;
+    updateSet(ex.id, setIndex, {
+      weight: String(p.weight),
+      reps: String(p.reps),
+    });
+  }
+
+  function barForExercise(name: string, exerciseId: string): BarLb {
+    if (barByExercise[exerciseId]) return barByExercise[exerciseId];
+    if (suggestedBarLb(name) === 35) return 35;
+    return barLb;
+  }
+
+  function chooseBar(exerciseId: string, lb: BarLb) {
+    setBarByExercise((m) => ({ ...m, [exerciseId]: lb }));
+    setBarLbState(lb);
+    setBarLb(lb);
+  }
+
+  function showPrToast(title: string, detail: string) {
+    if (prToastTimerRef.current) clearTimeout(prToastTimerRef.current);
+    setPrToast({ title, detail });
+    try {
+      navigator.vibrate?.(40);
+    } catch {
+      /* ignore */
     }
+    prToastTimerRef.current = setTimeout(() => setPrToast(null), 4200);
+  }
 
-    const ended = new Date();
-    const duration = Math.max(
-      1,
-      Math.round((ended.getTime() - new Date(startedAt).getTime()) / 1000)
-    );
+  function toggleComplete(ex: Exercise, setIndex: number) {
+    const set = setsByExercise[ex.id]?.[setIndex];
+    if (!set) return;
+    const next = !set.completed;
+    updateSet(ex.id, setIndex, { completed: next });
 
-    const { data: session, error: sessionErr } = await supabase
-      .from("workout_sessions")
-      .insert({
-        user_id: user.id,
-        day_name: dayName,
-        started_at: startedAt,
-        ended_at: ended.toISOString(),
-        duration_seconds: duration,
-      })
-      .select("id")
-      .single();
-
-    if (sessionErr || !session) {
-      setError(sessionErr?.message ?? "Could not save session");
-      setSaving(false);
-      return;
-    }
-
-    const rows: {
-      session_id: string;
-      exercise_name: string;
-      muscle: string;
-      set_number: number;
-      weight: number;
-      reps: number;
-      is_completed: boolean;
-    }[] = [];
-
-    for (const ex of sorted) {
-      for (const set of setsByExercise[ex.id] ?? []) {
-        if (!set.completed) continue;
-        rows.push({
-          session_id: session.id,
-          exercise_name: ex.name,
-          muscle: ex.muscle,
-          set_number: set.setNumber,
-          weight: Number(set.weight) || 0,
-          reps: Number(set.reps) || 0,
-          is_completed: true,
-        });
+    if (next && !set.isWarmup) {
+      const weight = Number(set.weight) || 0;
+      const reps = Number(set.reps) || 0;
+      if (weight > 0 && reps > 0) {
+        const name = displayName(ex);
+        const prev =
+          sessionBestRef.current[name] ?? sessionBestRef.current[ex.name];
+        const cur = { weight, reps };
+        if (!prev || setScore(cur.weight, cur.reps) > setScore(prev.weight, prev.reps)) {
+          sessionBestRef.current[name] = cur;
+          showPrToast(
+            prev ? `New PR · ${name}` : `First log · ${name}`,
+            prev
+              ? `${fmtSet(weight, reps)} (was ${fmtSet(prev.weight, prev.reps)})`
+              : fmtSet(weight, reps)
+          );
+        }
       }
     }
 
-    if (rows.length) {
-      const { error: setsErr } = await supabase.from("set_logs").insert(rows);
-      if (setsErr) {
-        setError(setsErr.message);
+    const baseRest = restByExercise[ex.id] ?? defaultRestSeconds(ex, setIndex);
+    const rest = set.isWarmup ? Math.min(baseRest, 90) : baseRest;
+    // Rest after every completed set — including the last (before next exercise)
+    if (next && rest > 0) {
+      void ensureRestNotifyPermission().then(() => startRest(ex, setIndex, rest));
+    } else if (activeRest?.exerciseId === ex.id && activeRest.afterSet === setIndex) {
+      clearActiveRest();
+    }
+  }
+
+  function openEdit(ex: Exercise) {
+    setEditForId(ex.id);
+    setEditNameDraft(displayName(ex));
+  }
+
+  function applyCustomName() {
+    if (!editForId) return;
+    const trimmed = editNameDraft.trim();
+    if (!trimmed) return;
+    setNameOverrides((o) => ({ ...o, [editForId]: trimmed }));
+    setEditForId(null);
+  }
+
+  function applySwap(exerciseId: string, newName: string) {
+    setNameOverrides((o) => ({ ...o, [exerciseId]: newName }));
+    setEditNameDraft(newName);
+    setSwapForId(null);
+    setEditForId(null);
+  }
+
+  async function applySwapAll(exerciseId: string, newName: string) {
+    applySwap(exerciseId, newName);
+    const supabase = createClient();
+    await supabase
+      .from("workout_exercises")
+      .update({ name: newName })
+      .eq("id", exerciseId);
+  }
+
+  function bumpRest(exerciseId: string, delta: number) {
+    setRestByExercise((r) => {
+      const cur = r[exerciseId] ?? 180;
+      const next = Math.max(0, Math.min(600, cur + delta));
+      const ex = sorted.find((e) => e.id === exerciseId);
+      if (ex) setRestPref(displayName(ex), next);
+      return { ...r, [exerciseId]: next };
+    });
+    setActiveRest((ar) => {
+      if (!ar || ar.exerciseId !== exerciseId) return ar;
+      const endsAt = Math.max(Date.now(), ar.endsAt + delta * 1000);
+      const ex = sorted.find((e) => e.id === exerciseId);
+      const label = ex ? displayName(ex) : "Next set";
+      void scheduleRestAlert({
+        exerciseId,
+        afterSet: ar.afterSet,
+        endsAt,
+        label,
+        url: window.location.pathname,
+      });
+      return { ...ar, endsAt };
+    });
+  }
+
+  function setRestSeconds(exerciseId: string, seconds: number) {
+    const next = Math.max(0, Math.min(600, seconds));
+    setRestByExercise((r) => ({ ...r, [exerciseId]: next }));
+    const ex = sorted.find((e) => e.id === exerciseId);
+    if (ex) setRestPref(displayName(ex), next);
+  }
+
+  /** Set preferred rest and restart the active countdown to that full duration. */
+  function applyRestPreset(exerciseId: string, seconds: number) {
+    setRestSeconds(exerciseId, seconds);
+    setRestEditExerciseId(null);
+    setActiveRest((ar) => {
+      if (!ar || ar.exerciseId !== exerciseId) return ar;
+      const endsAt = Date.now() + seconds * 1000;
+      const ex = sorted.find((e) => e.id === exerciseId);
+      const label = ex ? displayName(ex) : "Next set";
+      void scheduleRestAlert({
+        exerciseId,
+        afterSet: ar.afterSet,
+        endsAt,
+        label,
+        url: window.location.pathname,
+      });
+      return { ...ar, endsAt };
+    });
+  }
+
+  function requestFinish() {
+    setShowFinishConfirm(true);
+  }
+
+  function finish() {
+    setShowFinishConfirm(false);
+    if (completedSetCount === 0) {
+      setError("Complete at least one set before finishing.");
+      return;
+    }
+    setSaving(true);
+    setError("");
+    startTransition(async () => {
+      const supabase = supabaseRef.current;
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      if (!user) {
+        setError("Not signed in");
         setSaving(false);
         return;
       }
-    }
 
-    setSaving(false);
-    router.push("/dashboard");
+      const duration = Math.max(1, Math.floor((Date.now() - startedAt) / 1000));
+      let sessionStart = new Date(startedAt);
+      let sessionEnd = new Date();
+      if (logDate) {
+        // Anchor finished session to the selected calendar day (noon + duration)
+        const [y, m, d] = logDate.split("-").map(Number);
+        sessionEnd = new Date(y, m - 1, d, 12, 0, 0);
+        sessionStart = new Date(sessionEnd.getTime() - duration * 1000);
+      }
+      const { data: session, error: sessionErr } = await supabase
+        .from("workout_sessions")
+        .insert({
+          user_id: user.id,
+          day_name: sessionDayName,
+          started_at: sessionStart.toISOString(),
+          ended_at: sessionEnd.toISOString(),
+          duration_seconds: duration,
+          notes: Object.entries(notes)
+            .filter(([, v]) => v.trim())
+            .map(([id, v]) => {
+              const ex = sorted.find((e) => e.id === id);
+              const name = ex ? displayName(ex) : id;
+              return `${name}: ${v}`;
+            })
+            .join("\n"),
+        })
+        .select("id")
+        .single();
+
+      if (sessionErr || !session) {
+        setError(sessionErr?.message ?? "Could not save session");
+        setSaving(false);
+        return;
+      }
+
+      const rows = [];
+      for (const ex of sorted) {
+        for (const set of setsByExercise[ex.id] ?? []) {
+          if (!set.completed) continue;
+          rows.push({
+            session_id: session.id,
+            exercise_name: displayName(ex),
+            muscle: ex.muscle,
+            set_number: set.setNumber,
+            weight: Number(set.weight) || 0,
+            reps: Number(set.reps) || 0,
+            is_completed: true,
+            is_warmup: Boolean(set.isWarmup),
+          });
+        }
+      }
+
+      if (rows.length) {
+        let { error: setsErr } = await supabase.from("set_logs").insert(rows);
+        if (setsErr?.message?.toLowerCase().includes("is_warmup")) {
+          const fallbackRows = rows.map(({ is_warmup, ...rest }) => {
+            void is_warmup;
+            return rest;
+          });
+          const retry = await supabase.from("set_logs").insert(fallbackRows);
+          setsErr = retry.error;
+        }
+        if (setsErr) {
+          await supabase.from("workout_sessions").delete().eq("id", session.id);
+          setError(setsErr.message);
+          setSaving(false);
+          return;
+        }
+      }
+
+      pendingFinishRef.current = {
+        sessionId: session.id,
+        snapshot: {
+          dayId,
+          dayName: sessionDayName,
+          startedAt,
+          setsByExercise,
+          notes,
+          nameOverrides,
+          restByExercise,
+        },
+      };
+
+      clearDraft(dayId, logDate);
+      clearActiveRest();
+      setSaving(false);
+      sessionStorage.removeItem("ft-tab:train");
+      sessionStorage.removeItem("ft-tab:dashboard");
+      setRatingSessionId(session.id);
+    });
+  }
+
+  async function submitRating(score: number) {
+    if (!ratingSessionId) return;
+    setRatingSaving(true);
+    const supabase = supabaseRef.current;
+    const { error: rateErr } = await supabase
+      .from("workout_sessions")
+      .update({ rating: score })
+      .eq("id", ratingSessionId);
+    if (rateErr) {
+      // Column may not exist yet — still continue to recap
+      console.warn(rateErr.message);
+    }
+    const id = ratingSessionId;
+    pendingFinishRef.current = null;
+    setRatingSessionId(null);
+    setRatingSaving(false);
+    router.push(`/train/history/${id}?fresh=1`);
     router.refresh();
   }
 
-  if (!current) return null;
+  async function undoFinishAndResume() {
+    if (!ratingSessionId || ratingSaving) return;
+    setRatingSaving(true);
+    setError("");
+
+    const supabase = supabaseRef.current;
+    const id = ratingSessionId;
+    const snap = pendingFinishRef.current?.snapshot;
+
+    const { error: delErr } = await supabase
+      .from("workout_sessions")
+      .delete()
+      .eq("id", id);
+
+    if (delErr) {
+      setError(delErr.message);
+      setRatingSaving(false);
+      return;
+    }
+
+    if (snap) {
+      setSetsByExercise(snap.setsByExercise);
+      setNotes(snap.notes);
+      setNameOverrides(snap.nameOverrides);
+      setRestByExercise(snap.restByExercise);
+      setSessionDayName(snap.dayName);
+      setStartedAt(snap.startedAt);
+      saveDraft({
+        ...snap,
+        savedAt: Date.now(),
+      }, logDate);
+      setDraftBanner(true);
+    }
+
+    pendingFinishRef.current = null;
+    setRatingSessionId(null);
+    setRatingSaving(false);
+    sessionStorage.removeItem("ft-tab:train");
+    sessionStorage.removeItem("ft-tab:dashboard");
+  }
+
+  function skipRating() {
+    if (!ratingSessionId || ratingSaving) return;
+    const id = ratingSessionId;
+    pendingFinishRef.current = null;
+    setRatingSessionId(null);
+    router.push(`/train/history/${id}?fresh=1`);
+    router.refresh();
+  }
+
+  const mm = Math.floor(elapsed / 60);
+  const ss = elapsed % 60;
+  const timerText = `${mm}:${ss.toString().padStart(2, "0")}`;
+  const estimateLeft = formatEstimateMinutes(
+    estimateRemainingSeconds({
+      exercises: sorted,
+      setsByExercise,
+      restByExercise,
+      defaultRest: (ex, i) =>
+        defaultRestSeconds(ex as Exercise, i),
+    })
+  );
+  const dateLabel = (() => {
+    const d = logDate
+      ? (() => {
+          const [y, m, day] = logDate.split("-").map(Number);
+          return new Date(y, m - 1, day, 12);
+        })()
+      : new Date();
+    return d.toLocaleDateString(undefined, {
+      month: "short",
+      day: "numeric",
+      year: "numeric",
+    });
+  })();
+
+  const editEx = editForId ? sorted.find((e) => e.id === editForId) : null;
+  const swapEx = swapForId ? sorted.find((e) => e.id === swapForId) : null;
 
   return (
-    <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <div>
-          <p className="text-xs font-semibold text-[var(--blue)]">
-            Exercise {index + 1} / {sorted.length}
+    <div className="min-h-dvh bg-[var(--bg)] pb-28">
+      <div
+        className="sticky top-0 z-20 border-b border-[var(--border)] bg-[var(--bg)] px-4 pb-3"
+        style={{ paddingTop: "max(12px, env(safe-area-inset-top, 0px))" }}
+      >
+        <div className="mb-2 flex items-center justify-between">
+          <p className="text-[13px] font-bold">
+            <span className="text-white">Fit</span>
+            <span className="text-[var(--blue)]">Track</span>
           </p>
-          <h1 className="text-xl font-bold">{current.name}</h1>
-          <p className="text-xs text-[var(--muted)]">
-            {current.has_crown_set
-              ? `${current.default_sets} × ${current.crown_rep_range} / ${current.working_rep_range}`
-              : `${current.default_sets} × ${current.working_rep_range}`}
-          </p>
+          <span className="text-[11px] text-[var(--muted)]">autosaved ✓</span>
         </div>
-        <button onClick={finish} className="text-sm font-bold text-[var(--blue)]" disabled={saving}>
-          {saving ? "Saving…" : "Finish"}
-        </button>
+        <div className="flex items-center justify-between gap-3">
+          <button
+            type="button"
+            onClick={requestLeave}
+            className="flex h-11 w-11 items-center justify-center rounded-full bg-[#252b38] text-xl text-[var(--muted)]"
+            aria-label="Close"
+          >
+            ×
+          </button>
+          <div className="text-center">
+            <p className="font-mono text-lg font-bold tabular-nums">{timerText}</p>
+            <p className="text-[10px] font-semibold text-[var(--muted)]">
+              {estimateLeft}
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={requestFinish}
+            disabled={saving}
+            className="min-h-[44px] rounded-full bg-[var(--green)] px-4 text-sm font-bold text-black"
+          >
+            {saving ? "…" : "Finish"}
+          </button>
+        </div>
       </div>
 
-      <div className="card space-y-3">
-        <div className="grid grid-cols-[40px_1fr_1fr_72px] gap-2 text-[10px] font-bold uppercase text-[var(--muted)]">
-          <span>Set</span>
-          <span>Weight</span>
-          <span>Reps</span>
-          <span>Log</span>
+      {prToast ? (
+        <div
+          className="fixed left-1/2 z-40 w-[min(92vw,360px)] -translate-x-1/2 rounded-2xl border border-[var(--green)]/50 bg-[#14261a] px-4 py-3 shadow-lg"
+          style={{ top: "max(72px, calc(env(safe-area-inset-top, 0px) + 56px))" }}
+          role="status"
+        >
+          <p className="text-sm font-bold text-[var(--green)]">{prToast.title}</p>
+          <p className="mt-0.5 text-xs text-white/80">{prToast.detail}</p>
         </div>
-        {sets.map((set, i) => (
-          <div
-            key={set.setNumber}
-            className={`grid grid-cols-[40px_1fr_1fr_72px] items-center gap-2 rounded-xl p-2 ${
-              set.completed ? "bg-green-500/10" : "bg-[#0c0c0c]"
-            }`}
-          >
-            <span className="text-sm font-semibold">
-              {current.has_crown_set && i === 0 ? "👑" : set.setNumber}
-            </span>
+      ) : null}
+
+      {draftBanner ? (
+        <div className="mx-4 mt-3 rounded-xl border border-[var(--blue)]/40 bg-[var(--blue)]/10 px-3 py-2 text-xs text-[var(--blue)]">
+          Resumed saved session.{" "}
+          <button type="button" className="font-bold underline" onClick={() => setDraftBanner(false)}>
+            OK
+          </button>
+        </div>
+      ) : null}
+
+      <div className="px-4 pt-4">
+        <input
+          className="w-full bg-transparent text-2xl font-bold outline-none"
+          value={sessionDayName}
+          onChange={(e) => setSessionDayName(e.target.value)}
+          aria-label="Workout name"
+        />
+        <p className="mt-0.5 text-sm text-[var(--muted)]">
+          📅 {dateLabel}
+          {logDate ? " · backfill" : ""}
+          {" · "}
+          <span className="text-[10px]">tap name to rename</span>
+        </p>
+      </div>
+
+      <div className="mt-4 space-y-5 px-4">
+        {sorted.map((ex) => {
+          const sets = setsByExercise[ex.id] ?? [];
+          const name = displayName(ex);
+          const cat = catalogEntry(name) ?? catalogEntry(ex.name);
+          const isCardio = ex.muscle === "Cardio";
+          const showPlates = !isCardio && isBarbellLoadable(name);
+
+          return (
+            <section key={ex.id} className="space-y-2">
+              <div className="flex items-start justify-between gap-2">
+                <div className="min-w-0">
+                  <h2 className="text-lg font-bold text-[var(--blue)]">{name}</h2>
+                  {!isCardio ? (
+                    <div className="mt-1 space-y-0.5">
+                      {formatPrescription({
+                        defaultSets: ex.default_sets,
+                        hasCrownSet: ex.has_crown_set,
+                        crownRepRange: ex.crown_rep_range,
+                        workingRepRange: ex.working_rep_range,
+                      }).map((line) => (
+                        <p key={line} className="text-[13px] leading-snug text-white">
+                          {line}
+                        </p>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="mt-1 text-[13px] text-white">30 min incline walk</p>
+                  )}
+                  <p className="mt-1 text-[11px] text-[var(--muted)]">{ex.muscle}</p>
+                  {cat?.notes ? (
+                    <p className="mt-1 text-[11px] text-[var(--yellow)]">{cat.notes}</p>
+                  ) : null}
+                </div>
+                <div className="flex shrink-0 flex-col items-end gap-1">
+                  {cat?.youtubeUrl ? (
+                    <a
+                      href={cat.youtubeUrl}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="text-[11px] font-semibold text-[var(--blue)]"
+                    >
+                      ▶ Form
+                    </a>
+                  ) : null}
+                  <button
+                    type="button"
+                    className="text-[11px] font-semibold text-[var(--blue)]"
+                    onClick={() => setSwapForId(ex.id)}
+                  >
+                    Swap
+                  </button>
+                  <button
+                    type="button"
+                    className="text-[11px] font-semibold text-[var(--muted)]"
+                    onClick={() => openEdit(ex)}
+                  >
+                    Edit
+                  </button>
+                  {!isCardio ? (
+                    <p className="text-[10px] text-[var(--muted)]">
+                      Rest {formatRest(restByExercise[ex.id] ?? defaultRestSeconds(ex, 0))}
+                    </p>
+                  ) : null}
+                </div>
+              </div>
+
+              {isCardio ? (
+                <div className="card space-y-2">
+                  <p className="text-sm text-[var(--muted)]">
+                    30 min incline walk — log pace when done.
+                  </p>
+                  <div className="grid grid-cols-2 gap-2">
+                    <input
+                      className="field !py-2 text-center"
+                      placeholder="Speed"
+                      value={sets[0]?.weight ?? ""}
+                      onChange={(e) => updateSet(ex.id, 0, { weight: e.target.value })}
+                    />
+                    <input
+                      className="field !py-2 text-center"
+                      placeholder="Incline %"
+                      value={sets[0]?.reps ?? ""}
+                      onChange={(e) => updateSet(ex.id, 0, { reps: e.target.value })}
+                    />
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => toggleComplete(ex, 0)}
+                    className={`w-full rounded-xl py-3 text-sm font-bold ${
+                      sets[0]?.completed
+                        ? "bg-[var(--green)] text-black"
+                        : "bg-[#252b38] text-white"
+                    }`}
+                  >
+                    {sets[0]?.completed ? "Cardio done ✓" : "Mark cardio done"}
+                  </button>
+                </div>
+              ) : (
+                <div className="overflow-hidden rounded-2xl border border-[var(--border)] bg-[var(--card)]">
+                  <div className="grid grid-cols-[28px_minmax(0,1fr)_56px_52px_36px] gap-1 px-2 py-2 text-[9px] font-bold uppercase tracking-wide text-[var(--muted)]">
+                    <span title="Tap set # to mark warm-up">Set</span>
+                    <span>Prev · tap</span>
+                    <span className="text-center">lbs</span>
+                    <span className="text-center">Reps</span>
+                    <span className="text-center">✓</span>
+                  </div>
+
+                  {sets.map((set, i) => {
+                    const showRest =
+                      activeRest?.exerciseId === ex.id &&
+                      activeRest.afterSet === i &&
+                      activeRestLeft > 0;
+                    const targetLabel = set.isWarmup
+                      ? "Warm-up"
+                      : setTargetLabel(ex, i);
+
+                    return (
+                      <div key={set.setNumber}>
+                        <div
+                          className={`grid grid-cols-[28px_minmax(0,1fr)_56px_52px_36px] items-center gap-1 border-t border-[var(--border)] px-2 py-1.5 ${
+                            set.completed ? "bg-[var(--green)]/10" : ""
+                          } ${set.isWarmup && !set.completed ? "opacity-80" : ""}`}
+                        >
+                          <button
+                            type="button"
+                            title={
+                              set.isWarmup
+                                ? "Warm-up — tap for working"
+                                : "Working — tap for warm-up"
+                            }
+                            onClick={() =>
+                              updateSet(ex.id, i, { isWarmup: !set.isWarmup })
+                            }
+                            className={`mx-auto flex h-7 w-7 items-center justify-center rounded-md text-xs font-bold ${
+                              set.isWarmup
+                                ? "bg-[var(--yellow)]/20 text-[var(--yellow)]"
+                                : "text-white"
+                            }`}
+                          >
+                            {set.isWarmup
+                              ? "W"
+                              : ex.has_crown_set && i === 0
+                                ? "1"
+                                : set.setNumber}
+                          </button>
+                          <div className="min-w-0">
+                            {set.previous && set.previous !== "—" ? (
+                              <button
+                                type="button"
+                                className="block w-full truncate text-left text-[11px] font-semibold text-[var(--muted)] active:text-[var(--green)]"
+                                title="Tap to use last time’s weight & reps"
+                                onClick={() => fillFromPrevious(ex, i)}
+                              >
+                                {set.previous.replace("×", " × ")}
+                              </button>
+                            ) : (
+                              <p className="truncate text-[11px] text-[var(--muted)]">—</p>
+                            )}
+                            <p
+                              className={`truncate text-[10px] font-semibold ${
+                                set.isWarmup
+                                  ? "text-[var(--yellow)]"
+                                  : "text-[var(--blue)]"
+                              }`}
+                            >
+                              {targetLabel}
+                            </p>
+                          </div>
+                          <input
+                            className="field !rounded-lg !px-1 !py-1.5 text-center text-sm font-semibold"
+                            inputMode="decimal"
+                            value={set.weight}
+                            onChange={(e) =>
+                              updateSet(ex.id, i, { weight: e.target.value })
+                            }
+                          />
+                          <input
+                            className="field !rounded-lg !px-1 !py-1.5 text-center text-sm font-semibold"
+                            inputMode="numeric"
+                            value={set.reps}
+                            onChange={(e) =>
+                              updateSet(ex.id, i, { reps: e.target.value })
+                            }
+                          />
+                          <button
+                            type="button"
+                            onClick={() => toggleComplete(ex, i)}
+                            className={`mx-auto flex h-8 w-8 items-center justify-center rounded-lg text-xs font-bold ${
+                              set.completed
+                                ? "bg-[var(--green)] text-black"
+                                : "bg-[#252b38] text-[var(--muted)]"
+                            }`}
+                          >
+                            ✓
+                          </button>
+                        </div>
+                        {showPlates
+                          ? (() => {
+                              const exerciseBar = barForExercise(name, ex.id);
+                              const load = plateLoadForWeight(
+                                set.weight,
+                                exerciseBar
+                              );
+                              if (!load && !(Number(set.weight) > 0)) return null;
+                              return (
+                                <div className="flex flex-wrap items-center gap-2 border-t border-[var(--border)] px-2 py-1.5">
+                                  <div className="flex gap-1">
+                                    {BAR_OPTIONS.map((lb) => (
+                                      <button
+                                        key={lb}
+                                        type="button"
+                                        onClick={() => chooseBar(ex.id, lb)}
+                                        className={`rounded-md px-1.5 py-0.5 text-[10px] font-bold ${
+                                          exerciseBar === lb
+                                            ? "bg-[var(--green)] text-black"
+                                            : "bg-[#252b38] text-[var(--muted)]"
+                                        }`}
+                                      >
+                                        {lb}
+                                      </button>
+                                    ))}
+                                  </div>
+                                  {load ? (
+                                    <p className="text-[10px] leading-snug text-[var(--muted)]">
+                                      {formatPlateLoad(load)}
+                                      {!load.exact
+                                        ? ` · closest ${load.totalLb}`
+                                        : ""}
+                                    </p>
+                                  ) : (
+                                    <p className="text-[10px] text-[var(--muted)]">
+                                      below {exerciseBar} bar
+                                    </p>
+                                  )}
+                                </div>
+                              );
+                            })()
+                          : null}
+                        {showRest ? (
+                          <div className="flex items-center justify-center gap-2 border-t border-[var(--border)] py-2 text-sm text-[var(--muted)]">
+                            <span className="h-px flex-1 bg-[var(--border-solid)]" />
+                            <button
+                              type="button"
+                              className="rounded-lg bg-[#252b38] px-2 py-1 text-xs font-bold"
+                              onClick={() => bumpRest(ex.id, -15)}
+                            >
+                              −15s
+                            </button>
+                            <span className="font-mono font-bold tabular-nums">
+                              {formatRest(activeRestLeft)}
+                            </span>
+                            <button
+                              type="button"
+                              className="rounded-lg bg-[#252b38] px-2 py-1 text-xs font-bold"
+                              onClick={() => bumpRest(ex.id, 15)}
+                            >
+                              +15s
+                            </button>
+                            <button
+                              type="button"
+                              className="text-xs font-bold text-[var(--blue)]"
+                              onClick={clearActiveRest}
+                            >
+                              skip
+                            </button>
+                            <span className="h-px flex-1 bg-[var(--border-solid)]" />
+                          </div>
+                        ) : i < sets.length - 1 ? (
+                          <div className="border-t border-[var(--border)] py-1.5">
+                            {restEditExerciseId === ex.id ? (
+                              <div className="flex flex-wrap items-center justify-center gap-1.5 px-1">
+                                {REST_PRESETS.map((s) => {
+                                  const cur =
+                                    restByExercise[ex.id] ?? defaultRestSeconds(ex, i);
+                                  const on = cur === s;
+                                  return (
+                                    <button
+                                      key={s}
+                                      type="button"
+                                      className={`rounded-lg px-2.5 py-1.5 text-[11px] font-bold ${
+                                        on
+                                          ? "bg-[var(--green)] text-black"
+                                          : "bg-[#252b38] text-[var(--muted)]"
+                                      }`}
+                                      onClick={() => applyRestPreset(ex.id, s)}
+                                    >
+                                      {formatRest(s)}
+                                    </button>
+                                  );
+                                })}
+                                <button
+                                  type="button"
+                                  className="px-2 text-[11px] font-semibold text-[var(--muted)]"
+                                  onClick={() => setRestEditExerciseId(null)}
+                                >
+                                  done
+                                </button>
+                              </div>
+                            ) : (
+                              <button
+                                type="button"
+                                className="flex w-full items-center justify-center gap-3 py-1 text-[11px] text-[var(--muted)] active:text-white"
+                                onClick={() => setRestEditExerciseId(ex.id)}
+                              >
+                                <span className="h-px flex-1 bg-[var(--border-solid)]" />
+                                <span className="font-mono">
+                                  rest{" "}
+                                  {formatRest(
+                                    restByExercise[ex.id] ?? defaultRestSeconds(ex, i)
+                                  )}{" "}
+                                  · presets
+                                </span>
+                                <span className="h-px flex-1 bg-[var(--border-solid)]" />
+                              </button>
+                            )}
+                          </div>
+                        ) : null}
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+
+              <input
+                className="field !py-2.5 text-sm"
+                placeholder="Session note (optional)"
+                value={notes[ex.id] ?? ""}
+                onChange={(e) =>
+                  setNotes((n) => ({ ...n, [ex.id]: e.target.value }))
+                }
+              />
+            </section>
+          );
+        })}
+      </div>
+
+      {error ? <p className="px-4 pt-3 text-sm text-red-400">{error}</p> : null}
+
+      {showFinishConfirm ? (
+        <div
+          className="fixed inset-0 z-[65] flex items-end justify-center bg-black/75 p-4 sm:items-center"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="finish-title"
+        >
+          <div className="w-full max-w-sm rounded-2xl border border-[var(--border)] bg-[var(--card)] p-5 shadow-xl">
+            <p id="finish-title" className="text-lg font-bold">
+              Finish workout?
+            </p>
+            <p className="mt-2 text-sm text-[var(--muted)]">
+              {completedSetCount > 0
+                ? `${completedSetCount} set${completedSetCount === 1 ? "" : "s"} logged. You can undo on the next screen if you tapped by mistake.`
+                : "Complete at least one set before finishing."}
+            </p>
+            <div className="mt-5 space-y-2.5">
+              <button
+                type="button"
+                className="btn-green w-full"
+                onClick={finish}
+                disabled={saving || completedSetCount === 0}
+              >
+                {saving ? "Saving…" : "Finish & rate"}
+              </button>
+              <button
+                type="button"
+                className="btn-secondary w-full"
+                onClick={() => setShowFinishConfirm(false)}
+              >
+                Keep going
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
+
+      {showLeaveConfirm ? (
+        <div
+          className="fixed inset-0 z-50 flex items-end justify-center bg-black/75 p-4 sm:items-center"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="leave-title"
+        >
+          <div className="w-full max-w-sm rounded-2xl border border-[var(--border)] bg-[var(--card)] p-5 shadow-xl">
+            <p id="leave-title" className="text-lg font-bold">
+              Leave workout?
+            </p>
+            <p className="mt-2 text-sm text-[var(--muted)]">
+              Your sets can be saved on this device so you can resume later. Discarding
+              clears the in-progress session.
+            </p>
+            <div className="mt-5 space-y-2.5">
+              <button type="button" className="btn-green w-full" onClick={saveAndLeave}>
+                Save & resume later
+              </button>
+              <button
+                type="button"
+                className="btn-secondary w-full"
+                onClick={() => setShowLeaveConfirm(false)}
+              >
+                Keep going
+              </button>
+              <button
+                type="button"
+                className="w-full rounded-xl border border-[var(--border-solid)] px-4 py-3 text-sm font-bold text-[var(--red)]"
+                onClick={discardAndLeave}
+              >
+                Discard & leave
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
+
+      {swapEx ? (
+        <SwapExerciseSheet
+          currentName={displayName(swapEx)}
+          muscle={swapEx.muscle}
+          onClose={() => setSwapForId(null)}
+          onSwapHere={(name) => applySwap(swapEx.id, name)}
+          onSwapAll={(name) => applySwapAll(swapEx.id, name)}
+        />
+      ) : null}
+
+      {editEx ? (
+        <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/70 p-4 sm:items-center">
+          <div className="w-full max-w-sm rounded-2xl border border-[var(--border)] bg-[var(--card)] p-5">
+            <p className="text-lg font-bold">Edit exercise</p>
+            <p className="mt-1 text-xs text-[var(--muted)]">
+              Rename, pick a swap, or change rest for this movement.
+            </p>
+
+            <label className="label mt-4">Name</label>
             <input
-              className="field py-2 text-center"
-              inputMode="decimal"
-              value={set.weight}
-              placeholder={set.previous?.split("×")[0] ?? "0"}
-              onChange={(e) => updateSet(i, { weight: e.target.value })}
+              className="field !py-2.5"
+              value={editNameDraft}
+              onChange={(e) => setEditNameDraft(e.target.value)}
+              placeholder="Custom exercise name"
             />
-            <input
-              className="field py-2 text-center"
-              inputMode="numeric"
-              value={set.reps}
-              placeholder={set.previous?.split("×")[1] ?? "0"}
-              onChange={(e) => updateSet(i, { reps: e.target.value })}
-            />
+            <button type="button" className="btn-green mt-2 w-full !py-2.5" onClick={applyCustomName}>
+              Save name
+            </button>
+
+            {editEx.muscle !== "Cardio" ? (
+              <div className="mt-4">
+                <p className="label !mb-2">Rest between sets</p>
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    className="btn-secondary !px-3 !py-2"
+                    onClick={() => bumpRest(editEx.id, -15)}
+                  >
+                    −15s
+                  </button>
+                  <span className="flex-1 text-center font-mono text-lg font-bold">
+                    {formatRest(restByExercise[editEx.id] ?? defaultRestSeconds(editEx, 0))}
+                  </span>
+                  <button
+                    type="button"
+                    className="btn-secondary !px-3 !py-2"
+                    onClick={() => bumpRest(editEx.id, 15)}
+                  >
+                    +15s
+                  </button>
+                </div>
+                <div className="mt-2 grid grid-cols-5 gap-1.5">
+                  {REST_PRESETS.map((s) => {
+                    const cur =
+                      restByExercise[editEx.id] ?? defaultRestSeconds(editEx, 0);
+                    const on = cur === s;
+                    return (
+                      <button
+                        key={s}
+                        type="button"
+                        className={`rounded-lg py-1.5 text-[11px] font-semibold ${
+                          on
+                            ? "bg-[var(--green)] text-black"
+                            : "bg-[#252b38] text-[var(--muted)]"
+                        }`}
+                        onClick={() => setRestSeconds(editEx.id, s)}
+                      >
+                        {formatRest(s)}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            ) : null}
+
+            <p className="label mt-4">Rest / name only</p>
+            <p className="mb-2 text-[11px] text-[var(--muted)]">
+              Use <span className="text-[var(--blue)]">Swap</span> on the exercise for
+              recommendations and similar lifts.
+            </p>
             <button
               type="button"
-              className={`rounded-lg py-2 text-xs font-bold ${
-                set.completed ? "bg-[var(--green)] text-black" : "bg-[#222] text-white"
-              }`}
-              onClick={() => updateSet(i, { completed: !set.completed })}
+              className="mt-3 w-full text-sm font-semibold text-[var(--muted)]"
+              onClick={() => setEditForId(null)}
             >
-              {set.completed ? "Done" : "Log"}
+              Done
             </button>
-            {set.previous ? (
-              <p className="col-span-4 text-[11px] text-[var(--muted)]">prev {set.previous}</p>
-            ) : null}
           </div>
-        ))}
-      </div>
+        </div>
+      ) : null}
 
-      <div className="flex gap-3">
-        <button
-          className="btn-secondary flex-1"
-          disabled={index === 0}
-          onClick={() => setIndex((v) => Math.max(0, v - 1))}
+      {activeRest && activeRestLeft > 0 ? (
+        <div
+          className="fixed inset-x-0 bottom-0 z-40 border-t border-[var(--border)] bg-[#12151c]/95 px-4 pt-3 backdrop-blur"
+          style={{ paddingBottom: "max(16px, env(safe-area-inset-bottom, 0px))" }}
         >
-          Previous
-        </button>
-        {index < sorted.length - 1 ? (
-          <button
-            className="btn-primary flex-1"
-            onClick={() => setIndex((v) => Math.min(sorted.length - 1, v + 1))}
-          >
-            Next exercise
-          </button>
-        ) : (
-          <button className="btn-primary flex-1" onClick={finish} disabled={saving}>
-            {saving ? "Saving…" : "Finish workout"}
-          </button>
-        )}
-      </div>
+          <div className="mx-auto max-w-lg space-y-2.5">
+            <div className="flex items-center gap-3">
+              <div className="min-w-0 flex-1">
+                <p className="text-[11px] font-bold uppercase tracking-wide text-[var(--muted)]">
+                  Rest timer
+                </p>
+                <p className="font-mono text-3xl font-bold tabular-nums text-[var(--green)]">
+                  {formatRest(activeRestLeft)}
+                </p>
+                <p className="truncate text-xs text-[var(--muted)]">
+                  {(() => {
+                    const ex = sorted.find((e) => e.id === activeRest.exerciseId);
+                    if (!ex) return "Rest";
+                    const setsLen = setsByExercise[ex.id]?.length ?? 1;
+                    const isLast = activeRest.afterSet >= setsLen - 1;
+                    const exIdx = sorted.findIndex((e) => e.id === ex.id);
+                    const nextEx = isLast && exIdx >= 0 ? sorted[exIdx + 1] : null;
+                    if (isLast) {
+                      return nextEx
+                        ? `Up next · ${displayName(nextEx)}`
+                        : `${displayName(ex)} complete`;
+                    }
+                    return `Next set · ${displayName(ex)}`;
+                  })()}
+                </p>
+                {typeof Notification !== "undefined" &&
+                Notification.permission !== "granted" ? (
+                  <p className="mt-0.5 text-[10px] text-[var(--yellow)]">
+                    Allow notifications for alerts when the app is locked
+                  </p>
+                ) : null}
+              </div>
+              <button
+                type="button"
+                className="rounded-full bg-[#252b38] px-3 py-2 text-xs font-bold"
+                onClick={() => bumpRest(activeRest.exerciseId, 30)}
+              >
+                +30s
+              </button>
+              <button
+                type="button"
+                className="rounded-full bg-[var(--green)] px-4 py-2 text-xs font-bold text-black"
+                onClick={clearActiveRest}
+              >
+                Skip
+              </button>
+            </div>
+            <div className="flex gap-1.5">
+              {REST_PRESETS.map((s) => {
+                const cur =
+                  restByExercise[activeRest.exerciseId] ??
+                  (() => {
+                    const ex = sorted.find((e) => e.id === activeRest.exerciseId);
+                    return ex ? defaultRestSeconds(ex, 0) : 180;
+                  })();
+                const on = cur === s;
+                return (
+                  <button
+                    key={s}
+                    type="button"
+                    className={`flex-1 rounded-lg py-2 text-[11px] font-bold ${
+                      on
+                        ? "bg-[var(--green)]/20 text-[var(--green)] ring-1 ring-[var(--green)]"
+                        : "bg-[#252b38] text-[var(--muted)]"
+                    }`}
+                    onClick={() => applyRestPreset(activeRest.exerciseId, s)}
+                  >
+                    {formatRest(s)}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+      ) : null}
 
-      {error ? <p className="text-sm text-red-400">{error}</p> : null}
-      <p className="text-center text-[10px] text-[var(--muted)]">Day id {dayId.slice(0, 8)}</p>
+      {ratingSessionId ? (
+        <div
+          className="fixed inset-0 z-[70] flex items-end justify-center bg-black/80 p-4 sm:items-center"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="rating-title"
+        >
+          <div className="w-full max-w-sm rounded-2xl border border-[var(--border)] bg-[var(--card)] p-5 shadow-xl">
+            <p id="rating-title" className="text-lg font-bold">
+              How was this workout?
+            </p>
+            <p className="mt-1 text-sm text-[var(--muted)]">
+              Rate {sessionDayName} from 1–10, or keep training if you finished
+              early by mistake.
+            </p>
+            <div className="mt-4 grid grid-cols-5 gap-2">
+              {Array.from({ length: 10 }, (_, i) => i + 1).map((n) => (
+                <button
+                  key={n}
+                  type="button"
+                  disabled={ratingSaving}
+                  onClick={() => void submitRating(n)}
+                  className="flex h-12 items-center justify-center rounded-xl bg-[#252b38] text-base font-bold text-white active:bg-[var(--green)] active:text-black disabled:opacity-50"
+                >
+                  {n}
+                </button>
+              ))}
+            </div>
+            <button
+              type="button"
+              className="mt-4 w-full rounded-xl border border-[var(--blue)]/50 bg-[var(--blue)]/10 px-4 py-3 text-sm font-bold text-[var(--blue)]"
+              disabled={ratingSaving}
+              onClick={() => void undoFinishAndResume()}
+            >
+              {ratingSaving ? "Restoring…" : "Keep training — undo finish"}
+            </button>
+            <button
+              type="button"
+              className="mt-3 w-full text-sm font-semibold text-[var(--muted)]"
+              disabled={ratingSaving}
+              onClick={skipRating}
+            >
+              Skip rating
+            </button>
+          </div>
+        </div>
+      ) : null}
     </div>
   );
 }

@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { getPreviousSetsByExercise } from "@/lib/data";
-import { WorkoutLogger } from "./WorkoutLogger";
+import { WorkoutPreview } from "@/components/WorkoutPreview";
 
 export default async function TrainDayPage({
   params,
@@ -17,7 +17,7 @@ export default async function TrainDayPage({
 
   const { data: day } = await supabase
     .from("workout_days")
-    .select("id, name, user_id, workout_exercises(*)")
+    .select("id, name, subtitle, user_id, workout_exercises(*)")
     .eq("id", dayId)
     .eq("user_id", user.id)
     .single();
@@ -25,12 +25,14 @@ export default async function TrainDayPage({
   if (!day) notFound();
 
   const previous = await getPreviousSetsByExercise(user.id);
+  const exercises = day.workout_exercises ?? [];
 
   return (
-    <WorkoutLogger
+    <WorkoutPreview
       dayId={day.id}
       dayName={day.name}
-      exercises={day.workout_exercises ?? []}
+      subtitle={day.subtitle ?? ""}
+      exercises={exercises}
       previousByExercise={previous}
     />
   );

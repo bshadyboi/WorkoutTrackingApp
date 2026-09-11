@@ -3,14 +3,21 @@
 @tailwind utilities;
 
 :root {
-  --bg: #000000;
-  --card: #141414;
-  --border: #2a2a2a;
+  --bg: #0b0e14;
+  --card: #161a22;
+  --card-2: #1c212b;
+  --surface: #12151c;
+  --border: rgba(255, 255, 255, 0.08);
+  --border-solid: #2a3140;
   --text: #ffffff;
-  --muted: #8a8a8a;
-  --blue: #2e90ff;
-  --green: #34c759;
+  --muted: #8b93a7;
+  --blue: #5ba8ff;
+  --blue-dim: rgba(91, 168, 255, 0.18);
+  --green: #30d159;
   --yellow: #ffcc33;
+  --red: #ff453a;
+  --safe-top: env(safe-area-inset-top, 0px);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
 }
 
 html,
@@ -18,12 +25,19 @@ body {
   background: var(--bg);
   color: var(--text);
   min-height: 100%;
+  min-height: 100dvh;
+  /* Reduce iOS tap delay / double-tap zoom fights */
+  touch-action: manipulation;
+  overscroll-behavior-y: none;
 }
 
 body {
   font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
     sans-serif;
   -webkit-font-smoothing: antialiased;
+  /* PWA: fill notch / home indicator */
+  padding: 0;
+  margin: 0;
 }
 
 input,
@@ -33,26 +47,94 @@ select {
   font: inherit;
 }
 
+input[type="number"]::-webkit-outer-spin-button,
+input[type="number"]::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
 .card {
-  @apply rounded-2xl border border-[var(--border)] bg-[var(--card)] p-4;
+  @apply rounded-2xl p-4;
+  background: var(--card);
+  border: 1px solid var(--border);
+  overflow: hidden;
 }
 
 .btn {
-  @apply inline-flex items-center justify-center rounded-xl px-4 py-3 text-sm font-bold transition;
+  @apply inline-flex items-center justify-center rounded-xl px-4 py-3 text-sm font-bold transition active:scale-[0.98] disabled:opacity-40;
 }
 
 .btn-primary {
-  @apply btn bg-[var(--blue)] text-black;
+  @apply btn text-black;
+  background: var(--blue);
+}
+
+.btn-green {
+  @apply btn text-black;
+  background: var(--green);
 }
 
 .btn-secondary {
-  @apply btn bg-[#222] text-white;
+  @apply btn text-white;
+  background: #252b38;
+}
+
+.btn-pill {
+  @apply inline-flex items-center justify-center rounded-full px-3.5 py-1.5 text-xs font-bold;
 }
 
 .field {
-  @apply w-full rounded-xl border border-[var(--border)] bg-[#0c0c0c] px-3 py-3 text-white outline-none focus:border-[var(--blue)];
+  @apply w-full rounded-xl px-3 py-3 text-white outline-none;
+  background: var(--surface);
+  border: 1px solid var(--border-solid);
+}
+
+.field:focus {
+  border-color: var(--blue);
 }
 
 .label {
-  @apply mb-1.5 block text-xs font-semibold uppercase tracking-wide text-[var(--muted)];
+  @apply mb-1.5 block text-[11px] font-semibold uppercase tracking-[0.14em] text-[var(--muted)];
+}
+
+.eyebrow {
+  @apply text-[11px] font-semibold uppercase tracking-[0.16em] text-[var(--muted)];
+}
+
+.chip {
+  @apply inline-flex items-center gap-1.5 rounded-full px-3.5 py-2 text-sm font-semibold;
+  background: #1a1f2a;
+  color: #a0a8b8;
+  border: 1.5px solid transparent;
+}
+
+.chip-active {
+  @apply chip text-white;
+  background: #1a3050;
+  border-color: var(--blue);
+  color: #fff;
+}
+
+.progress-track {
+  @apply h-1.5 w-full overflow-hidden rounded-full;
+  background: #2a3140;
+}
+
+.progress-fill {
+  @apply h-full rounded-full;
+  background: var(--blue);
+}
+
+.check-box {
+  @apply flex h-7 w-7 shrink-0 items-center justify-center rounded-lg border-2 text-sm font-bold;
+  border-color: #5a6578;
+  background: #1c212b;
+  color: transparent;
+}
+
+.check-box-on {
+  @apply flex h-7 w-7 shrink-0 items-center justify-center rounded-lg border-2 text-sm font-bold;
+  border-color: var(--green);
+  background: var(--green);
+  color: #0b0e14;
 }

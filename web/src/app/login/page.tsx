@@ -32,8 +32,11 @@ function LoginForm() {
   return (
     <main className="mx-auto flex min-h-dvh max-w-md flex-col justify-center px-5 py-10">
       <div className="mb-8 text-center">
-        <h1 className="text-3xl font-bold">FitTrack</h1>
-        <p className="mt-2 text-sm text-[var(--muted)]">Sign in to train or coach</p>
+        <h1 className="text-3xl font-bold tracking-tight">
+          <span className="text-white">Fit</span>
+          <span className="text-[var(--blue)]">Track</span>
+        </h1>
+        <p className="mt-2 text-sm text-[var(--muted)]">Sign in to train</p>
       </div>
 
       <form onSubmit={onSubmit} className="card space-y-4">
@@ -67,7 +70,10 @@ function LoginForm() {
 
       <p className="mt-6 text-center text-sm text-[var(--muted)]">
         No account?{" "}
-        <Link href="/signup" className="font-semibold text-[var(--blue)]">
+        <Link
+          href={`/signup?next=${encodeURIComponent(next)}`}
+          className="font-semibold text-[var(--blue)]"
+        >
           Create one
         </Link>
       </p>
@@ -77,7 +83,11 @@ function LoginForm() {
 
 export default function LoginPage() {
   return (
-    <Suspense fallback={<main className="p-10 text-center text-sm text-[var(--muted)]">Loading…</main>}>
+    <Suspense
+      fallback={
+        <main className="p-10 text-center text-sm text-[var(--muted)]">Loading…</main>
+      }
+    >
       <LoginForm />
     </Suspense>
   );

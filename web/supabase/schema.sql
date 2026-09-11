@@ -51,6 +51,7 @@ create table if not exists public.workout_sessions (
   ended_at timestamptz,
   duration_seconds int not null default 0,
   notes text not null default '',
+  rating int check (rating is null or (rating >= 1 and rating <= 10)),
   created_at timestamptz not null default now()
 );
 
@@ -63,7 +64,8 @@ create table if not exists public.set_logs (
   weight double precision not null default 0,
   reps int not null default 0,
   rir int,
-  is_completed boolean not null default true
+  is_completed boolean not null default true,
+  is_warmup boolean not null default false
 );
 
 create table if not exists public.daily_logs (
@@ -72,8 +74,8 @@ create table if not exists public.daily_logs (
   date date not null,
   target_calories int not null default 2100,
   target_protein int not null default 190,
-  target_carbs int not null default 100,
-  target_fats int not null default 70,
+  target_carbs int not null default 200,
+  target_fats int not null default 60,
   actual_calories int not null default 0,
   actual_protein int not null default 0,
   actual_carbs_pre int not null default 0,

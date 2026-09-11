@@ -1,12 +1,14 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { FormEvent, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { FormEvent, Suspense, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 
-export default function SignupPage() {
+function SignupForm() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const next = searchParams.get("next") || "/dashboard";
   const [displayName, setDisplayName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -23,7 +25,7 @@ export default function SignupPage() {
       password,
       options: {
         data: { display_name: displayName },
-        emailRedirectTo: `${window.location.origin}/auth/callback`,
+        emailRedirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(next)}`,
       },
     });
     setLoading(false);
@@ -31,15 +33,20 @@ export default function SignupPage() {
       setError(err.message);
       return;
     }
-    router.push("/dashboard");
+    router.push(next);
     router.refresh();
   }
 
   return (
     <main className="mx-auto flex min-h-dvh max-w-md flex-col justify-center px-5 py-10">
       <div className="mb-8 text-center">
-        <h1 className="text-3xl font-bold">Create account</h1>
-        <p className="mt-2 text-sm text-[var(--muted)]">Athlete or coach — same signup</p>
+        <h1 className="text-3xl font-bold tracking-tight">
+          <span className="text-white">Fit</span>
+          <span className="text-[var(--blue)]">Track</span>
+        </h1>
+        <p className="mt-2 text-sm text-[var(--muted)]">
+          Create your account
+        </p>
       </div>
 
       <form onSubmit={onSubmit} className="card space-y-4">
@@ -83,10 +90,21 @@ export default function SignupPage() {
 
       <p className="mt-6 text-center text-sm text-[var(--muted)]">
         Already have an account?{" "}
-        <Link href="/login" className="font-semibold text-[var(--blue)]">
+        <Link
+          href={`/login?next=${encodeURIComponent(next)}`}
+          className="font-semibold text-[var(--blue)]"
+        >
           Sign in
         </Link>
       </p>
     </main>
+  );
+}
+
+export default function SignupPage() {
+  return (
+    <Suspense fallback={<main className="p-8 text-center text-sm text-[var(--muted)]">Loading…</main>}>
+      <SignupForm />
+    </Suspense>
   );
 }
