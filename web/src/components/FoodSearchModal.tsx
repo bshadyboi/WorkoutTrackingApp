@@ -244,7 +244,7 @@ export function FoodSearchModal({
           </div>
           <button
             type="button"
-            className="w-full rounded-lg bg-[#252b38] py-2 text-xs font-semibold text-[var(--blue)]"
+            className="w-full rounded-lg bg-[var(--raised)] py-2 text-xs font-semibold text-[var(--blue)]"
             onClick={() => setManual((v) => !v)}
           >
             ✎ Manual entry
@@ -330,7 +330,7 @@ export function FoodSearchModal({
                   // eslint-disable-next-line @next/next/no-img-element
                   <img src={f.imageUrl} alt="" className="h-12 w-12 rounded-lg object-cover" />
                 ) : (
-                  <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-[#252b38] text-lg">
+                  <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-[var(--raised)] text-lg">
                     🍽️
                   </div>
                 )}

@@ -132,7 +132,7 @@ export function DailyWeightCard({
     <div className="card space-y-2">
       <div className="flex items-center justify-between gap-2">
         <p className="text-sm font-semibold">Morning weight</p>
-        <span className="rounded-full bg-[#252b38] px-2 py-0.5 text-[10px] font-bold text-[var(--muted)]">
+        <span className="rounded-full bg-[var(--raised)] px-2 py-0.5 text-[10px] font-bold text-[var(--muted)]">
           Daily
         </span>
       </div>

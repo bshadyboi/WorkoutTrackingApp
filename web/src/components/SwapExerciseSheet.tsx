@@ -20,7 +20,7 @@ function MusclePills({ muscle }: { muscle?: string }) {
       {tags.map((t) => (
         <span
           key={t}
-          className="rounded-md bg-[#2a3140] px-1.5 py-0.5 text-[10px] font-semibold text-[var(--muted)]"
+          className="rounded-md bg-[var(--border-solid)] px-1.5 py-0.5 text-[10px] font-semibold text-[var(--muted)]"
         >
           {t}
         </span>
@@ -52,7 +52,7 @@ function SwapRow({
         className="flex min-w-0 flex-1 items-center gap-3 text-left"
         onClick={onSelect}
       >
-        <div className="relative h-14 w-[72px] shrink-0 overflow-hidden rounded-lg bg-[#252b38]">
+        <div className="relative h-14 w-[72px] shrink-0 overflow-hidden rounded-lg bg-[var(--raised)]">
           {thumb ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img src={thumb} alt="" className="h-full w-full object-cover" />
@@ -73,7 +73,7 @@ function SwapRow({
       <button
         type="button"
         aria-label={`Swap to ${item.name}`}
-        className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#252b38] text-[var(--muted)]"
+        className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[var(--raised)] text-[var(--muted)]"
         onClick={onSwapHere}
       >
         ⇅
@@ -124,7 +124,7 @@ export function SwapExerciseSheet({
       >
         <button
           type="button"
-          className="flex h-10 w-10 items-center justify-center rounded-full bg-[#252b38] text-lg text-[var(--muted)]"
+          className="flex h-10 w-10 items-center justify-center rounded-full bg-[var(--raised)] text-lg text-[var(--muted)]"
           onClick={onClose}
           aria-label="Back"
         >
@@ -214,13 +214,13 @@ export function SwapExerciseSheet({
       </div>
 
       <div
-        className="fixed inset-x-0 bottom-0 z-10 grid grid-cols-2 gap-2 border-t border-[var(--border)] bg-[#12151c] px-4 pt-3"
+        className="fixed inset-x-0 bottom-0 z-10 grid grid-cols-2 gap-2 border-t border-[var(--border)] bg-[var(--surface)] px-4 pt-3"
         style={{ paddingBottom: "max(16px, env(safe-area-inset-bottom, 0px))" }}
       >
         <button
           type="button"
           disabled={!chosen}
-          className="rounded-xl bg-[#252b38] py-3 text-sm font-bold text-white disabled:opacity-40"
+          className="rounded-xl bg-[var(--raised)] py-3 text-sm font-bold text-white disabled:opacity-40"
           onClick={() => chosen && onSwapHere(chosen)}
         >
           Swap here
@@ -228,7 +228,7 @@ export function SwapExerciseSheet({
         <button
           type="button"
           disabled={!chosen || busy}
-          className="rounded-xl bg-[#d8dde6] py-3 text-sm font-bold text-black disabled:opacity-40"
+          className="rounded-xl bg-[var(--blue)] py-3 text-sm font-bold text-[var(--on-blue)] disabled:opacity-40"
           onClick={() => {
             if (!chosen) return;
             setBusy(true);

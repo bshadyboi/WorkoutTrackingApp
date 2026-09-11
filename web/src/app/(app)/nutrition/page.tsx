@@ -481,21 +481,21 @@ export default function NutritionPage() {
                   <div className="grid grid-cols-3 gap-1.5">
                     <button
                       type="button"
-                      className="rounded-lg bg-[#252b38] py-2 text-[11px] font-semibold text-[var(--blue)]"
+                      className="rounded-lg bg-[var(--raised)] py-2 text-[11px] font-semibold text-[var(--blue)]"
                       onClick={() => setSearchMeal(meal)}
                     >
                       + Log
                     </button>
                     <button
                       type="button"
-                      className="rounded-lg bg-[#252b38] py-2 text-[11px] font-semibold text-[var(--blue)]"
+                      className="rounded-lg bg-[var(--raised)] py-2 text-[11px] font-semibold text-[var(--blue)]"
                       onClick={() => setSearchMeal(meal)}
                     >
                       📷 Snap
                     </button>
                     <button
                       type="button"
-                      className="rounded-lg bg-[#252b38] py-2 text-[11px] font-semibold text-[var(--blue)]"
+                      className="rounded-lg bg-[var(--raised)] py-2 text-[11px] font-semibold text-[var(--blue)]"
                       onClick={() => void copyYesterday(meal)}
                     >
                       🔄 Copy
@@ -513,8 +513,8 @@ export default function NutritionPage() {
                 type="button"
                 className={`rounded-full px-2 py-1.5 text-[12px] font-semibold ${
                   planTab === t
-                    ? "border border-[var(--blue)] bg-[#1a3050] text-white"
-                    : "bg-[#1a1f2a] text-[var(--muted)]"
+                    ? "border border-[var(--blue)] bg-[#123240] text-white"
+                    : "bg-[var(--card-2)] text-[var(--muted)]"
                 }`}
                 onClick={() => setPlanTab(t)}
               >
@@ -573,7 +573,7 @@ function MacroTile({
         {label}
       </p>
       <p className="text-[10px] text-[var(--muted)]">/ {target}</p>
-      <div className="mx-auto mt-2 h-1 w-full max-w-[48px] overflow-hidden rounded-full bg-[#2a3140]">
+      <div className="mx-auto mt-2 h-1 w-full max-w-[48px] overflow-hidden rounded-full bg-[var(--border-solid)]">
         <div className="h-full rounded-full bg-[var(--blue)]" style={{ width: `${pct}%` }} />
       </div>
     </div>

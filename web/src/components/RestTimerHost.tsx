@@ -139,7 +139,7 @@ export function RestTimerHost() {
 
       {rest && left > 0 && !onSession ? (
         <div
-          className="fixed inset-x-3 z-[60] rounded-xl border border-[var(--border)] bg-[#161a22]/95 px-3 py-2 backdrop-blur"
+          className="fixed inset-x-3 z-[60] rounded-xl border border-[var(--border)] bg-[var(--card)]/95 px-3 py-2 backdrop-blur"
           style={{
             bottom: "calc(88px + env(safe-area-inset-bottom, 0px))",
           }}

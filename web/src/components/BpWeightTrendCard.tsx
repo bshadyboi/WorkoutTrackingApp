@@ -212,7 +212,7 @@ export function BpWeightTrendCard() {
   }, [rows]);
 
   if (loading) {
-    return <div className="h-40 animate-pulse rounded-2xl bg-[#1c212b]" />;
+    return <div className="h-40 animate-pulse rounded-2xl bg-[var(--card-2)]" />;
   }
 
   if (!rows.length) {

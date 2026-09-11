@@ -61,7 +61,7 @@ export function KeyLiftsCard() {
   }, []);
 
   if (loading) {
-    return <div className="h-36 animate-pulse rounded-2xl bg-[#1c212b]" />;
+    return <div className="h-36 animate-pulse rounded-2xl bg-[var(--card-2)]" />;
   }
 
   const hasAny = rows.some((r) => r.thisWeek || r.lastWeek);
@@ -82,7 +82,7 @@ export function KeyLiftsCard() {
                 ? "bg-[var(--green)]/15 text-[var(--green)]"
                 : autoTrend === "falling"
                   ? "bg-[var(--red)]/15 text-[var(--red)]"
-                  : "bg-[#252b38] text-[var(--muted)]"
+                  : "bg-[var(--raised)] text-[var(--muted)]"
             }`}
           >
             {autoTrend}

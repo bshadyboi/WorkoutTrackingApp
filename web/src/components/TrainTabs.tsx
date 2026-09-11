@@ -162,7 +162,7 @@ export function TrainTabs({
             type="button"
             className={`h-9 flex-1 rounded-[18px] text-[14px] ${
               tab === key
-                ? "bg-[#253449] font-bold text-white"
+                ? "bg-[#13323f] font-bold text-white"
                 : "font-semibold text-[var(--muted)]"
             }`}
             onClick={() => setTab(key)}
@@ -236,14 +236,14 @@ function WeekStrip({
           <div key={d.key} className="flex flex-col items-center gap-1.5">
             <span
               className={`text-[10.5px] font-bold ${
-                isToday ? "text-[var(--blue)]" : "text-[#5a6578]"
+                isToday ? "text-[var(--blue)]" : "text-[var(--dim)]"
               }`}
             >
               {WEEKDAY_SHORT[d.date.getDay()]}
             </span>
             {done ? (
               <span
-                className={`flex h-[30px] w-[30px] items-center justify-center rounded-full bg-[var(--green)] text-[#06120a] ${
+                className={`flex h-[30px] w-[30px] items-center justify-center rounded-full bg-[var(--green)] text-[var(--on-green)] ${
                   isToday ? "ring-2 ring-[var(--blue)]/60 ring-offset-2 ring-offset-[var(--card)]" : ""
                 }`}
               >
@@ -251,7 +251,7 @@ function WeekStrip({
               </span>
             ) : rest ? (
               <span
-                className={`h-[30px] w-[30px] rounded-full border border-dashed border-[#2a3140] bg-[var(--surface)] ${
+                className={`h-[30px] w-[30px] rounded-full border border-dashed border-[var(--border-solid)] bg-[var(--surface)] ${
                   isToday ? "!border-solid !border-2 !border-[var(--blue)]" : ""
                 }`}
               />
@@ -260,7 +260,7 @@ function WeekStrip({
                 <IconDumbbell size={14} strokeWidth={2.4} />
               </span>
             ) : (
-              <span className="flex h-[30px] w-[30px] items-center justify-center rounded-full bg-[#1c212b] text-[11px] font-extrabold text-[var(--muted)]">
+              <span className="flex h-[30px] w-[30px] items-center justify-center rounded-full bg-[var(--card-2)] text-[11px] font-extrabold text-[var(--muted)]">
                 {dayInitials(d.resolved.label)}
               </span>
             )}
@@ -440,7 +440,7 @@ function WorkoutsTab({
               <Link
                 href={`/train/${todayDay.id}/session`}
                 prefetch={false}
-                className="flex h-[52px] flex-1 items-center justify-center gap-2 rounded-[15px] bg-[var(--green)] text-[16px] font-extrabold text-[#06120a] active:scale-[0.98]"
+                className="glow-green flex h-[52px] flex-1 items-center justify-center gap-2 rounded-[15px] bg-[var(--green)] text-[16px] font-extrabold text-[var(--on-green)] active:scale-[0.98]"
               >
                 <IconPlay size={15} />
                 {todayDone ? "Train again" : "Start workout"}
@@ -449,7 +449,7 @@ function WorkoutsTab({
                 href={`/train/${todayDay.id}`}
                 prefetch={false}
                 aria-label="Preview workout"
-                className="flex h-[52px] w-[52px] items-center justify-center rounded-[15px] border border-[var(--border)] bg-[#1c212b] text-[var(--muted)] active:bg-white/5"
+                className="flex h-[52px] w-[52px] items-center justify-center rounded-[15px] border border-[var(--border)] bg-[var(--card-2)] text-[var(--muted)] active:bg-white/5"
               >
                 <IconEye size={20} />
               </Link>
@@ -536,7 +536,7 @@ function WorkoutsTab({
                     Today
                   </span>
                 ) : null}
-                <span className="shrink-0 text-[#5a6578]">
+                <span className="shrink-0 text-[var(--dim)]">
                   <IconChevronRight size={18} />
                 </span>
               </Link>
@@ -882,8 +882,8 @@ function CalendarTab({
                 <div className="space-y-3">
                   {sessionDetail.loading ? (
                     <div className="space-y-2">
-                      <div className="h-14 animate-pulse rounded-xl bg-[#1c212b]" />
-                      <div className="h-14 animate-pulse rounded-xl bg-[#1c212b]" />
+                      <div className="h-14 animate-pulse rounded-xl bg-[var(--card-2)]" />
+                      <div className="h-14 animate-pulse rounded-xl bg-[var(--card-2)]" />
                     </div>
                   ) : sessionDetail.exercises.length === 0 ? (
                     <p className="text-sm text-[var(--muted)]">No sets logged for this session.</p>
@@ -891,7 +891,7 @@ function CalendarTab({
                     sessionDetail.exercises.map((ex) => (
                       <div
                         key={ex.name}
-                        className="rounded-xl border border-[var(--border)] bg-[#161a22] px-3 py-2.5"
+                        className="rounded-xl border border-[var(--border)] bg-[var(--card)] px-3 py-2.5"
                       >
                         <p className="text-sm font-semibold text-[var(--blue)]">{ex.name}</p>
                         <p className="mt-0.5 text-xs leading-relaxed text-[var(--muted)]">
@@ -1005,7 +1005,7 @@ function Sparkline({ points }: { points: LiftPoint[] }) {
   });
 
   const rising = weights[weights.length - 1] > weights[0];
-  const stroke = rising ? "var(--green)" : max === min ? "#5a6578" : "var(--blue)";
+  const stroke = rising ? "var(--green)" : max === min ? "var(--dim)" : "var(--blue)";
 
   return (
     <svg width={w} height={h} viewBox={`0 0 ${w} ${h}`} aria-hidden className="shrink-0">
@@ -1159,9 +1159,9 @@ function ProgressionTab({ history }: { history: Hist[] }) {
 
         {series === null ? (
           <div className="space-y-2">
-            <div className="h-[62px] animate-pulse rounded-[18px] bg-[#1c212b]" />
-            <div className="h-[62px] animate-pulse rounded-[18px] bg-[#1c212b]" />
-            <div className="h-[62px] animate-pulse rounded-[18px] bg-[#1c212b]" />
+            <div className="h-[62px] animate-pulse rounded-[18px] bg-[var(--card-2)]" />
+            <div className="h-[62px] animate-pulse rounded-[18px] bg-[var(--card-2)]" />
+            <div className="h-[62px] animate-pulse rounded-[18px] bg-[var(--card-2)]" />
           </div>
         ) : loadError ? (
           <p className="text-[13px] text-[var(--yellow)]">{loadError}</p>

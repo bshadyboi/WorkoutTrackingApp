@@ -927,14 +927,14 @@ export function WorkoutLogger({
   return (
     <div className="min-h-dvh bg-[var(--bg)] pb-28">
       <div
-        className="sticky top-0 z-20 border-b border-[var(--border)] bg-[#0d1017] px-5 pb-3"
+        className="sticky top-0 z-20 border-b border-[var(--border)] bg-[var(--surface)] px-5 pb-3"
         style={{ paddingTop: "max(14px, env(safe-area-inset-top, 0px))" }}
       >
         <div className="flex items-center justify-between gap-3">
           <button
             type="button"
             onClick={requestLeave}
-            className="flex h-[42px] w-[42px] items-center justify-center rounded-full bg-[#1c212b] text-[var(--muted)]"
+            className="flex h-[42px] w-[42px] items-center justify-center rounded-full bg-[var(--card-2)] text-[var(--muted)]"
             aria-label="Close"
           >
             <IconX size={18} />
@@ -951,13 +951,13 @@ export function WorkoutLogger({
             type="button"
             onClick={requestFinish}
             disabled={saving}
-            className="flex h-[42px] items-center rounded-full bg-[var(--green)] px-5 text-[14.5px] font-extrabold text-[#06120a]"
+            className="glow-green flex h-[42px] items-center rounded-full bg-[var(--green)] px-5 text-[14.5px] font-extrabold text-[var(--on-green)]"
           >
             {saving ? "…" : "Finish"}
           </button>
         </div>
         <div className="mt-2.5 flex items-center gap-2.5">
-          <div className="h-1 flex-1 overflow-hidden rounded-full bg-[#2a3140]">
+          <div className="h-1 flex-1 overflow-hidden rounded-full bg-[var(--border-solid)]">
             <div
               className="h-full rounded-full bg-[var(--green)] transition-[width]"
               style={{
@@ -1016,7 +1016,7 @@ export function WorkoutLogger({
               </div>
               <button
                 type="button"
-                className="shrink-0 rounded-[10px] bg-[#1c212b] px-3 py-2 text-[12.5px] font-bold text-[var(--muted)] active:text-white"
+                className="shrink-0 rounded-[10px] bg-[var(--card-2)] px-3 py-2 text-[12.5px] font-bold text-[var(--muted)] active:text-white"
                 onClick={() => {
                   const allDone = warmupsDone === warmups.length;
                   for (const ex of warmups) setWarmupDone(ex.id, !allDone);
@@ -1043,8 +1043,8 @@ export function WorkoutLogger({
                       <span
                         className={`flex h-[26px] w-[26px] shrink-0 items-center justify-center rounded-lg border-2 ${
                           done
-                            ? "border-[var(--green)] bg-[var(--green)] text-[#06120a]"
-                            : "border-[#5a6578] bg-[#1c212b] text-transparent"
+                            ? "border-[var(--green)] bg-[var(--green)] text-[var(--on-green)]"
+                            : "border-[var(--dim)] bg-[var(--card-2)] text-transparent"
                         }`}
                       >
                         <IconCheck size={15} />
@@ -1068,7 +1068,7 @@ export function WorkoutLogger({
                         target="_blank"
                         rel="noreferrer"
                         aria-label={`Form video for ${name}`}
-                        className="flex h-[34px] w-[34px] shrink-0 items-center justify-center rounded-[10px] bg-[#1c212b] text-[var(--muted)] active:text-white"
+                        className="flex h-[34px] w-[34px] shrink-0 items-center justify-center rounded-[10px] bg-[var(--card-2)] text-[var(--muted)] active:text-white"
                       >
                         <IconPlayCircle size={17} />
                       </a>
@@ -1076,7 +1076,7 @@ export function WorkoutLogger({
                     <button
                       type="button"
                       aria-label={`Options for ${name}`}
-                      className="flex h-[34px] w-[34px] shrink-0 items-center justify-center rounded-[10px] bg-[#1c212b] text-[var(--muted)] active:text-white"
+                      className="flex h-[34px] w-[34px] shrink-0 items-center justify-center rounded-[10px] bg-[var(--card-2)] text-[var(--muted)] active:text-white"
                       onClick={() => openEdit(ex)}
                     >
                       <IconMore size={17} />
@@ -1104,7 +1104,7 @@ export function WorkoutLogger({
                 <div className="min-w-0">
                   <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
                     <h2 className="text-[17px] font-bold leading-snug">{name}</h2>
-                    <span className="rounded-[10px] bg-[#1c212b] px-2 py-0.5 text-[11px] font-bold text-[var(--muted)]">
+                    <span className="rounded-[10px] bg-[var(--card-2)] px-2 py-0.5 text-[11px] font-bold text-[var(--muted)]">
                       {ex.muscle}
                     </span>
                   </div>
@@ -1140,7 +1140,7 @@ export function WorkoutLogger({
                       target="_blank"
                       rel="noreferrer"
                       aria-label="Form video"
-                      className="flex h-[34px] w-[34px] items-center justify-center rounded-[10px] bg-[#1c212b] text-[var(--muted)] active:text-white"
+                      className="flex h-[34px] w-[34px] items-center justify-center rounded-[10px] bg-[var(--card-2)] text-[var(--muted)] active:text-white"
                     >
                       <IconPlayCircle size={17} />
                     </a>
@@ -1148,7 +1148,7 @@ export function WorkoutLogger({
                   <button
                     type="button"
                     aria-label="Swap exercise"
-                    className="flex h-[34px] w-[34px] items-center justify-center rounded-[10px] bg-[#1c212b] text-[var(--muted)] active:text-white"
+                    className="flex h-[34px] w-[34px] items-center justify-center rounded-[10px] bg-[var(--card-2)] text-[var(--muted)] active:text-white"
                     onClick={() => setSwapForId(ex.id)}
                   >
                     <IconSwap size={17} />
@@ -1156,7 +1156,7 @@ export function WorkoutLogger({
                   <button
                     type="button"
                     aria-label="Edit exercise"
-                    className="flex h-[34px] w-[34px] items-center justify-center rounded-[10px] bg-[#1c212b] text-[var(--muted)] active:text-white"
+                    className="flex h-[34px] w-[34px] items-center justify-center rounded-[10px] bg-[var(--card-2)] text-[var(--muted)] active:text-white"
                     onClick={() => openEdit(ex)}
                   >
                     <IconMore size={17} />
@@ -1188,8 +1188,8 @@ export function WorkoutLogger({
                     onClick={() => toggleComplete(ex, 0)}
                     className={`w-full rounded-xl py-3 text-sm font-bold ${
                       sets[0]?.completed
-                        ? "bg-[var(--green)] text-black"
-                        : "bg-[#252b38] text-white"
+                        ? "bg-[var(--green)] text-[var(--on-green)]"
+                        : "bg-[var(--raised)] text-white"
                     }`}
                   >
                     {sets[0]?.completed ? "Cardio done ✓" : "Mark cardio done"}
@@ -1197,7 +1197,7 @@ export function WorkoutLogger({
                 </div>
               ) : (
                 <div>
-                  <div className="grid grid-cols-[36px_minmax(0,1fr)_64px_56px_44px] items-center gap-1.5 px-0.5 pb-1.5 text-[11px] font-bold uppercase tracking-[0.08em] text-[#5a6578]">
+                  <div className="grid grid-cols-[36px_minmax(0,1fr)_64px_56px_44px] items-center gap-1.5 px-0.5 pb-1.5 text-[11px] font-bold uppercase tracking-[0.08em] text-[var(--dim)]">
                     <span title="Tap set # to mark warm-up">Set</span>
                     <span>Previous</span>
                     <span className="text-center">lbs</span>
@@ -1238,7 +1238,7 @@ export function WorkoutLogger({
                             className={`mx-auto flex h-[30px] w-[30px] items-center justify-center rounded-full text-[13px] font-extrabold ${
                               set.isWarmup
                                 ? "bg-[var(--yellow)]/15 text-[var(--yellow)]"
-                                : "bg-[#1c212b] text-white"
+                                : "bg-[var(--card-2)] text-white"
                             }`}
                           >
                             {set.isWarmup
@@ -1271,7 +1271,7 @@ export function WorkoutLogger({
                             </p>
                           </div>
                           <input
-                            className="h-11 w-full rounded-xl border border-[#2a3140] bg-[#10131a] px-1 text-center text-[15px] font-bold text-white outline-none focus:border-[var(--blue)]"
+                            className="h-11 w-full rounded-xl border border-[var(--border-solid)] bg-[var(--field)] px-1 text-center text-[15px] font-bold text-white outline-none focus:border-[var(--blue)]"
                             inputMode="decimal"
                             value={set.weight}
                             onChange={(e) =>
@@ -1279,7 +1279,7 @@ export function WorkoutLogger({
                             }
                           />
                           <input
-                            className="h-11 w-full rounded-xl border border-[#2a3140] bg-[#10131a] px-1 text-center text-[15px] font-bold text-white outline-none focus:border-[var(--blue)]"
+                            className="h-11 w-full rounded-xl border border-[var(--border-solid)] bg-[var(--field)] px-1 text-center text-[15px] font-bold text-white outline-none focus:border-[var(--blue)]"
                             inputMode="numeric"
                             value={set.reps}
                             onChange={(e) =>
@@ -1292,8 +1292,8 @@ export function WorkoutLogger({
                             onClick={() => toggleComplete(ex, i)}
                             className={`mx-auto flex h-10 w-10 items-center justify-center rounded-xl ${
                               set.completed
-                                ? "bg-[var(--green)] text-[#06120a]"
-                                : "bg-[#1c212b] text-[#5a6578]"
+                                ? "bg-[var(--green)] text-[var(--on-green)] shadow-[0_0_14px_rgba(43,245,160,0.45)]"
+                                : "bg-[var(--card-2)] text-[var(--dim)]"
                             }`}
                           >
                             <IconCheck size={18} />
@@ -1317,8 +1317,8 @@ export function WorkoutLogger({
                                         onClick={() => chooseBar(ex.id, lb)}
                                         className={`rounded-md px-1.5 py-0.5 text-[10px] font-bold ${
                                           exerciseBar === lb
-                                            ? "bg-[var(--green)] text-black"
-                                            : "bg-[#252b38] text-[var(--muted)]"
+                                            ? "bg-[var(--green)] text-[var(--on-green)]"
+                                            : "bg-[var(--raised)] text-[var(--muted)]"
                                         }`}
                                       >
                                         {lb}
@@ -1343,7 +1343,7 @@ export function WorkoutLogger({
                           : null}
                         {showRest ? (
                           <div className="my-1.5 flex items-center gap-2.5 rounded-xl border border-[var(--blue)]/25 bg-[var(--blue)]/10 px-3.5 py-2.5">
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#5ba8ff" strokeWidth="2" strokeLinecap="round" aria-hidden><circle cx="12" cy="12" r="9" /><path d="M12 7v5l3 2" /></svg>
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--blue)" strokeWidth="2" strokeLinecap="round" aria-hidden><circle cx="12" cy="12" r="9" /><path d="M12 7v5l3 2" /></svg>
                             <span className="flex-1 font-mono text-[13.5px] font-bold tabular-nums text-[var(--blue)]">
                               Rest · {formatRest(activeRestLeft)}
                             </span>
@@ -1383,8 +1383,8 @@ export function WorkoutLogger({
                                       type="button"
                                       className={`rounded-lg px-2.5 py-1.5 text-[11px] font-bold ${
                                         on
-                                          ? "bg-[var(--green)] text-black"
-                                          : "bg-[#252b38] text-[var(--muted)]"
+                                          ? "bg-[var(--green)] text-[var(--on-green)]"
+                                          : "bg-[var(--raised)] text-[var(--muted)]"
                                       }`}
                                       onClick={() => applyRestPreset(ex.id, s)}
                                     >
@@ -1586,8 +1586,8 @@ export function WorkoutLogger({
                         type="button"
                         className={`rounded-lg py-1.5 text-[11px] font-semibold ${
                           on
-                            ? "bg-[var(--green)] text-black"
-                            : "bg-[#252b38] text-[var(--muted)]"
+                            ? "bg-[var(--green)] text-[var(--on-green)]"
+                            : "bg-[var(--raised)] text-[var(--muted)]"
                         }`}
                         onClick={() => setRestSeconds(editEx.id, s)}
                       >
@@ -1617,7 +1617,7 @@ export function WorkoutLogger({
 
       {activeRest && activeRestLeft > 0 ? (
         <div
-          className="fixed inset-x-0 bottom-0 z-40 border-t border-[var(--border)] bg-[#12151c]/95 px-4 pt-3 backdrop-blur"
+          className="fixed inset-x-0 bottom-0 z-40 border-t border-[var(--border)] bg-[var(--surface)]/95 px-4 pt-3 backdrop-blur"
           style={{ paddingBottom: "max(16px, env(safe-area-inset-bottom, 0px))" }}
         >
           <div className="mx-auto max-w-lg space-y-2.5">
@@ -1654,14 +1654,14 @@ export function WorkoutLogger({
               </div>
               <button
                 type="button"
-                className="rounded-full bg-[#252b38] px-3 py-2 text-xs font-bold"
+                className="rounded-full bg-[var(--raised)] px-3 py-2 text-xs font-bold"
                 onClick={() => bumpRest(activeRest.exerciseId, 30)}
               >
                 +30s
               </button>
               <button
                 type="button"
-                className="rounded-full bg-[var(--green)] px-4 py-2 text-xs font-bold text-black"
+                className="rounded-full bg-[var(--green)] px-4 py-2 text-xs font-bold text-[var(--on-green)]"
                 onClick={clearActiveRest}
               >
                 Skip
@@ -1683,7 +1683,7 @@ export function WorkoutLogger({
                     className={`flex-1 rounded-lg py-2 text-[11px] font-bold ${
                       on
                         ? "bg-[var(--green)]/20 text-[var(--green)] ring-1 ring-[var(--green)]"
-                        : "bg-[#252b38] text-[var(--muted)]"
+                        : "bg-[var(--raised)] text-[var(--muted)]"
                     }`}
                     onClick={() => applyRestPreset(activeRest.exerciseId, s)}
                   >
@@ -1718,7 +1718,7 @@ export function WorkoutLogger({
                   type="button"
                   disabled={ratingSaving}
                   onClick={() => void submitRating(n)}
-                  className="flex h-12 items-center justify-center rounded-xl bg-[#252b38] text-base font-bold text-white active:bg-[var(--green)] active:text-black disabled:opacity-50"
+                  className="flex h-12 items-center justify-center rounded-xl bg-[var(--raised)] text-base font-bold text-white active:bg-[var(--green)] active:text-[var(--on-green)] disabled:opacity-50"
                 >
                   {n}
                 </button>

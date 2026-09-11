@@ -267,7 +267,7 @@ export default function ProtocolPage() {
                 </div>
                 <button
                   type="button"
-                  className="flex h-8 w-8 items-center justify-center rounded-full bg-[#252b38] text-sm"
+                  className="flex h-8 w-8 items-center justify-center rounded-full bg-[var(--raised)] text-sm"
                   onClick={() => removeItem(item.id)}
                   aria-label="Delete"
                 >

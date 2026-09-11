@@ -139,7 +139,7 @@ export default function ManageWorkoutsPage() {
       <div className="space-y-2">
         <p className="text-lg font-bold">Your days</p>
         {loading ? (
-          <div className="h-20 animate-pulse rounded-2xl bg-[#1c212b]" />
+          <div className="h-20 animate-pulse rounded-2xl bg-[var(--card-2)]" />
         ) : days.length === 0 ? (
           <p className="text-sm text-[var(--muted)]">No days yet — create one above.</p>
         ) : (
@@ -153,7 +153,7 @@ export default function ManageWorkoutsPage() {
               </div>
               <Link
                 href={`/train/manage/${d.id}`}
-                className="rounded-full bg-[#252b38] px-3 py-2 text-xs font-bold text-[var(--blue)]"
+                className="rounded-full bg-[var(--raised)] px-3 py-2 text-xs font-bold text-[var(--blue)]"
               >
                 Edit
               </Link>

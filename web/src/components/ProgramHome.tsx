@@ -249,7 +249,7 @@ export function ProgramHome({
         <div className="flex items-start justify-between gap-3">
           <div>
             <p className="text-[15px] font-bold text-white">Accelerate Your Transformation</p>
-            <p className="mt-1 text-[12px] italic text-[#9a9a9a]">
+            <p className="mt-1 text-[12px] italic text-[var(--muted)]">
               4 workouts = 4x more likely to transform.
             </p>
           </div>
@@ -311,12 +311,12 @@ export function ProgramHome({
                 <>
                   <span
                     className={`text-[10px] font-bold tracking-wide ${
-                      on ? "text-white" : "text-[#6b6b6b]"
+                      on ? "text-white" : "text-[var(--dim)]"
                     }`}
                   >
                     REST
                   </span>
-                  <span className={`text-[13px] ${on ? "text-white" : "text-[#6b6b6b]"}`}>
+                  <span className={`text-[13px] ${on ? "text-white" : "text-[var(--dim)]"}`}>
                     ☾
                   </span>
                 </>
@@ -324,14 +324,14 @@ export function ProgramHome({
                 <>
                   <span
                     className={`text-[10px] font-bold tracking-wide ${
-                      on ? "text-white" : "text-[#6b6b6b]"
+                      on ? "text-white" : "text-[var(--dim)]"
                     }`}
                   >
                     DAY
                   </span>
                   <span
                     className={`text-[15px] font-semibold leading-none ${
-                      on ? "text-white" : "text-[#6b6b6b]"
+                      on ? "text-white" : "text-[var(--dim)]"
                     }`}
                   >
                     {c.programDay}
@@ -357,11 +357,11 @@ export function ProgramHome({
               {slot.rest ? "Rest Day" : title}
             </h2>
             {slot.rest ? (
-              <p className="mt-1 text-[13px] text-[#c8c8c8]">Recover · walk · sleep</p>
+              <p className="mt-1 text-[13px] text-[var(--muted)]">Recover · walk · sleep</p>
             ) : muscles.length ? (
-              <p className="mt-1 text-[13px] text-[#c8c8c8]">{muscles.join(" • ")}</p>
+              <p className="mt-1 text-[13px] text-[var(--muted)]">{muscles.join(" • ")}</p>
             ) : (
-              <p className="mt-1 text-[13px] text-[#c8c8c8]">{slot.day?.subtitle || "Training"}</p>
+              <p className="mt-1 text-[13px] text-[var(--muted)]">{slot.day?.subtitle || "Training"}</p>
             )}
           </div>
         </div>
@@ -369,15 +369,15 @@ export function ProgramHome({
           <div className="grid grid-cols-3 border-t border-white/10 bg-black/80 py-3 text-center">
             <div>
               <p className="text-[20px] font-bold text-white">{exCount || "—"}</p>
-              <p className="text-[11px] text-[#9a9a9a]">Exercises</p>
+              <p className="text-[11px] text-[var(--muted)]">Exercises</p>
             </div>
             <div>
               <p className="text-[20px] font-bold text-white">{setCount || "—"}</p>
-              <p className="text-[11px] text-[#9a9a9a]">Sets</p>
+              <p className="text-[11px] text-[var(--muted)]">Sets</p>
             </div>
             <div>
               <p className="text-[20px] font-bold text-white">{minutes}</p>
-              <p className="text-[11px] text-[#9a9a9a]">Minutes</p>
+              <p className="text-[11px] text-[var(--muted)]">Minutes</p>
             </div>
           </div>
         ) : null}
@@ -388,20 +388,20 @@ export function ProgramHome({
           {isToday && !todayDone ? (
             <button
               type="button"
-              className="flex min-h-[48px] w-full items-center justify-center rounded-xl bg-white text-[15px] font-bold text-black active:scale-[0.98]"
+              className="flex min-h-[48px] w-full items-center justify-center rounded-xl bg-[var(--blue)] text-[15px] font-bold text-[var(--on-blue)] active:scale-[0.98]"
               disabled={restBusy}
               onClick={() => void completeRest()}
             >
               {restBusy ? "Saving…" : "Mark rest complete"}
             </button>
           ) : isToday && todayDone ? (
-            <p className="text-center text-sm font-semibold text-[#30d159]">Rest complete</p>
+            <p className="text-center text-sm font-semibold text-[var(--green)]">Rest complete</p>
           ) : (
-            <p className="text-center text-sm text-[#9a9a9a]">Rest day on the split</p>
+            <p className="text-center text-sm text-[var(--muted)]">Rest day on the split</p>
           )}
-          {restMsg ? <p className="text-center text-xs text-[#ffcc33]">{restMsg}</p> : null}
+          {restMsg ? <p className="text-center text-xs text-[var(--yellow)]">{restMsg}</p> : null}
           {todayIsRest && isToday ? (
-            <Link href="/dashboard" className="block text-center text-xs font-bold text-[#5ba8ff]">
+            <Link href="/dashboard" className="block text-center text-xs font-bold text-[var(--blue)]">
               Log steps & water on Home →
             </Link>
           ) : null}
@@ -421,7 +421,7 @@ export function ProgramHome({
             <Link
               href={startHref}
               prefetch={false}
-              className="flex min-h-[48px] items-center justify-center rounded-xl bg-white text-[15px] font-bold text-black active:scale-[0.98]"
+              className="flex min-h-[48px] items-center justify-center rounded-xl bg-[var(--blue)] text-[15px] font-bold text-[var(--on-blue)] active:scale-[0.98]"
             >
               Start Day {slot.programDay}
             </Link>

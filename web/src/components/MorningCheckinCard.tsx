@@ -105,7 +105,7 @@ export function MorningCheckinCard({
             Rate sleep, energy, and pump · 1–4
           </p>
         </div>
-        <span className="rounded-full bg-[#252b38] px-2 py-0.5 text-[10px] font-bold text-[var(--muted)]">
+        <span className="rounded-full bg-[var(--raised)] px-2 py-0.5 text-[10px] font-bold text-[var(--muted)]">
           {filled}/3
         </span>
       </div>
@@ -131,8 +131,8 @@ export function MorningCheckinCard({
                 onClick={() => void pick(tag.key, n)}
                 className={`rounded-lg py-2 text-xs font-bold transition-colors ${
                   values[tag.key] === n
-                    ? "bg-[var(--green)] text-black"
-                    : "bg-[#252b38] text-[var(--muted)] hover:text-white"
+                    ? "bg-[var(--green)] text-[var(--on-green)]"
+                    : "bg-[var(--raised)] text-[var(--muted)] hover:text-white"
                 }`}
               >
                 {n}

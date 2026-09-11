@@ -82,8 +82,8 @@ export default function SettingsPage() {
   if (loading) {
     return (
       <div className="space-y-3">
-        <div className="h-8 w-1/3 animate-pulse rounded-lg bg-[#1c212b]" />
-        <div className="h-40 animate-pulse rounded-2xl bg-[#1c212b]" />
+        <div className="h-8 w-1/3 animate-pulse rounded-lg bg-[var(--card-2)]" />
+        <div className="h-40 animate-pulse rounded-2xl bg-[var(--card-2)]" />
       </div>
     );
   }

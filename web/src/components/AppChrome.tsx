@@ -59,7 +59,7 @@ function Nav({ pathname }: { pathname: string }) {
       aria-label="Primary"
     >
       <div
-        className="pointer-events-auto mx-auto flex max-w-lg items-stretch gap-0.5 rounded-2xl border border-[var(--border)] bg-[#161a22] px-1 py-1.5"
+        className="pointer-events-auto mx-auto flex max-w-lg items-stretch gap-0.5 rounded-2xl border border-[var(--border)] bg-[var(--card)] px-1 py-1.5"
         style={{ touchAction: "manipulation" }}
       >
         {links.map((l) => {
@@ -75,7 +75,11 @@ function Nav({ pathname }: { pathname: string }) {
               style={{ WebkitTapHighlightColor: "transparent" }}
             >
               <span className="pointer-events-none" aria-hidden>
-                <l.Icon size={22} strokeWidth={active ? 2.2 : 2} />
+                <l.Icon
+                  size={22}
+                  strokeWidth={active ? 2.2 : 2}
+                  className={active ? "glow-ink" : undefined}
+                />
               </span>
               <span className="pointer-events-none text-[10.5px] font-semibold leading-none">
                 {l.label}
@@ -103,10 +107,10 @@ export function AppChrome({
   const isDayPreview = /^\/train\/[^/]+\/?$/.test(pathname);
 
   return (
-    <div className="mx-auto min-h-dvh max-w-lg bg-[var(--bg)]">
+    <div className="aurora relative mx-auto min-h-dvh max-w-lg bg-[var(--bg)]">
       {!isSession && !isDayPreview ? (
         <header
-          className="sticky top-0 z-20 border-b border-[var(--border)] bg-[var(--bg)] px-4 py-3"
+          className="sticky top-0 z-20 border-b border-[var(--border)] bg-[var(--bg)]/85 px-4 py-3 backdrop-blur-md"
           style={{ paddingTop: "max(12px, env(safe-area-inset-top, 0px))" }}
         >
           <div className="flex items-center justify-between gap-3">
@@ -131,7 +135,7 @@ export function AppChrome({
       ) : null}
 
       <main
-        className={isSession || isDayPreview ? "" : "px-4 pt-4"}
+        className={isSession || isDayPreview ? "relative z-10" : "relative z-10 px-4 pt-4"}
         style={
           isSession
             ? undefined

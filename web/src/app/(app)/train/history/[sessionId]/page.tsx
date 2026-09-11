@@ -319,7 +319,7 @@ function SessionRecapInner() {
   }
 
   if (loading) {
-    return <div className="h-40 animate-pulse rounded-2xl bg-[#1c212b]" />;
+    return <div className="h-40 animate-pulse rounded-2xl bg-[var(--card-2)]" />;
   }
 
   if (err || !review) {
@@ -517,7 +517,7 @@ function SessionRecapInner() {
 
 export default function SessionRecapPage() {
   return (
-    <Suspense fallback={<div className="h-40 animate-pulse rounded-2xl bg-[#1c212b]" />}>
+    <Suspense fallback={<div className="h-40 animate-pulse rounded-2xl bg-[var(--card-2)]" />}>
       <SessionRecapInner />
     </Suspense>
   );

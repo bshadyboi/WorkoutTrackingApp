@@ -350,7 +350,7 @@ export function FastedBloodPressureCard({
     <div className="card space-y-2">
       <div className="flex items-center justify-between gap-2">
         <p className="text-sm font-semibold">Fasted blood pressure</p>
-        <span className="rounded-full bg-[#252b38] px-2 py-0.5 text-[10px] font-bold text-[var(--muted)]">
+        <span className="rounded-full bg-[var(--raised)] px-2 py-0.5 text-[10px] font-bold text-[var(--muted)]">
           2 readings
         </span>
       </div>
@@ -436,7 +436,7 @@ export function FastedBloodPressureCard({
       ) : null}
 
       {weekSummary && weekSummary.daysLogged > 0 ? (
-        <div className="space-y-2 rounded-xl border border-[var(--border)] bg-[#161a22] p-3">
+        <div className="space-y-2 rounded-xl border border-[var(--border)] bg-[var(--card)] p-3">
           <div className="flex items-start justify-between gap-2">
             <div>
               <p className="text-[11px] font-bold uppercase tracking-wide text-[var(--muted)]">
@@ -470,7 +470,7 @@ export function FastedBloodPressureCard({
       </button>
 
       {showHistory ? (
-        <div className="space-y-1.5 rounded-xl border border-[var(--border)] bg-[#161a22] p-2">
+        <div className="space-y-1.5 rounded-xl border border-[var(--border)] bg-[var(--card)] p-2">
           {historyLoading ? (
             <p className="px-1 py-2 text-[11px] text-[var(--muted)]">Loading…</p>
           ) : history.length === 0 ? (

@@ -51,7 +51,7 @@ export function CompletionBanner({
       style={{ paddingTop: "max(12px, env(safe-area-inset-top, 0px))" }}
     >
       <div
-        className="w-full max-w-lg rounded-2xl border border-[var(--green)]/50 bg-[#12151c] px-4 py-3 shadow-lg"
+        className="w-full max-w-lg rounded-2xl border border-[var(--green)]/50 bg-[var(--surface)] px-4 py-3 shadow-lg"
         role="status"
       >
         <div className="flex items-start justify-between gap-3">

@@ -192,7 +192,7 @@ export function WorkoutPreview({
             className="absolute inset-0 h-full w-full scale-105 object-cover opacity-70"
           />
         ) : (
-          <div className="absolute inset-0 bg-gradient-to-br from-[#1d2433] via-[#12151c] to-[var(--bg)]" />
+          <div className="absolute inset-0 bg-gradient-to-br from-[#1d2433] via-[var(--surface)] to-[var(--bg)]" />
         )}
         <div className="absolute inset-0 bg-gradient-to-t from-[var(--bg)] via-[var(--bg)]/75 to-[var(--bg)]/30" />
 
@@ -233,7 +233,7 @@ export function WorkoutPreview({
             {muscles.map((m) => (
               <span
                 key={m}
-                className="rounded-[10px] bg-[#1c212b] px-2.5 py-1 text-[11.5px] font-bold text-[var(--muted)]"
+                className="rounded-[10px] bg-[var(--card-2)] px-2.5 py-1 text-[11.5px] font-bold text-[var(--muted)]"
               >
                 {m}
               </span>
@@ -298,13 +298,13 @@ export function WorkoutPreview({
               <Link
                 href={startHref}
                 prefetch={false}
-                className="flex min-h-[44px] flex-1 items-center justify-center rounded-xl bg-[var(--green)] text-[14px] font-extrabold text-[#06120a]"
+                className="flex min-h-[44px] flex-1 items-center justify-center rounded-xl bg-[var(--green)] text-[14px] font-extrabold text-[var(--on-green)]"
               >
                 Resume
               </Link>
               <button
                 type="button"
-                className="min-h-[44px] rounded-xl bg-[#1c212b] px-4 text-[13px] font-bold text-[var(--muted)]"
+                className="min-h-[44px] rounded-xl bg-[var(--card-2)] px-4 text-[13px] font-bold text-[var(--muted)]"
                 onClick={discardDraft}
               >
                 Discard
@@ -329,7 +329,7 @@ export function WorkoutPreview({
                 const cat = catalogEntry(ex.name);
                 return (
                   <li key={ex.id} className="flex items-center gap-3 py-1.5">
-                    <span className="h-[22px] w-[22px] shrink-0 rounded-md border-2 border-[#5a6578]" />
+                    <span className="h-[22px] w-[22px] shrink-0 rounded-md border-2 border-[var(--dim)]" />
                     <span className="min-w-0 flex-1">
                       <span className="block truncate text-[14px] font-semibold text-white">
                         {ex.name}
@@ -344,7 +344,7 @@ export function WorkoutPreview({
                         target="_blank"
                         rel="noreferrer"
                         aria-label={`Form video for ${ex.name}`}
-                        className="flex h-[32px] w-[32px] shrink-0 items-center justify-center rounded-[10px] bg-[#1c212b] text-[var(--muted)] active:text-white"
+                        className="flex h-[32px] w-[32px] shrink-0 items-center justify-center rounded-[10px] bg-[var(--card-2)] text-[var(--muted)] active:text-white"
                       >
                         <IconPlayCircle size={16} />
                       </a>
@@ -371,7 +371,7 @@ export function WorkoutPreview({
             return (
               <div key={ex.id} className={i > 0 ? "border-t border-white/5" : ""}>
                 <div className="flex items-start gap-3 px-4 py-3.5">
-                  <span className="mt-0.5 w-4 shrink-0 text-[13px] font-bold tabular-nums text-[#5a6578]">
+                  <span className="mt-0.5 w-4 shrink-0 text-[13px] font-bold tabular-nums text-[var(--dim)]">
                     {i + 1}
                   </span>
                   {cat?.youtubeUrl ? (
@@ -380,7 +380,7 @@ export function WorkoutPreview({
                       target="_blank"
                       rel="noreferrer"
                       aria-label={`Form video for ${ex.name}`}
-                      className="relative h-[52px] w-[52px] shrink-0 overflow-hidden rounded-[10px] bg-[#1c212b]"
+                      className="relative h-[52px] w-[52px] shrink-0 overflow-hidden rounded-[10px] bg-[var(--card-2)]"
                     >
                       {thumb ? (
                         // eslint-disable-next-line @next/next/no-img-element
@@ -395,7 +395,7 @@ export function WorkoutPreview({
                       </span>
                     </a>
                   ) : (
-                    <div className="flex h-[52px] w-[52px] shrink-0 items-center justify-center rounded-[10px] bg-[#1c212b] text-[#5a6578]">
+                    <div className="flex h-[52px] w-[52px] shrink-0 items-center justify-center rounded-[10px] bg-[var(--card-2)] text-[var(--dim)]">
                       <IconPlayCircle size={20} />
                     </div>
                   )}
@@ -424,7 +424,7 @@ export function WorkoutPreview({
                   </div>
                   <button
                     type="button"
-                    className="shrink-0 text-[#5a6578]"
+                    className="shrink-0 text-[var(--dim)]"
                     aria-label={`Options for ${ex.name}`}
                     onClick={() => setOpenMenuId((id) => (id === ex.id ? null : ex.id))}
                   >
@@ -498,7 +498,7 @@ export function WorkoutPreview({
         <Link
           href={startHref}
           prefetch={false}
-          className="flex min-h-[54px] w-full items-center justify-center gap-2 rounded-2xl bg-[var(--green)] text-[16px] font-extrabold text-[#06120a] shadow-lg shadow-black/40 active:scale-[0.99]"
+          className="glow-green flex min-h-[54px] w-full items-center justify-center gap-2 rounded-2xl bg-[var(--green)] text-[16px] font-extrabold text-[var(--on-green)] active:scale-[0.99]"
         >
           <IconPlay size={15} />
           {hasDraft ? "Resume Workout" : "Start Workout"}

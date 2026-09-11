@@ -292,8 +292,8 @@ export function RecompCheckinCard() {
                   type="button"
                   className={`rounded-full px-2 py-2 text-[12px] font-semibold ${
                     waistTrend === k
-                      ? "border border-[var(--blue)] bg-[#1a3050] text-white"
-                      : "bg-[#1a1f2a] text-[var(--muted)]"
+                      ? "border border-[var(--blue)] bg-[#123240] text-white"
+                      : "bg-[var(--card-2)] text-[var(--muted)]"
                   }`}
                   onClick={() => setWaistTrend(k)}
                 >
@@ -325,8 +325,8 @@ export function RecompCheckinCard() {
                   type="button"
                   className={`rounded-full px-2 py-2 text-[12px] font-semibold ${
                     strengthTrend === k
-                      ? "border border-[var(--blue)] bg-[#1a3050] text-white"
-                      : "bg-[#1a1f2a] text-[var(--muted)]"
+                      ? "border border-[var(--blue)] bg-[#123240] text-white"
+                      : "bg-[var(--card-2)] text-[var(--muted)]"
                   }`}
                   onClick={() => setStrengthTrend(k)}
                 >

@@ -111,7 +111,7 @@ export default function TrainSchedulePage() {
       </div>
 
       {loading ? (
-        <div className="h-40 animate-pulse rounded-2xl bg-[#1c212b]" />
+        <div className="h-40 animate-pulse rounded-2xl bg-[var(--card-2)]" />
       ) : (
         <div className="space-y-4">
           <div className="card space-y-3">
@@ -138,7 +138,7 @@ export default function TrainSchedulePage() {
                     className={`w-full rounded-xl border px-3 py-3 text-left ${
                       isActive
                         ? "border-[var(--green)]/50 bg-[var(--green)]/10"
-                        : "border-[var(--border)] bg-[#161a22] active:bg-white/5"
+                        : "border-[var(--border)] bg-[var(--card)] active:bg-white/5"
                     }`}
                   >
                     <div className="flex items-start justify-between gap-2">
@@ -187,14 +187,14 @@ export default function TrainSchedulePage() {
             </div>
 
             {active.tip ? (
-              <div className="rounded-xl border border-[var(--border)] bg-[#1a1f2a] p-3 text-sm">
+              <div className="rounded-xl border border-[var(--border)] bg-[var(--card-2)] p-3 text-sm">
                 <p className="font-semibold text-white">Notes</p>
                 <p className="mt-1 text-[var(--muted)]">{active.tip}</p>
               </div>
             ) : null}
 
             {activeId === "elevate-challenge" ? (
-              <div className="rounded-xl border border-[var(--border)] bg-[#1a1f2a] p-3 text-sm">
+              <div className="rounded-xl border border-[var(--border)] bg-[var(--card-2)] p-3 text-sm">
                 <p className="font-semibold text-white">Challenge week</p>
                 <p className="mt-1 text-[11px] text-[var(--muted)]">
                   Calendar starts Friday as Day 1. Odd weeks (1/3/5) use A days.
@@ -209,8 +209,8 @@ export default function TrainSchedulePage() {
                       onClick={() => void toggleElevateWeek(w)}
                       className={`rounded-lg py-2 text-xs font-bold ${
                         elevateWeek === w
-                          ? "bg-[var(--blue)] text-black"
-                          : "bg-[#252b38] text-[var(--muted)]"
+                          ? "bg-[var(--blue)] text-[var(--on-blue)]"
+                          : "bg-[var(--raised)] text-[var(--muted)]"
                       }`}
                     >
                       Week {w}
@@ -221,7 +221,7 @@ export default function TrainSchedulePage() {
             ) : null}
 
             {activeId === "ppl-aesthetics" ? (
-              <div className="rounded-xl border border-[var(--border)] bg-[#1a1f2a] p-3 text-sm">
+              <div className="rounded-xl border border-[var(--border)] bg-[var(--card-2)] p-3 text-sm">
                 <p className="font-semibold text-white">Wednesday swaps</p>
                 <p className="mt-1 text-[var(--muted)]">
                   Default is{" "}
@@ -250,7 +250,7 @@ export default function TrainSchedulePage() {
 
       {confirmId ? (
         <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/70 p-4 sm:items-center">
-          <div className="w-full max-w-md space-y-3 rounded-2xl border border-[var(--border)] bg-[#161a22] p-4">
+          <div className="w-full max-w-md space-y-3 rounded-2xl border border-[var(--border)] bg-[var(--card)] p-4">
             <p className="text-lg font-bold text-white">
               Switch to {getProgram(confirmId).shortName}?
             </p>

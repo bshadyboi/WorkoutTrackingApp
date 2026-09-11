@@ -54,7 +54,7 @@ export function MakeupDayButton({
       </button>
 
       {open ? (
-        <div className="rounded-xl border border-[var(--border)] bg-[#12151c] p-3 space-y-2">
+        <div className="rounded-xl border border-[var(--border)] bg-[var(--surface)] p-3 space-y-2">
           <p className="text-[11px] text-[var(--muted)]">
             Changes <span className="font-semibold text-white">today only</span>
             {todayName ? ` · scheduled ${todayName}` : " · scheduled Rest"}. Weekly template stays
@@ -68,7 +68,7 @@ export function MakeupDayButton({
                 type="button"
                 disabled={busy}
                 onClick={() => void apply(d.id)}
-                className="rounded-lg bg-[#252b38] px-2.5 py-1.5 text-[11px] font-bold text-white active:bg-white/10 disabled:opacity-50"
+                className="rounded-lg bg-[var(--raised)] px-2.5 py-1.5 text-[11px] font-bold text-white active:bg-white/10 disabled:opacity-50"
               >
                 {shortDayLabel(d.name)}
               </button>
@@ -77,7 +77,7 @@ export function MakeupDayButton({
               type="button"
               disabled={busy}
               onClick={() => void apply(null)}
-              className="rounded-lg bg-[#252b38] px-2.5 py-1.5 text-[11px] font-bold text-[var(--yellow)] disabled:opacity-50"
+              className="rounded-lg bg-[var(--raised)] px-2.5 py-1.5 text-[11px] font-bold text-[var(--yellow)] disabled:opacity-50"
             >
               Skip · Rest
             </button>

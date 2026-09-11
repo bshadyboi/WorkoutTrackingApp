@@ -91,7 +91,7 @@ export function WaterStepsCards({
                 type="button"
                 onClick={() => setUnit(u)}
                 className={`rounded-full px-1.5 py-0.5 ${
-                  unit === u ? "bg-[var(--blue)] text-black" : "text-[var(--muted)]"
+                  unit === u ? "bg-[var(--blue)] text-[var(--on-blue)]" : "text-[var(--muted)]"
                 }`}
               >
                 {u}
@@ -108,21 +108,21 @@ export function WaterStepsCards({
         <div className="grid grid-cols-3 gap-1">
           <button
             type="button"
-            className="rounded-lg bg-[#252b38] py-2 text-xs font-bold active:bg-[var(--blue)] active:text-black"
+            className="rounded-lg bg-[var(--raised)] py-2 text-xs font-bold active:bg-[var(--blue)] active:text-[var(--on-blue)]"
             onClick={() => addWater(8)}
           >
             +8
           </button>
           <button
             type="button"
-            className="rounded-lg bg-[#252b38] py-2 text-xs font-bold active:bg-[var(--blue)] active:text-black"
+            className="rounded-lg bg-[var(--raised)] py-2 text-xs font-bold active:bg-[var(--blue)] active:text-[var(--on-blue)]"
             onClick={() => addWater(16)}
           >
             +16
           </button>
           <button
             type="button"
-            className="rounded-lg bg-[#252b38] py-2 text-xs font-bold text-[var(--muted)] active:text-white"
+            className="rounded-lg bg-[var(--raised)] py-2 text-xs font-bold text-[var(--muted)] active:text-white"
             onClick={resetWater}
           >
             reset

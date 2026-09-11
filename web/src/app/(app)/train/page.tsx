@@ -131,12 +131,12 @@ export default function TrainPage() {
     return (
       <div className="space-y-3 py-2">
         <div className="grid grid-cols-3 gap-1.5">
-          <div className="h-9 animate-pulse rounded-full bg-[#1c212b]" />
-          <div className="h-9 animate-pulse rounded-full bg-[#1c212b]" />
-          <div className="h-9 animate-pulse rounded-full bg-[#1c212b]" />
+          <div className="h-9 animate-pulse rounded-full bg-[var(--card-2)]" />
+          <div className="h-9 animate-pulse rounded-full bg-[var(--card-2)]" />
+          <div className="h-9 animate-pulse rounded-full bg-[var(--card-2)]" />
         </div>
-        <div className="h-24 animate-pulse rounded-2xl bg-[#1c212b]" />
-        <div className="h-16 animate-pulse rounded-2xl bg-[#1c212b]" />
+        <div className="h-24 animate-pulse rounded-2xl bg-[var(--card-2)]" />
+        <div className="h-16 animate-pulse rounded-2xl bg-[var(--card-2)]" />
       </div>
     );
   }
