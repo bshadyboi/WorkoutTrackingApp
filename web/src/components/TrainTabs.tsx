@@ -17,6 +17,15 @@ import {
   derrickRecompWeek,
 } from "@/lib/derrickRecomp";
 import { useRouter } from "next/navigation";
+import {
+  IconCalendar,
+  IconCheck,
+  IconChevronRight,
+  IconClock,
+  IconDumbbell,
+  IconEye,
+  IconPlay,
+} from "@/components/icons";
 
 type Day = {
   id: string;
@@ -57,6 +66,44 @@ export function TrainTabs({
   const [overrides, setOverrides] = useState<DateOverrides>(initialOverrides ?? {});
   const sessionBriefs = sessionBriefsFromHistory(history);
 
+  const [programLabel, setProgramLabel] = useState("");
+  const [isDerrick, setIsDerrick] = useState(false);
+  useEffect(() => {
+    void (async () => {
+      const id = await getActiveProgramId();
+      const p = getProgram(id);
+      setProgramLabel(p.shortName);
+      setIsDerrick(p.id === "derrick-recomp");
+    })();
+  }, []);
+
+  const todayKey = dateKey(new Date());
+  const recompWeek = derrickRecompWeek(todayKey);
+  const inRecomp =
+    isDerrick && todayKey >= DERRICK_RECOMP_START && todayKey <= DERRICK_RECOMP_END;
+  const programLine = inRecomp
+    ? `Derrick Recomp · Week ${recompWeek} of 10`
+    : programLabel;
+
+  /** Sun→Sat of the current week, each resolved against the live schedule */
+  const weekInfo = useMemo(() => {
+    const now = new Date();
+    const start = new Date(now.getFullYear(), now.getMonth(), now.getDate() - now.getDay(), 12);
+    return Array.from({ length: 7 }, (_, i) => {
+      const d = new Date(start);
+      d.setDate(start.getDate() + i);
+      const resolved = resolveWeekdayWorkout({
+        asOf: d,
+        slots: scheduleSlots,
+        days,
+        overrides,
+        sessions: sessionBriefs,
+      });
+      return { date: d, key: dateKey(d), resolved };
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [scheduleSlots, days, overrides, history]);
+
   const live = resolveWeekdayWorkout({
     slots: scheduleSlots,
     days,
@@ -76,40 +123,47 @@ export function TrainTabs({
 
   return (
     <div className="space-y-5">
-      <div className="grid grid-cols-3 gap-1.5">
-        <button
-          type="button"
-          className={`rounded-full px-2 py-1.5 text-center text-[12px] font-semibold ${
-            tab === "workouts"
-              ? "border border-[var(--blue)] bg-[#1a3050] text-white"
-              : "bg-[#1a1f2a] text-[var(--muted)]"
-          }`}
-          onClick={() => setTab("workouts")}
+      <div className="flex items-center justify-between gap-3">
+        <div className="min-w-0">
+          <h1 className="text-[26px] font-extrabold leading-tight tracking-tight">Train</h1>
+          {programLine ? (
+            <p className="mt-0.5 truncate text-[13px] font-semibold text-[var(--muted)]">
+              {programLine}
+            </p>
+          ) : null}
+        </div>
+        <Link
+          href="/train/schedule"
+          aria-label="Schedule"
+          className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-[var(--border)] bg-[var(--card)] text-[var(--muted)] active:bg-white/5"
         >
-          Workouts
-        </button>
-        <button
-          type="button"
-          className={`rounded-full px-2 py-1.5 text-center text-[12px] font-semibold ${
-            tab === "calendar"
-              ? "border border-[var(--blue)] bg-[#1a3050] text-white"
-              : "bg-[#1a1f2a] text-[var(--muted)]"
-          }`}
-          onClick={() => setTab("calendar")}
-        >
-          Calendar
-        </button>
-        <button
-          type="button"
-          className={`rounded-full px-2 py-1.5 text-center text-[12px] font-semibold ${
-            tab === "progression"
-              ? "border border-[var(--blue)] bg-[#1a3050] text-white"
-              : "bg-[#1a1f2a] text-[var(--muted)]"
-          }`}
-          onClick={() => setTab("progression")}
-        >
-          Progress
-        </button>
+          <IconCalendar size={19} />
+        </Link>
+      </div>
+
+      <WeekStrip weekInfo={weekInfo} todayKey={todayKey} />
+
+      <div className="flex gap-1 rounded-[22px] border border-white/5 bg-[var(--surface)] p-1">
+        {(
+          [
+            ["workouts", "Workouts"],
+            ["calendar", "Calendar"],
+            ["progression", "Progress"],
+          ] as const
+        ).map(([key, label]) => (
+          <button
+            key={key}
+            type="button"
+            className={`h-9 flex-1 rounded-[18px] text-[14px] ${
+              tab === key
+                ? "bg-[#253449] font-bold text-white"
+                : "font-semibold text-[var(--muted)]"
+            }`}
+            onClick={() => setTab(key)}
+          >
+            {label}
+          </button>
+        ))}
       </div>
 
       {tab === "workouts" ? (
@@ -122,6 +176,7 @@ export function TrainTabs({
           history={history}
           overrides={overrides}
           onOverridesChange={setOverrides}
+          weekInfo={weekInfo}
         />
       ) : null}
       {tab === "calendar" ? (
@@ -140,36 +195,72 @@ export function TrainTabs({
   );
 }
 
-function WorkoutCard({
-  id,
-  name,
-  subtitle,
-  highlight,
+type WeekDayInfo = {
+  date: Date;
+  key: string;
+  resolved: ReturnType<typeof resolveWeekdayWorkout>;
+};
+
+/** "Upper A · Horizontal Strength" → "UA"; "Optional Day 5" → "OD" */
+function dayInitials(name: string) {
+  const head = name.split("·")[0]?.trim() ?? name;
+  const words = head.split(/\s+/).filter(Boolean);
+  const letters = words
+    .map((w) => (/^\d+$/.test(w) ? w : w[0]?.toUpperCase() ?? ""))
+    .join("");
+  return letters.slice(0, 2) || "•";
+}
+
+const WEEKDAY_SHORT = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+
+function WeekStrip({
+  weekInfo,
+  todayKey,
 }: {
-  id: string;
-  name: string;
-  subtitle: string;
-  highlight?: boolean;
+  weekInfo: WeekDayInfo[];
+  todayKey: string;
 }) {
   return (
-    <div
-      className={`card flex items-center gap-3 !py-3.5 ${
-        highlight ? "ring-1 ring-[var(--blue)]" : ""
-      }`}
-    >
-      <Link href={`/train/${id}`} prefetch={false} className="min-w-0 flex-1 active:opacity-80">
-        <p className="font-bold">{name}</p>
-        <p className="truncate text-xs text-[var(--muted)]">
-          {subtitle || "Tap to preview"}
-        </p>
-      </Link>
-      <Link
-        href={`/train/${id}/session`}
-        prefetch={false}
-        className="inline-flex min-h-[44px] min-w-[72px] shrink-0 items-center justify-center rounded-full bg-[var(--green)] px-4 text-sm font-bold text-black active:scale-95"
-      >
-        Start
-      </Link>
+    <div className="flex justify-between rounded-2xl border border-[var(--border)] bg-[var(--card)] px-3.5 py-3">
+      {weekInfo.map((d) => {
+        const isToday = d.key === todayKey;
+        const done = d.resolved.doneToday && !d.resolved.isRest;
+        const rest = d.resolved.isRest;
+        return (
+          <div key={d.key} className="flex flex-col items-center gap-1.5">
+            <span
+              className={`text-[10.5px] font-bold ${
+                isToday ? "text-[var(--blue)]" : "text-[#5a6578]"
+              }`}
+            >
+              {WEEKDAY_SHORT[d.date.getDay()]}
+            </span>
+            {done ? (
+              <span
+                className={`flex h-[30px] w-[30px] items-center justify-center rounded-full bg-[var(--green)] text-[#06120a] ${
+                  isToday ? "ring-2 ring-[var(--blue)]/60 ring-offset-2 ring-offset-[var(--card)]" : ""
+                }`}
+              >
+                <IconCheck size={14} />
+              </span>
+            ) : rest ? (
+              <span
+                className={`h-[30px] w-[30px] rounded-full border border-dashed border-[#2a3140] bg-[var(--surface)] ${
+                  isToday ? "!border-solid !border-2 !border-[var(--blue)]" : ""
+                }`}
+              />
+            ) : isToday ? (
+              <span className="flex h-[30px] w-[30px] items-center justify-center rounded-full border-2 border-[var(--blue)] bg-[var(--blue)]/15 text-[var(--blue)]">
+                <IconDumbbell size={14} strokeWidth={2.4} />
+              </span>
+            ) : (
+              <span className="flex h-[30px] w-[30px] items-center justify-center rounded-full bg-[#1c212b] text-[11px] font-extrabold text-[var(--muted)]">
+                {dayInitials(d.resolved.label)}
+              </span>
+            )}
+          </div>
+        );
+      })}
     </div>
   );
 }
@@ -183,6 +274,7 @@ function WorkoutsTab({
   history,
   overrides,
   onOverridesChange,
+  weekInfo,
 }: {
   todayName: string | null;
   todayDay: { id: string; name: string; subtitle: string } | null;
@@ -192,30 +284,46 @@ function WorkoutsTab({
   history: Hist[];
   overrides: DateOverrides;
   onOverridesChange: (o: DateOverrides) => void;
+  weekInfo: WeekDayInfo[];
 }) {
   const router = useRouter();
   const hasOverride = Object.prototype.hasOwnProperty.call(overrides, dateKey(new Date()));
   const [restBusy, setRestBusy] = useState(false);
   const [restMsg, setRestMsg] = useState("");
-  const [programLabel, setProgramLabel] = useState("");
-  const [isDerrick, setIsDerrick] = useState(false);
 
-  useEffect(() => {
-    void (async () => {
-      const id = await getActiveProgramId();
-      const p = getProgram(id);
-      setProgramLabel(p.shortName);
-      setIsDerrick(p.id === "derrick-recomp");
-    })();
-  }, []);
+  const stats = useMemo(() => {
+    const weekStart = weekInfo[0]?.date
+      ? new Date(
+          weekInfo[0].date.getFullYear(),
+          weekInfo[0].date.getMonth(),
+          weekInfo[0].date.getDate()
+        )
+      : new Date();
+    const isTraining = (h: Hist) => !/rest/i.test(h.dayName.trim());
+    const weekSessions = history.filter(
+      (h) => isTraining(h) && new Date(h.startedAt) >= weekStart
+    );
+    const scheduled = weekInfo.filter((d) => !d.resolved.isRest).length;
+    const weekVolume = weekSessions.reduce((n, h) => n + h.volume, 0);
 
-  const todayKey = dateKey(new Date());
-  const recompWeek = derrickRecompWeek(todayKey);
-  const inRecomp =
-    isDerrick && todayKey >= DERRICK_RECOMP_START && todayKey <= DERRICK_RECOMP_END;
-  const todayLine = todayIsRest
-    ? "Rest day"
-    : todayDay?.name?.split("·")[0]?.trim() || todayName || "Training";
+    // Consecutive weeks (ending this week) with at least one training session
+    let streak = 0;
+    for (let w = 0; w < 26; w++) {
+      const start = new Date(weekStart);
+      start.setDate(start.getDate() - w * 7);
+      const end = new Date(start);
+      end.setDate(end.getDate() + 7);
+      const any = history.some((h) => {
+        if (!isTraining(h)) return false;
+        const t = new Date(h.startedAt);
+        return t >= start && t < end;
+      });
+      if (any) streak++;
+      else if (w > 0) break;
+    }
+
+    return { weekSessions: weekSessions.length, scheduled, weekVolume, streak };
+  }, [history, weekInfo]);
 
   async function completeRest() {
     setRestBusy(true);
@@ -231,63 +339,36 @@ function WorkoutsTab({
     router.refresh();
   }
 
+  const todayMeta = todayDay ? days.find((d) => d.id === todayDay.id) : null;
+  const todayHead = todayDay?.name?.split("·")[0]?.trim() ?? todayName ?? "";
+  const todayTail = todayDay?.name?.split("·").slice(1).join("·").trim() ?? "";
+  const estMinutes = todayMeta?.setCount
+    ? Math.round(5 + todayMeta.setCount * 2.2)
+    : null;
+  const eyebrowDate = new Date()
+    .toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric" })
+    .toUpperCase();
+
   return (
     <div className="space-y-5">
-      {inRecomp ? (
-        <div className="rounded-2xl border border-[var(--blue)]/35 bg-[#1a3050]/40 px-4 py-3">
-          <p className="text-[11px] font-bold uppercase tracking-wide text-[var(--blue)]">
-            Derrick Recomp
-          </p>
-          <p className="text-lg font-bold leading-tight">
-            Week {recompWeek}/10 · {todayLine}
-            {todayDone ? " · done" : ""}
-          </p>
-        </div>
-      ) : programLabel ? (
-        <div className="flex items-center justify-between gap-2">
-          <p className="text-[12px] font-semibold text-[var(--muted)]">{programLabel}</p>
-          <Link href="/train/schedule" className="text-xs font-bold text-[var(--blue)]">
-            Schedule →
-          </Link>
-        </div>
-      ) : null}
-
-      {inRecomp ? (
-        <div className="flex justify-end">
-          <Link href="/train/schedule" className="text-xs font-bold text-[var(--blue)]">
-            Schedule →
-          </Link>
-        </div>
-      ) : null}
-
       <section className="space-y-2">
-        <div className="flex items-center justify-between gap-2">
-          <h2 className="text-xl font-bold">Today</h2>
-          <div className="flex items-center gap-1.5">
-            {todayDone ? (
-              <span className="rounded-full bg-[var(--green)]/15 px-2 py-0.5 text-[10px] font-bold text-[var(--green)]">
-                Done
-              </span>
-            ) : null}
-            {hasOverride ? (
-              <span className="rounded-full bg-[var(--blue)]/15 px-2 py-0.5 text-[10px] font-bold text-[var(--blue)]">
-                Makeup
-              </span>
-            ) : (
-              <span className="rounded-full bg-[#252b38] px-2 py-0.5 text-[10px] font-bold text-[var(--muted)]">
-                Weekly
-              </span>
-            )}
-          </div>
-        </div>
-
         {todayIsRest ? (
-          <div className="card space-y-3 text-sm">
+          <div className="card space-y-3 !rounded-[20px] !p-5 text-sm">
+            <div className="flex items-center justify-between">
+              <p className="text-[11px] font-bold tracking-[0.12em] text-[var(--muted)]">
+                TODAY · {eyebrowDate}
+              </p>
+              {todayDone ? (
+                <span className="rounded-xl bg-[var(--green)]/15 px-2.5 py-1 text-[11px] font-bold text-[var(--green)]">
+                  Done
+                </span>
+              ) : null}
+            </div>
             <div>
-              <p className="text-lg font-bold text-white">
+              <p className="text-[22px] font-extrabold leading-tight">
                 {todayDone ? "Rest complete" : "Rest / Recovery"}
               </p>
-              <p className="mt-1 text-[var(--muted)]">
+              <p className="mt-1 text-[15px] text-[var(--muted)]">
                 Off day — Zone-2 walk and/or prehab. Hit steps and nutrition.
               </p>
             </div>
@@ -302,23 +383,72 @@ function WorkoutsTab({
               </button>
             ) : null}
             {restMsg ? <p className="text-[11px] text-[var(--yellow)]">{restMsg}</p> : null}
-            <Link href="/dashboard" className="text-xs font-bold text-[var(--blue)]">
+            <Link href="/dashboard" className="text-[13px] font-bold text-[var(--blue)]">
               Log steps & water on Home →
             </Link>
           </div>
         ) : todayDay ? (
-          <WorkoutCard
-            id={todayDay.id}
-            name={todayDay.name}
-            subtitle={
-              todayDone
-                ? "Completed today"
-                : hasOverride
-                  ? "Makeup for today"
-                  : "Scheduled for today"
-            }
-            highlight
-          />
+          <div className="space-y-4 rounded-[20px] border border-white/10 bg-[var(--card)] p-5">
+            <div className="flex items-center justify-between">
+              <p className="text-[11px] font-bold tracking-[0.12em] text-[var(--muted)]">
+                TODAY · {eyebrowDate}
+              </p>
+              {todayDone ? (
+                <span className="rounded-xl bg-[var(--green)]/15 px-2.5 py-1 text-[11px] font-bold text-[var(--green)]">
+                  Done
+                </span>
+              ) : hasOverride ? (
+                <span className="rounded-xl bg-[var(--blue)]/15 px-2.5 py-1 text-[11px] font-bold text-[var(--blue)]">
+                  Makeup
+                </span>
+              ) : (
+                <span className="rounded-xl bg-[var(--blue)]/15 px-2.5 py-1 text-[11px] font-bold text-[var(--blue)]">
+                  Weekly plan
+                </span>
+              )}
+            </div>
+            <div>
+              <h3 className="text-[26px] font-extrabold leading-tight tracking-tight">
+                {todayHead}
+              </h3>
+              {todayTail ? (
+                <p className="mt-0.5 text-[15px] font-medium text-[var(--muted)]">
+                  {todayTail}
+                </p>
+              ) : null}
+            </div>
+            <div className="flex items-center gap-4 text-[13px] font-semibold text-[var(--muted)]">
+              {todayMeta ? (
+                <span className="flex items-center gap-1.5">
+                  <IconDumbbell size={15} />
+                  {todayMeta.exerciseCount ?? 0} exercises · {todayMeta.setCount ?? 0} sets
+                </span>
+              ) : null}
+              {estMinutes ? (
+                <span className="flex items-center gap-1.5">
+                  <IconClock size={15} />~{estMinutes} min
+                </span>
+              ) : null}
+            </div>
+            <div className="flex gap-2.5">
+              <Link
+                href={`/train/${todayDay.id}/session`}
+                prefetch={false}
+                className="flex h-[52px] flex-1 items-center justify-center gap-2 rounded-[15px] bg-[var(--green)] text-[16px] font-extrabold text-[#06120a] active:scale-[0.98]"
+              >
+                <IconPlay size={15} />
+                {todayDone ? "Train again" : "Start workout"}
+              </Link>
+              <Link
+                href={`/train/${todayDay.id}`}
+                prefetch={false}
+                aria-label="Preview workout"
+                className="flex h-[52px] w-[52px] items-center justify-center rounded-[15px] border border-[var(--border)] bg-[#1c212b] text-[var(--muted)] active:bg-white/5"
+              >
+                <IconEye size={20} />
+              </Link>
+            </div>
+          </div>
         ) : todayName ? (
           <div className="card text-sm text-[var(--muted)]">
             <p className="font-semibold text-white">{todayName}</p>
@@ -340,27 +470,72 @@ function WorkoutsTab({
         />
       </section>
 
-      <section className="space-y-2">
-        <div className="flex items-center justify-between gap-2">
-          <h2 className="text-xl font-bold">Your Workouts</h2>
-          <div className="flex gap-3">
-            <Link href="/train/schedule" className="text-xs font-bold text-[var(--blue)]">
-              Schedule
-            </Link>
-            <Link href="/train/manage" className="text-xs font-bold text-[var(--blue)]">
-              Edit days
-            </Link>
-          </div>
+      <div className="grid grid-cols-3 gap-2">
+        <div className="rounded-xl border border-white/5 bg-[var(--surface)] px-3 py-2.5">
+          <p className="text-[17px] font-extrabold tabular-nums">
+            {stats.weekSessions}/{stats.scheduled || "—"}
+          </p>
+          <p className="text-[10.5px] font-semibold text-[var(--muted)]">Sessions</p>
         </div>
-        <div className="space-y-2.5">
-          {days.map((d) => (
-            <WorkoutCard
-              key={d.id}
-              id={d.id}
-              name={d.name}
-              subtitle={d.subtitle || `${d.exerciseCount ?? 0} exercises`}
-            />
-          ))}
+        <div className="rounded-xl border border-white/5 bg-[var(--surface)] px-3 py-2.5">
+          <p className="text-[17px] font-extrabold tabular-nums">
+            {stats.weekVolume >= 1000
+              ? `${(stats.weekVolume / 1000).toFixed(1)}k`
+              : Math.round(stats.weekVolume)}
+          </p>
+          <p className="text-[10.5px] font-semibold text-[var(--muted)]">Week lb</p>
+        </div>
+        <div className="rounded-xl border border-white/5 bg-[var(--surface)] px-3 py-2.5">
+          <p className="text-[17px] font-extrabold tabular-nums">{stats.streak} wk</p>
+          <p className="text-[10.5px] font-semibold text-[var(--muted)]">Streak</p>
+        </div>
+      </div>
+
+      <section className="space-y-2.5">
+        <div className="flex items-center justify-between gap-2">
+          <h2 className="text-[17px] font-bold">Your workouts</h2>
+          <Link href="/train/manage" className="text-[13px] font-bold text-[var(--blue)]">
+            Edit
+          </Link>
+        </div>
+        <div className="overflow-hidden rounded-[18px] border border-[var(--border)] bg-[var(--card)]">
+          {days.map((d, i) => {
+            const head = d.name.split("·")[0]?.trim() ?? d.name;
+            const tail = d.name.split("·").slice(1).join("·").trim();
+            const isToday = todayDay?.id === d.id;
+            return (
+              <Link
+                key={d.id}
+                href={`/train/${d.id}`}
+                prefetch={false}
+                className={`flex items-center gap-3 px-4 py-3.5 active:bg-white/5 ${
+                  i > 0 ? "border-t border-white/5" : ""
+                }`}
+              >
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-baseline gap-2">
+                    <p className="text-[15px] font-bold">{head}</p>
+                    {tail ? (
+                      <p className="truncate text-[12.5px] font-medium text-[var(--muted)]">
+                        {tail}
+                      </p>
+                    ) : null}
+                  </div>
+                  <p className="mt-0.5 text-[12.5px] text-[var(--muted)]">
+                    {d.exerciseCount ?? 0} exercises · {d.setCount ?? 0} sets
+                  </p>
+                </div>
+                {isToday ? (
+                  <span className="shrink-0 rounded-lg bg-[var(--blue)]/15 px-2 py-0.5 text-[10.5px] font-bold text-[var(--blue)]">
+                    Today
+                  </span>
+                ) : null}
+                <span className="shrink-0 text-[#5a6578]">
+                  <IconChevronRight size={18} />
+                </span>
+              </Link>
+            );
+          })}
         </div>
         <Link
           href="/train/manage"
@@ -370,9 +545,9 @@ function WorkoutsTab({
         </Link>
       </section>
 
-      <section className="space-y-2">
-        <h2 className="text-xl font-bold">History</h2>
-        <div className="card !p-0 overflow-hidden">
+      <section className="space-y-2.5">
+        <h2 className="text-[17px] font-bold">History</h2>
+        <div className="overflow-hidden rounded-[18px] border border-white/5 bg-[var(--surface)]">
           {history.length === 0 ? (
             <p className="p-4 text-sm text-[var(--muted)]">No sessions logged yet.</p>
           ) : (
@@ -386,25 +561,21 @@ function WorkoutsTab({
                   key={h.id}
                   href={`/train/history/${h.id}`}
                   prefetch={false}
-                  className="flex items-center justify-between gap-3 border-b border-[var(--border)] px-4 py-3 last:border-0 active:bg-white/5"
+                  className="flex items-center justify-between gap-3 border-b border-white/5 px-4 py-3 last:border-0 active:bg-white/5"
                 >
                   <div className="min-w-0">
-                    <p className="font-semibold">{h.dayName}</p>
-                    <p className="text-[11px] text-[var(--muted)]">
+                    <p className="text-[14.5px] font-bold">{h.dayName}</p>
+                    <p className="mt-0.5 text-[12px] text-[var(--muted)]">
                       {new Date(h.startedAt).toLocaleDateString(undefined, {
+                        weekday: "short",
                         month: "short",
                         day: "numeric",
-                      })}{" "}
-                      · tap for recap
+                      })}
                     </p>
                   </div>
-                  <div className="shrink-0 text-right text-[11px] text-[var(--muted)]">
-                    <p className="font-semibold text-[var(--yellow)]">
-                      {h.setCount} sets
-                    </p>
-                    <p>{Math.round(h.volume).toLocaleString()} lb</p>
-                    <p>{dur}</p>
-                  </div>
+                  <p className="shrink-0 text-right text-[12px] tabular-nums text-[var(--muted)]">
+                    {h.setCount} sets · {Math.round(h.volume).toLocaleString()} lb · {dur}
+                  </p>
                 </Link>
               );
             })

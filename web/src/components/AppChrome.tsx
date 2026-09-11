@@ -6,12 +6,19 @@ import { useEffect, useState, useTransition } from "react";
 import { KeepAliveBanner } from "@/components/KeepAliveBanner";
 import { AppUpdateBanner } from "@/components/AppUpdateBanner";
 import { RestTimerHost } from "@/components/RestTimerHost";
+import {
+  IconClipboard,
+  IconDumbbell,
+  IconGear,
+  IconHome,
+  IconUtensils,
+} from "@/components/icons";
 
 const links = [
-  { href: "/dashboard", label: "Home", icon: "🏠" },
-  { href: "/train", label: "Train", icon: "🏋️" },
-  { href: "/nutrition", label: "Nutrition", icon: "🥩" },
-  { href: "/protocol", label: "Protocol", icon: "🧬" },
+  { href: "/dashboard", label: "Home", Icon: IconHome },
+  { href: "/train", label: "Train", Icon: IconDumbbell },
+  { href: "/nutrition", label: "Nutrition", Icon: IconUtensils },
+  { href: "/protocol", label: "Protocol", Icon: IconClipboard },
 ];
 
 function isActive(pathname: string, href: string) {
@@ -66,10 +73,10 @@ function Nav({ pathname }: { pathname: string }) {
               }`}
               style={{ WebkitTapHighlightColor: "transparent" }}
             >
-              <span className="pointer-events-none text-[22px] leading-none" aria-hidden>
-                {l.icon}
+              <span className="pointer-events-none" aria-hidden>
+                <l.Icon size={22} strokeWidth={active ? 2.2 : 2} />
               </span>
-              <span className="pointer-events-none text-[10px] font-semibold leading-none">
+              <span className="pointer-events-none text-[10.5px] font-semibold leading-none">
                 {l.label}
               </span>
               {active ? (
@@ -113,8 +120,9 @@ export function AppChrome({
               href="/settings"
               prefetch={false}
               className="inline-flex items-center gap-1 font-semibold"
+              aria-label="Settings"
             >
-              settings ⚙
+              <IconGear size={16} />
             </Link>
             </div>
           </div>

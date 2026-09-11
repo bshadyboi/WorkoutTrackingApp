@@ -13,6 +13,7 @@ import {
   type DraftSet,
 } from "@/lib/sessionDraft";
 import { formatPrescription, setTargetLabel } from "@/lib/workouts";
+import { IconCheck, IconMore, IconPlayCircle, IconSwap, IconX } from "@/components/icons";
 import {
   cancelRestAlert,
   ensureRestNotifyPermission,
@@ -220,6 +221,10 @@ export function WorkoutLogger({
       (n, sets) => n + sets.filter((s) => s.completed).length,
       0
     );
+  }, [setsByExercise]);
+
+  const totalSetCount = useMemo(() => {
+    return Object.values(setsByExercise).reduce((n, sets) => n + sets.length, 0);
   }, [setsByExercise]);
 
   // Autosave draft when there's real progress (crash recovery)
@@ -766,28 +771,23 @@ export function WorkoutLogger({
   return (
     <div className="min-h-dvh bg-[var(--bg)] pb-28">
       <div
-        className="sticky top-0 z-20 border-b border-[var(--border)] bg-[var(--bg)] px-4 pb-3"
-        style={{ paddingTop: "max(12px, env(safe-area-inset-top, 0px))" }}
+        className="sticky top-0 z-20 border-b border-[var(--border)] bg-[#0d1017] px-5 pb-3"
+        style={{ paddingTop: "max(14px, env(safe-area-inset-top, 0px))" }}
       >
-        <div className="mb-2 flex items-center justify-between">
-          <p className="text-[13px] font-bold">
-            <span className="text-white">Fit</span>
-            <span className="text-[var(--blue)]">Track</span>
-          </p>
-          <span className="text-[11px] text-[var(--muted)]">autosaved ✓</span>
-        </div>
         <div className="flex items-center justify-between gap-3">
           <button
             type="button"
             onClick={requestLeave}
-            className="flex h-11 w-11 items-center justify-center rounded-full bg-[#252b38] text-xl text-[var(--muted)]"
+            className="flex h-[42px] w-[42px] items-center justify-center rounded-full bg-[#1c212b] text-[var(--muted)]"
             aria-label="Close"
           >
-            ×
+            <IconX size={18} />
           </button>
           <div className="text-center">
-            <p className="font-mono text-lg font-bold tabular-nums">{timerText}</p>
-            <p className="text-[10px] font-semibold text-[var(--muted)]">
+            <p className="font-mono text-[22px] font-extrabold leading-tight tabular-nums tracking-tight">
+              {timerText}
+            </p>
+            <p className="text-[11px] font-semibold text-[var(--muted)]">
               {estimateLeft}
             </p>
           </div>
@@ -795,10 +795,23 @@ export function WorkoutLogger({
             type="button"
             onClick={requestFinish}
             disabled={saving}
-            className="min-h-[44px] rounded-full bg-[var(--green)] px-4 text-sm font-bold text-black"
+            className="flex h-[42px] items-center rounded-full bg-[var(--green)] px-5 text-[14.5px] font-extrabold text-[#06120a]"
           >
             {saving ? "…" : "Finish"}
           </button>
+        </div>
+        <div className="mt-2.5 flex items-center gap-2.5">
+          <div className="h-1 flex-1 overflow-hidden rounded-full bg-[#2a3140]">
+            <div
+              className="h-full rounded-full bg-[var(--green)] transition-[width]"
+              style={{
+                width: `${totalSetCount ? Math.round((completedSetCount / totalSetCount) * 100) : 0}%`,
+              }}
+            />
+          </div>
+          <p className="shrink-0 text-[11px] font-bold tabular-nums text-[var(--muted)]">
+            {completedSetCount} of {totalSetCount} sets
+          </p>
         </div>
       </div>
 
@@ -822,22 +835,20 @@ export function WorkoutLogger({
         </div>
       ) : null}
 
-      <div className="px-4 pt-4">
+      <div className="px-5 pt-4">
         <input
-          className="w-full bg-transparent text-2xl font-bold outline-none"
+          className="w-full bg-transparent text-[22px] font-extrabold tracking-tight outline-none"
           value={sessionDayName}
           onChange={(e) => setSessionDayName(e.target.value)}
           aria-label="Workout name"
         />
-        <p className="mt-0.5 text-sm text-[var(--muted)]">
-          📅 {dateLabel}
-          {logDate ? " · backfill" : ""}
-          {" · "}
-          <span className="text-[10px]">tap name to rename</span>
+        <p className="mt-0.5 text-[13px] text-[var(--muted)]">
+          {dateLabel}
+          {logDate ? " · backfill" : ""} · autosaved · tap name to rename
         </p>
       </div>
 
-      <div className="mt-4 space-y-5 px-4">
+      <div className="mt-4 space-y-4 px-4">
         {sorted.map((ex) => {
           const sets = setsByExercise[ex.id] ?? [];
           const name = displayName(ex);
@@ -846,66 +857,76 @@ export function WorkoutLogger({
           const showPlates = !isCardio && isBarbellLoadable(name);
 
           return (
-            <section key={ex.id} className="space-y-2">
-              <div className="flex items-start justify-between gap-2">
+            <section
+              key={ex.id}
+              className="space-y-3 rounded-[18px] border border-white/10 bg-[var(--card)] p-4"
+            >
+              <div className="flex items-start justify-between gap-2.5">
                 <div className="min-w-0">
-                  <h2 className="text-lg font-bold text-[var(--blue)]">{name}</h2>
+                  <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+                    <h2 className="text-[17px] font-bold leading-snug">{name}</h2>
+                    <span className="rounded-[10px] bg-[#1c212b] px-2 py-0.5 text-[11px] font-bold text-[var(--muted)]">
+                      {ex.muscle}
+                    </span>
+                  </div>
                   {!isCardio ? (
-                    <div className="mt-1 space-y-0.5">
+                    <div className="mt-1.5 space-y-0.5">
                       {formatPrescription({
                         defaultSets: ex.default_sets,
                         hasCrownSet: ex.has_crown_set,
                         crownRepRange: ex.crown_rep_range,
                         workingRepRange: ex.working_rep_range,
                       }).map((line) => (
-                        <p key={line} className="text-[13px] leading-snug text-white">
+                        <p
+                          key={line}
+                          className="text-[13px] font-semibold leading-snug text-[var(--blue)]"
+                        >
                           {line}
                         </p>
                       ))}
                     </div>
                   ) : (
-                    <p className="mt-1 text-[13px] text-white">30 min incline walk</p>
+                    <p className="mt-1.5 text-[13px] font-semibold text-[var(--blue)]">
+                      30 min incline walk
+                    </p>
                   )}
-                  <p className="mt-1 text-[11px] text-[var(--muted)]">{ex.muscle}</p>
                   {cat?.notes ? (
-                    <p className="mt-1 text-[11px] text-[var(--yellow)]">{cat.notes}</p>
+                    <p className="mt-1 text-[12px] text-[var(--yellow)]">{cat.notes}</p>
                   ) : null}
                 </div>
-                <div className="flex shrink-0 flex-col items-end gap-1">
+                <div className="flex shrink-0 gap-1.5">
                   {cat?.youtubeUrl ? (
                     <a
                       href={cat.youtubeUrl}
                       target="_blank"
                       rel="noreferrer"
-                      className="text-[11px] font-semibold text-[var(--blue)]"
+                      aria-label="Form video"
+                      className="flex h-[34px] w-[34px] items-center justify-center rounded-[10px] bg-[#1c212b] text-[var(--muted)] active:text-white"
                     >
-                      ▶ Form
+                      <IconPlayCircle size={17} />
                     </a>
                   ) : null}
                   <button
                     type="button"
-                    className="text-[11px] font-semibold text-[var(--blue)]"
+                    aria-label="Swap exercise"
+                    className="flex h-[34px] w-[34px] items-center justify-center rounded-[10px] bg-[#1c212b] text-[var(--muted)] active:text-white"
                     onClick={() => setSwapForId(ex.id)}
                   >
-                    Swap
+                    <IconSwap size={17} />
                   </button>
                   <button
                     type="button"
-                    className="text-[11px] font-semibold text-[var(--muted)]"
+                    aria-label="Edit exercise"
+                    className="flex h-[34px] w-[34px] items-center justify-center rounded-[10px] bg-[#1c212b] text-[var(--muted)] active:text-white"
                     onClick={() => openEdit(ex)}
                   >
-                    Edit
+                    <IconMore size={17} />
                   </button>
-                  {!isCardio ? (
-                    <p className="text-[10px] text-[var(--muted)]">
-                      Rest {formatRest(restByExercise[ex.id] ?? defaultRestSeconds(ex, 0))}
-                    </p>
-                  ) : null}
                 </div>
               </div>
 
               {isCardio ? (
-                <div className="card space-y-2">
+                <div className="space-y-2">
                   <p className="text-sm text-[var(--muted)]">
                     30 min incline walk — log pace when done.
                   </p>
@@ -936,13 +957,13 @@ export function WorkoutLogger({
                   </button>
                 </div>
               ) : (
-                <div className="overflow-hidden rounded-2xl border border-[var(--border)] bg-[var(--card)]">
-                  <div className="grid grid-cols-[28px_minmax(0,1fr)_56px_52px_36px] gap-1 px-2 py-2 text-[9px] font-bold uppercase tracking-wide text-[var(--muted)]">
+                <div>
+                  <div className="grid grid-cols-[36px_minmax(0,1fr)_64px_56px_44px] items-center gap-1.5 px-0.5 pb-1.5 text-[11px] font-bold uppercase tracking-[0.08em] text-[#5a6578]">
                     <span title="Tap set # to mark warm-up">Set</span>
-                    <span>Prev · tap</span>
+                    <span>Previous</span>
                     <span className="text-center">lbs</span>
                     <span className="text-center">Reps</span>
-                    <span className="text-center">✓</span>
+                    <span></span>
                   </div>
 
                   {sets.map((set, i) => {
@@ -957,8 +978,12 @@ export function WorkoutLogger({
                     return (
                       <div key={set.setNumber}>
                         <div
-                          className={`grid grid-cols-[28px_minmax(0,1fr)_56px_52px_36px] items-center gap-1 border-t border-[var(--border)] px-2 py-1.5 ${
-                            set.completed ? "bg-[var(--green)]/10" : ""
+                          className={`grid grid-cols-[36px_minmax(0,1fr)_64px_56px_44px] items-center gap-1.5 rounded-xl px-0.5 py-1.5 ${
+                            set.completed
+                              ? set.isWarmup
+                                ? "bg-[var(--yellow)]/[0.07]"
+                                : "bg-[var(--green)]/[0.07]"
+                              : ""
                           } ${set.isWarmup && !set.completed ? "opacity-80" : ""}`}
                         >
                           <button
@@ -971,10 +996,10 @@ export function WorkoutLogger({
                             onClick={() =>
                               updateSet(ex.id, i, { isWarmup: !set.isWarmup })
                             }
-                            className={`mx-auto flex h-7 w-7 items-center justify-center rounded-md text-xs font-bold ${
+                            className={`mx-auto flex h-[30px] w-[30px] items-center justify-center rounded-full text-[13px] font-extrabold ${
                               set.isWarmup
-                                ? "bg-[var(--yellow)]/20 text-[var(--yellow)]"
-                                : "text-white"
+                                ? "bg-[var(--yellow)]/15 text-[var(--yellow)]"
+                                : "bg-[#1c212b] text-white"
                             }`}
                           >
                             {set.isWarmup
@@ -987,17 +1012,17 @@ export function WorkoutLogger({
                             {set.previous && set.previous !== "—" ? (
                               <button
                                 type="button"
-                                className="block w-full truncate text-left text-[11px] font-semibold text-[var(--muted)] active:text-[var(--green)]"
+                                className="block w-full truncate text-left text-[13px] font-semibold text-[var(--muted)] active:text-[var(--green)]"
                                 title="Tap to use last time’s weight & reps"
                                 onClick={() => fillFromPrevious(ex, i)}
                               >
                                 {set.previous.replace("×", " × ")}
                               </button>
                             ) : (
-                              <p className="truncate text-[11px] text-[var(--muted)]">—</p>
+                              <p className="truncate text-[13px] text-[var(--muted)]">—</p>
                             )}
                             <p
-                              className={`truncate text-[10px] font-semibold ${
+                              className={`truncate text-[11px] font-bold ${
                                 set.isWarmup
                                   ? "text-[var(--yellow)]"
                                   : "text-[var(--blue)]"
@@ -1007,7 +1032,7 @@ export function WorkoutLogger({
                             </p>
                           </div>
                           <input
-                            className="field !rounded-lg !px-1 !py-1.5 text-center text-sm font-semibold"
+                            className="h-11 w-full rounded-xl border border-[#2a3140] bg-[#10131a] px-1 text-center text-[15px] font-bold text-white outline-none focus:border-[var(--blue)]"
                             inputMode="decimal"
                             value={set.weight}
                             onChange={(e) =>
@@ -1015,7 +1040,7 @@ export function WorkoutLogger({
                             }
                           />
                           <input
-                            className="field !rounded-lg !px-1 !py-1.5 text-center text-sm font-semibold"
+                            className="h-11 w-full rounded-xl border border-[#2a3140] bg-[#10131a] px-1 text-center text-[15px] font-bold text-white outline-none focus:border-[var(--blue)]"
                             inputMode="numeric"
                             value={set.reps}
                             onChange={(e) =>
@@ -1024,14 +1049,15 @@ export function WorkoutLogger({
                           />
                           <button
                             type="button"
+                            aria-label={set.completed ? "Set done" : "Mark set done"}
                             onClick={() => toggleComplete(ex, i)}
-                            className={`mx-auto flex h-8 w-8 items-center justify-center rounded-lg text-xs font-bold ${
+                            className={`mx-auto flex h-10 w-10 items-center justify-center rounded-xl ${
                               set.completed
-                                ? "bg-[var(--green)] text-black"
-                                : "bg-[#252b38] text-[var(--muted)]"
+                                ? "bg-[var(--green)] text-[#06120a]"
+                                : "bg-[#1c212b] text-[#5a6578]"
                             }`}
                           >
-                            ✓
+                            <IconCheck size={18} />
                           </button>
                         </div>
                         {showPlates
@@ -1043,7 +1069,7 @@ export function WorkoutLogger({
                               );
                               if (!load && !(Number(set.weight) > 0)) return null;
                               return (
-                                <div className="flex flex-wrap items-center gap-2 border-t border-[var(--border)] px-2 py-1.5">
+                                <div className="flex flex-wrap items-center gap-2 px-1 py-1">
                                   <div className="flex gap-1">
                                     {BAR_OPTIONS.map((lb) => (
                                       <button
@@ -1077,36 +1103,35 @@ export function WorkoutLogger({
                             })()
                           : null}
                         {showRest ? (
-                          <div className="flex items-center justify-center gap-2 border-t border-[var(--border)] py-2 text-sm text-[var(--muted)]">
-                            <span className="h-px flex-1 bg-[var(--border-solid)]" />
+                          <div className="my-1.5 flex items-center gap-2.5 rounded-xl border border-[var(--blue)]/25 bg-[var(--blue)]/10 px-3.5 py-2.5">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#5ba8ff" strokeWidth="2" strokeLinecap="round" aria-hidden><circle cx="12" cy="12" r="9" /><path d="M12 7v5l3 2" /></svg>
+                            <span className="flex-1 font-mono text-[13.5px] font-bold tabular-nums text-[var(--blue)]">
+                              Rest · {formatRest(activeRestLeft)}
+                            </span>
                             <button
                               type="button"
-                              className="rounded-lg bg-[#252b38] px-2 py-1 text-xs font-bold"
+                              className="text-[12.5px] font-bold text-[var(--muted)]"
                               onClick={() => bumpRest(ex.id, -15)}
                             >
                               −15s
                             </button>
-                            <span className="font-mono font-bold tabular-nums">
-                              {formatRest(activeRestLeft)}
-                            </span>
                             <button
                               type="button"
-                              className="rounded-lg bg-[#252b38] px-2 py-1 text-xs font-bold"
+                              className="text-[12.5px] font-bold text-[var(--muted)]"
                               onClick={() => bumpRest(ex.id, 15)}
                             >
                               +15s
                             </button>
                             <button
                               type="button"
-                              className="text-xs font-bold text-[var(--blue)]"
+                              className="text-[12.5px] font-bold text-[var(--blue)]"
                               onClick={clearActiveRest}
                             >
-                              skip
+                              Skip
                             </button>
-                            <span className="h-px flex-1 bg-[var(--border-solid)]" />
                           </div>
                         ) : i < sets.length - 1 ? (
-                          <div className="border-t border-[var(--border)] py-1.5">
+                          <div className="py-0.5">
                             {restEditExerciseId === ex.id ? (
                               <div className="flex flex-wrap items-center justify-center gap-1.5 px-1">
                                 {REST_PRESETS.map((s) => {
