@@ -1,6 +1,17 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { SW_URL } from "@/lib/restAlert";
+
+/** iOS silently hangs on some SW/push promises — fail visibly instead. */
+function withTimeout<T>(p: Promise<T>, ms: number, step: string): Promise<T> {
+  return Promise.race([
+    p,
+    new Promise<never>((_, reject) =>
+      setTimeout(() => reject(new Error(`Timed out: ${step}`)), ms)
+    ),
+  ]);
+}
 
 function urlBase64ToUint8Array(base64String: string) {
   const padding = "=".repeat((4 - (base64String.length % 4)) % 4);
@@ -47,24 +58,49 @@ export function PushEnableButton() {
       return;
     }
     try {
-      const reg = await navigator.serviceWorker.register("/sw.js?v=rest6");
-      await navigator.serviceWorker.ready;
+      // Permission FIRST — iOS only honors the request inside the tap gesture,
+      // before any awaited work consumes the user activation.
+      setMsg("Requesting permission…");
       const perm = await Notification.requestPermission();
       if (perm !== "granted") {
         setMsg("Permission denied — enable in iPhone Settings → FitTrack.");
         setStatus("error");
         return;
       }
-      const sub = await reg.pushManager.subscribe({
-        userVisibleOnly: true,
-        applicationServerKey: urlBase64ToUint8Array(pub),
-      });
+      setMsg("Starting service worker…");
+      await navigator.serviceWorker.register(SW_URL, { scope: "/" });
+      const reg = await withTimeout(
+        navigator.serviceWorker.ready,
+        10000,
+        "service worker startup"
+      );
+      setMsg("Creating push subscription…");
+      let sub = await withTimeout(
+        reg.pushManager.getSubscription(),
+        5000,
+        "reading existing subscription"
+      );
+      if (!sub) {
+        sub = await withTimeout(
+          reg.pushManager.subscribe({
+            userVisibleOnly: true,
+            applicationServerKey: urlBase64ToUint8Array(pub),
+          }),
+          10000,
+          "push subscribe"
+        );
+      }
       const json = sub.toJSON();
-      const res = await fetch("/api/push/subscribe", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(json),
-      });
+      setMsg("Saving to server…");
+      const res = await withTimeout(
+        fetch("/api/push/subscribe", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(json),
+        }),
+        10000,
+        "saving subscription"
+      );
       const data = await res.json();
       if (!res.ok) {
         setMsg(data.error || "Subscribe failed");

@@ -21,15 +21,17 @@ export function RestTimerHost() {
   const [rest, setRest] = useState<ActiveRestState | null>(null);
   const [left, setLeft] = useState(0);
   const [doneFlash, setDoneFlash] = useState<string | null>(null);
-  const [pushWarn, setPushWarn] = useState(false);
+  const [pushWarn, setPushWarn] = useState<string | null>(null);
 
   useEffect(() => {
     const onPushFailed = (e: Event) => {
-      const reason = (e as CustomEvent).detail?.reason;
-      if (reason === "no_push_subscription") {
-        setPushWarn(true);
-        window.setTimeout(() => setPushWarn(false), 8000);
-      }
+      const reason = (e as CustomEvent).detail?.reason as string | undefined;
+      setPushWarn(
+        reason === "no_push_subscription"
+          ? "Enable notifications in Settings or the timer can't alert you when the app is closed"
+          : `Background alert scheduling failed (${reason || "unknown"}) — in-app timer still works`
+      );
+      window.setTimeout(() => setPushWarn(null), 8000);
     };
     window.addEventListener("fittrack:rest-push-failed", onPushFailed);
     return () => window.removeEventListener("fittrack:rest-push-failed", onPushFailed);
@@ -112,9 +114,7 @@ export function RestTimerHost() {
           <p className="text-[11px] font-bold uppercase tracking-wide text-[#ffb340]">
             Background alerts off
           </p>
-          <p className="text-sm font-semibold text-white">
-            Enable notifications in Settings or the timer can&apos;t alert you when the app is closed
-          </p>
+          <p className="text-sm font-semibold text-white">{pushWarn}</p>
         </div>
       ) : null}
 

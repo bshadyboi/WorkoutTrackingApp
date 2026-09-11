@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
+import { SW_URL } from "@/lib/restAlert";
 
 /**
  * Drop old Workbox caches (lag source), keep / register lean push SW.
@@ -27,7 +28,7 @@ export function UnregisterServiceWorkers() {
           );
         }
         // Ensure push + rest SW is registered (bump query to refresh)
-        await navigator.serviceWorker.register("/sw.js?v=rest6", { scope: "/" });
+        await navigator.serviceWorker.register(SW_URL, { scope: "/" });
         const reg = await navigator.serviceWorker.ready;
         await reg.update();
       } catch {
