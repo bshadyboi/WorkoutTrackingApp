@@ -1,3 +1,5 @@
+import { isContraindicated } from "@/lib/contraindicated";
+
 export type ExerciseCatalogEntry = {
   name: string;
   muscle: string;
@@ -1955,6 +1957,8 @@ export function getSwapRecommendations(
   ) {
     const key = name.trim().toLowerCase();
     if (!key || key === currentKey || seen.has(key)) return;
+    // Never propose a movement the active program rules out.
+    if (isContraindicated(name)) return;
     seen.add(key);
     const altEntry = catalogEntry(name);
     out.push({

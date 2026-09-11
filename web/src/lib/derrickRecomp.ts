@@ -23,17 +23,18 @@ const UPPER_PREHAB: WorkoutTemplate["exercises"] = [
   work("Band Pull-Aparts", "Rear Delts", 2, "15–20", "Prehab · 8–12 min block"),
   work("Face Pulls + External Rotation", "Rear Delts", 2, "12–15", "Prehab"),
   work("Prone Y / T Raise", "Rear Delts", 2, "10–12", "Prehab"),
-  work("Side-Lying External Rotation", "Rear Delts", 2, "10–12", "Prehab · per side"),
+  work("Side-Lying External Rotation", "Rear Delts", 2, "12–15", "Prehab · per side"),
   work("Scapular Wall Slides", "Shoulders", 2, "10–12", "Prehab"),
 ];
 
 /**
- * Derrick Recomp Split — 10 weeks (Sep 7 → Nov 14).
+ * Derrick Recomp Split — 8 weeks (Sep 8 → Nov 2).
  * 5 training days · Wed/Sun off · 2:1 pull-to-press bias · prehab on upper days.
  * Baseline: 2500 kcal · 185P / 280C / 70F · 10–12k steps.
  */
+export const DERRICK_RECOMP_WEEKS = 8;
 export const DERRICK_RECOMP_START = "2026-09-08";
-export const DERRICK_RECOMP_END = "2026-11-14";
+export const DERRICK_RECOMP_END = "2026-11-02";
 export const DERRICK_CHECKPOINT_WEEK = 3; // ~Sep 29 from Tue start
 
 export const DERRICK_RECOMP_BASELINE = {
@@ -58,7 +59,6 @@ export const DERRICK_RECOMP_WORKOUTS: WorkoutTemplate[] = [
       work("Lateral Raise", "Side Delts", 3, "12–15"),
       work("Face Pull", "Rear Delts", 3, "15–20"),
       work("Triceps Pushdown", "Triceps", 3, "10–15"),
-      work("Overhead Rope Extension", "Triceps", 3, "10–15"),
     ],
   },
   {
@@ -84,7 +84,6 @@ export const DERRICK_RECOMP_WORKOUTS: WorkoutTemplate[] = [
       work("Rear-Delt Fly", "Rear Delts", 3, "12–15"),
       work("Lateral Raise", "Side Delts", 3, "12–15"),
       work("Hammer Curl", "Biceps", 3, "8–12"),
-      work("Close-Grip / Neutral DB Press", "Triceps", 3, "8–12"),
       work("Farmer / Suitcase Carry", "Core", 3, "30–40m", "Per set distance"),
     ],
   },
@@ -128,7 +127,7 @@ export const DERRICK_RECOMP_WEEKLY_LABELS = [
 export const DERRICK_RECOMP_TIP =
   "4-day Upper/Lower (Tue start): Upper A → Lower A → Rest → Upper B → Lower B → Rest ×2. " +
   "Optional Day 5 (Arms & Delts) is available anytime via Makeup — not required. " +
-  "10 weeks from Sep 8. Baseline 2500 · 185P/280C/70F · 10–12k steps. " +
+  "8 weeks from Sep 8. Baseline 2500 · 185P/280C/70F · 10–12k steps. " +
   "Add reps before weight · 1–3 RIR. Week 1 glycogen bump is normal. " +
   "From Week 3: weekly waist + strength check adjusts calories.";
 
@@ -141,7 +140,54 @@ export function derrickRecompWeek(asOfKey: string): number {
   const asOf = new Date(`${asOfKey}T12:00:00`);
   const days = Math.floor((asOf.getTime() - start.getTime()) / 86400000);
   if (days < 0) return 0;
-  return Math.min(10, Math.floor(days / 7) + 1);
+  return Math.min(DERRICK_RECOMP_WEEKS, Math.floor(days / 7) + 1);
+}
+
+export type WeekGuidance = {
+  /** Short phase name for the header chip. */
+  phase: string;
+  /** What to do differently this week, in the lifter's terms. */
+  note: string;
+  /** True during the planned deload, which the UI calls out rather than hides. */
+  deload: boolean;
+};
+
+/**
+ * How hard to push, by week. The written plan ramps effort rather than holding
+ * it flat: learn the positions well short of failure, spend the middle weeks
+ * adding reps, take a lighter week, then push closest to failure at the end.
+ * None of this reached the app before — the per-exercise RIR note is not
+ * persisted to workout_exercises, so it was never shown anywhere.
+ */
+export function derrickRecompGuidance(week: number): WeekGuidance | null {
+  if (week < 1 || week > DERRICK_RECOMP_WEEKS) return null;
+
+  if (week <= 2) {
+    return {
+      phase: "Learn the positions",
+      note: "Stay 3 reps in reserve — stop well short of failure while the positions are new. Film a set of floor press and rows.",
+      deload: false,
+    };
+  }
+  if (week <= 5) {
+    return {
+      phase: "Build",
+      note: "Add 1–2 reps per set until the top of the range, then add the smallest plate and drop reps back. Keep 1–3 in reserve on compounds.",
+      deload: false,
+    };
+  }
+  if (week === 6) {
+    return {
+      phase: "Deload week",
+      note: "Optional lighter week: cut your sets by about 40% and keep the loads moderate. Same exercises, less work — it lets fatigue clear so weeks 7–8 land harder.",
+      deload: true,
+    };
+  }
+  return {
+    phase: "Push",
+    note: "Push closer to 1–2 reps in reserve — but only on lifts that are completely pain-free. Anything that pinches stays where it is.",
+    deload: false,
+  };
 }
 
 export type RecompDecision = {

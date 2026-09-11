@@ -14,6 +14,8 @@ import { getProgram } from "@/lib/programs";
 import {
   DERRICK_RECOMP_END,
   DERRICK_RECOMP_START,
+  DERRICK_RECOMP_WEEKS,
+  derrickRecompGuidance,
   derrickRecompWeek,
 } from "@/lib/derrickRecomp";
 import { useRouter } from "next/navigation";
@@ -87,8 +89,9 @@ export function TrainTabs({
   const recompWeek = derrickRecompWeek(todayKey);
   const inRecomp =
     isDerrick && todayKey >= DERRICK_RECOMP_START && todayKey <= DERRICK_RECOMP_END;
+  const guidance = inRecomp ? derrickRecompGuidance(recompWeek) : null;
   const programLine = inRecomp
-    ? `Derrick Recomp · Week ${recompWeek} of 10`
+    ? `Derrick Recomp · Week ${recompWeek} of ${DERRICK_RECOMP_WEEKS}`
     : programLabel;
 
   /** Sun→Sat of the current week, each resolved against the live schedule */
@@ -148,6 +151,27 @@ export function TrainTabs({
       </div>
 
       <WeekStrip weekInfo={weekInfo} todayKey={todayKey} />
+
+      {guidance ? (
+        <div
+          className={`rounded-2xl border px-4 py-3 ${
+            guidance.deload
+              ? "border-[var(--yellow)]/35 bg-[var(--yellow)]/10"
+              : "border-[var(--border)] bg-[var(--surface)]"
+          }`}
+        >
+          <p
+            className={`text-[11px] font-bold uppercase tracking-[0.12em] ${
+              guidance.deload ? "text-[var(--yellow)]" : "text-[var(--blue)]"
+            }`}
+          >
+            Week {recompWeek} · {guidance.phase}
+          </p>
+          <p className="mt-1 text-[13px] leading-snug text-[var(--muted)]">
+            {guidance.note}
+          </p>
+        </div>
+      ) : null}
 
       <div className="flex gap-1 rounded-[22px] border border-white/5 bg-[var(--surface)] p-1">
         {(
