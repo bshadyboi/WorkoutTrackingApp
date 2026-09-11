@@ -40,6 +40,8 @@ export async function updateSession(request: NextRequest) {
     isAuthPage ||
     path.startsWith("/auth") ||
     path.startsWith("/join") ||
+    // QStash server-to-server callback — no cookies; gated by PUSH_FIRE_SECRET
+    path.startsWith("/api/push/fire") ||
     path === "/";
 
   if (!user && !isPublic) {
