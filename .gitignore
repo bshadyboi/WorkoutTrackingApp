@@ -5,3 +5,12 @@ DerivedData/
 FitTrack/**/xcuserdata/
 
 *.mov
+
+web/node_modules/
+web/.next/
+web/.env.local
+web/public/workbox-*.js
+web/public/sw.js.map
+web/public/swe-worker-*.js
+.vercel
+.env*

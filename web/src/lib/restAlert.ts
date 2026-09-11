@@ -4,7 +4,7 @@ const REST_STORAGE_KEY = "fittrack-active-rest";
 const REST_PUSH_ID_KEY = "fittrack-rest-push-id";
 const REST_FIRED_KEY = "fittrack-rest-fired-at";
 
-export const SW_URL = "/sw.js?v=rest7";
+export const SW_URL = "/sw.js?v=rest8";
 
 /**
  * iOS unlocks audio only inside a user gesture. We create ONE persistent
