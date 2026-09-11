@@ -6,6 +6,7 @@ import { useEffect, useState, useTransition } from "react";
 import { KeepAliveBanner } from "@/components/KeepAliveBanner";
 import { AppUpdateBanner } from "@/components/AppUpdateBanner";
 import { RestTimerHost } from "@/components/RestTimerHost";
+import { PendingSessionSync } from "@/components/PendingSessionSync";
 import {
   IconClipboard,
   IconDumbbell,
@@ -139,6 +140,7 @@ export function AppChrome({
               }
         }
       >
+        {!isSession && !isDayPreview ? <PendingSessionSync /> : null}
         {!isSession && !isDayPreview ? <KeepAliveBanner /> : null}
         <RestTimerHost />
         {children}

@@ -15,6 +15,12 @@ import {
 import { formatPrescription, setTargetLabel } from "@/lib/workouts";
 import { IconCheck, IconMore, IconPlayCircle, IconSwap, IconX } from "@/components/icons";
 import { splitWarmupBlock } from "@/lib/prehab";
+import { renameExerciseEverywhere } from "@/lib/exerciseRename";
+import {
+  isOfflineError,
+  queuePendingSession,
+  type PendingSessionRow,
+} from "@/lib/pendingSessions";
 import {
   cancelRestAlert,
   ensureRestNotifyPermission,
@@ -78,6 +84,28 @@ function formatRest(seconds: number) {
   return formatRestClock(seconds);
 }
 
+/**
+ * One set row, pre-filled from the matching set last time. Both weight and reps
+ * are seeded so a session that repeats last week's numbers is a row of taps;
+ * the "previous" label stays visible so an edited value is still comparable.
+ */
+function buildSet(
+  index: number,
+  prev: { weight: number; reps: number } | undefined,
+  isWarmup: boolean
+): DraftSet {
+  return {
+    setNumber: index + 1,
+    weight: prev ? String(prev.weight) : "",
+    reps: prev ? String(prev.reps) : "",
+    completed: false,
+    isWarmup,
+    previous: prev
+      ? `${Number.isInteger(prev.weight) ? prev.weight : prev.weight.toFixed(1)} × ${prev.reps}`
+      : "—",
+  };
+}
+
 export function WorkoutLogger({
   dayId,
   dayName,
@@ -110,6 +138,7 @@ export function WorkoutLogger({
   const [elapsed, setElapsed] = useState(0);
   const [notes, setNotes] = useState<Record<string, string>>({});
   const [nameOverrides, setNameOverrides] = useState<Record<string, string>>({});
+  const [renameBusy, setRenameBusy] = useState(false);
   const [restByExercise, setRestByExercise] = useState<Record<string, number>>(() => {
     const init: Record<string, number> = {};
     for (const ex of sorted) {
@@ -160,19 +189,9 @@ export function WorkoutLogger({
     for (const ex of sorted) {
       const prev = previousByExercise[ex.name] ?? [];
       const warmEx = isWarmupExerciseName(ex.name);
-      init[ex.id] = Array.from({ length: ex.default_sets }, (_, i) => {
-        const p = prev[i] ?? prev[prev.length - 1];
-        return {
-          setNumber: i + 1,
-          weight: p ? String(p.weight) : "",
-          reps: "",
-          completed: false,
-          isWarmup: warmEx,
-          previous: p
-            ? `${Number.isInteger(p.weight) ? p.weight : p.weight.toFixed(1)} × ${p.reps}`
-            : "—",
-        };
-      });
+      init[ex.id] = Array.from({ length: ex.default_sets }, (_, i) =>
+        buildSet(i, prev[i] ?? prev[prev.length - 1], warmEx)
+      );
     }
     return init;
   });
@@ -515,16 +534,57 @@ export function WorkoutLogger({
     setEditNameDraft(displayName(ex));
   }
 
-  function applyCustomName() {
-    if (!editForId) return;
+  /**
+   * Point a movement's un-logged sets at a different exercise's history, so a
+   * rename or swap immediately shows that movement's last numbers instead of
+   * the ones belonging to the exercise it replaced. Sets already ticked off are
+   * left alone — that work happened.
+   */
+  function reseedFromHistory(exerciseId: string, name: string) {
+    const prev = previousByExercise[name] ?? [];
+    setSetsByExercise((cur) => {
+      const list = (cur[exerciseId] ?? []).map((s, i) => {
+        const p = prev[i] ?? prev[prev.length - 1];
+        const label = p
+          ? `${Number.isInteger(p.weight) ? p.weight : p.weight.toFixed(1)} × ${p.reps}`
+          : "—";
+        if (s.completed) return { ...s, previous: label };
+        return {
+          ...buildSet(i, p, Boolean(s.isWarmup)),
+          setNumber: s.setNumber,
+          previous: label,
+        };
+      });
+      return { ...cur, [exerciseId]: list };
+    });
+  }
+
+  async function applyCustomName() {
+    if (!editForId || renameBusy) return;
     const trimmed = editNameDraft.trim();
     if (!trimmed) return;
-    setNameOverrides((o) => ({ ...o, [editForId]: trimmed }));
+
+    const ex = sorted.find((e) => e.id === editForId);
+    const from = ex ? displayName(ex) : "";
+    const target = editForId;
+
+    setNameOverrides((o) => ({ ...o, [target]: trimmed }));
+    reseedFromHistory(target, trimmed);
+
+    // Persist so the plan and past logs travel together — otherwise next
+    // session looks this movement up under the old name and finds nothing.
+    setRenameBusy(true);
+    const res = await renameExerciseEverywhere(from, trimmed);
+    setRenameBusy(false);
+    if (!res.ok) {
+      setError(`Renamed for this session only — ${res.error}`);
+    }
     setEditForId(null);
   }
 
   function applySwap(exerciseId: string, newName: string) {
     setNameOverrides((o) => ({ ...o, [exerciseId]: newName }));
+    reseedFromHistory(exerciseId, newName);
     setEditNameDraft(newName);
     setSwapForId(null);
     setEditForId(null);
@@ -594,6 +654,66 @@ export function WorkoutLogger({
     setShowFinishConfirm(true);
   }
 
+  /** Build the set rows exactly as they are stored, independent of transport. */
+  function buildSetRows() {
+    const rows: PendingSessionRow[] = [];
+    for (const ex of sorted) {
+      for (const set of setsByExercise[ex.id] ?? []) {
+        if (!set.completed) continue;
+        rows.push({
+          exercise_name: displayName(ex),
+          muscle: ex.muscle,
+          set_number: set.setNumber,
+          weight: Number(set.weight) || 0,
+          reps: Number(set.reps) || 0,
+          is_completed: true,
+          is_warmup: Boolean(set.isWarmup),
+        });
+      }
+    }
+    return rows;
+  }
+
+  function buildSessionMeta() {
+    const duration = Math.max(1, Math.floor((Date.now() - startedAt) / 1000));
+    let sessionStart = new Date(startedAt);
+    let sessionEnd = new Date();
+    if (logDate) {
+      const [y, m, d] = logDate.split("-").map(Number);
+      sessionEnd = new Date(y, m - 1, d, 12, 0, 0);
+      sessionStart = new Date(sessionEnd.getTime() - duration * 1000);
+    }
+    return {
+      day_name: sessionDayName,
+      started_at: sessionStart.toISOString(),
+      ended_at: sessionEnd.toISOString(),
+      duration_seconds: duration,
+      notes: Object.entries(notes)
+        .filter(([, v]) => v.trim())
+        .map(([id, v]) => {
+          const ex = sorted.find((e) => e.id === id);
+          const name = ex ? displayName(ex) : id;
+          return `${name}: ${v}`;
+        })
+        .join("\n"),
+    };
+  }
+
+  /**
+   * Keep a finished workout on the device when it cannot be uploaded, and leave
+   * the session screen as if it had saved — the queue uploads it later. Rating
+   * needs a server session id, so a queued workout skips that step.
+   */
+  function finishOffline() {
+    queuePendingSession({ session: buildSessionMeta(), sets: buildSetRows() });
+    clearDraft(dayId, logDate);
+    clearActiveRest();
+    sessionStorage.removeItem("ft-tab:train");
+    sessionStorage.removeItem("ft-tab:dashboard");
+    setSaving(false);
+    router.push("/train");
+  }
+
   function finish() {
     setShowFinishConfirm(false);
     if (completedSetCount === 0) {
@@ -602,11 +722,24 @@ export function WorkoutLogger({
     }
     setSaving(true);
     setError("");
+
+    if (typeof navigator !== "undefined" && navigator.onLine === false) {
+      finishOffline();
+      return;
+    }
+
     startTransition(async () => {
       const supabase = supabaseRef.current;
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
+      let user;
+      try {
+        const res = await supabase.auth.getUser();
+        user = res.data.user;
+      } catch (err) {
+        if (isOfflineError(err)) return finishOffline();
+        setError("Could not verify your session");
+        setSaving(false);
+        return;
+      }
       if (!user) {
         setError("Not signed in");
         setSaving(false);
@@ -643,27 +776,13 @@ export function WorkoutLogger({
         .single();
 
       if (sessionErr || !session) {
+        if (isOfflineError(sessionErr)) return finishOffline();
         setError(sessionErr?.message ?? "Could not save session");
         setSaving(false);
         return;
       }
 
-      const rows = [];
-      for (const ex of sorted) {
-        for (const set of setsByExercise[ex.id] ?? []) {
-          if (!set.completed) continue;
-          rows.push({
-            session_id: session.id,
-            exercise_name: displayName(ex),
-            muscle: ex.muscle,
-            set_number: set.setNumber,
-            weight: Number(set.weight) || 0,
-            reps: Number(set.reps) || 0,
-            is_completed: true,
-            is_warmup: Boolean(set.isWarmup),
-          });
-        }
-      }
+      const rows = buildSetRows().map((r) => ({ ...r, session_id: session.id }));
 
       if (rows.length) {
         let { error: setsErr } = await supabase.from("set_logs").insert(rows);
@@ -677,6 +796,7 @@ export function WorkoutLogger({
         }
         if (setsErr) {
           await supabase.from("workout_sessions").delete().eq("id", session.id);
+          if (isOfflineError(setsErr)) return finishOffline();
           setError(setsErr.message);
           setSaving(false);
           return;
@@ -1420,8 +1540,17 @@ export function WorkoutLogger({
               onChange={(e) => setEditNameDraft(e.target.value)}
               placeholder="Custom exercise name"
             />
-            <button type="button" className="btn-green mt-2 w-full !py-2.5" onClick={applyCustomName}>
-              Save name
+            <p className="mt-1.5 text-[11px] text-[var(--muted)]">
+              Saved to your plan and past logs, so next session opens with these
+              numbers already filled in.
+            </p>
+            <button
+              type="button"
+              className="btn-green mt-2 w-full !py-2.5"
+              disabled={renameBusy}
+              onClick={() => void applyCustomName()}
+            >
+              {renameBusy ? "Saving…" : "Save name"}
             </button>
 
             {editEx.muscle !== "Cardio" ? (

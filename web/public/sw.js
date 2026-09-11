@@ -1,6 +1,22 @@
-/* FitTrack service worker — rest timer + push notifications */
+/* FitTrack service worker — rest timer + push notifications + offline shell */
 
 let restTimer = null;
+
+/**
+ * Offline support, deliberately narrow. A previous next-pwa/workbox setup was
+ * removed because it served stale JS to the iOS home-screen PWA, so nothing
+ * here may ever answer with a cached copy while the network is reachable:
+ *
+ *   - /_next/static/* is content-hashed, so a hit can never be stale → cache first.
+ *   - Navigations are network-first; the cache only answers once the network has
+ *     actually failed, which is the gym-basement case this exists for.
+ *   - API and Supabase traffic is never cached — a stale set or session is worse
+ *     than an honest error.
+ *
+ * The cache name must not contain "workbox", "next", "pages" or "start-url":
+ * UnregisterServiceWorkers deletes those on boot to clear the legacy caches.
+ */
+const SHELL_CACHE = "fittrack-shell-v1";
 
 self.addEventListener("install", () => {
   // clients.claim() is only valid during activate — calling it here made
@@ -9,7 +25,82 @@ self.addEventListener("install", () => {
 });
 
 self.addEventListener("activate", (event) => {
-  event.waitUntil(self.clients.claim());
+  event.waitUntil(
+    (async () => {
+      const keys = await caches.keys();
+      await Promise.all(
+        keys
+          .filter((k) => k.startsWith("fittrack-shell-") && k !== SHELL_CACHE)
+          .map((k) => caches.delete(k))
+      );
+      await self.clients.claim();
+    })()
+  );
+});
+
+function isImmutableAsset(url) {
+  return url.pathname.startsWith("/_next/static/") || url.pathname.startsWith("/icons/");
+}
+
+function isCacheableNavigation(request, url) {
+  if (request.mode !== "navigate") return false;
+  if (url.pathname.startsWith("/api/")) return false;
+  if (url.pathname.startsWith("/auth/")) return false;
+  return true;
+}
+
+self.addEventListener("fetch", (event) => {
+  const { request } = event;
+  if (request.method !== "GET") return;
+
+  let url;
+  try {
+    url = new URL(request.url);
+  } catch {
+    return;
+  }
+
+  // Supabase, analytics, anything off-origin: leave it entirely alone.
+  if (url.origin !== self.location.origin) return;
+  if (url.pathname.startsWith("/api/")) return;
+  if (url.pathname === "/version.json") return;
+
+  if (isImmutableAsset(url)) {
+    event.respondWith(
+      (async () => {
+        const cached = await caches.match(request);
+        if (cached) return cached;
+        const response = await fetch(request);
+        if (response.ok) {
+          const cache = await caches.open(SHELL_CACHE);
+          void cache.put(request, response.clone());
+        }
+        return response;
+      })()
+    );
+    return;
+  }
+
+  if (isCacheableNavigation(request, url)) {
+    event.respondWith(
+      (async () => {
+        try {
+          const response = await fetch(request);
+          if (response.ok) {
+            const cache = await caches.open(SHELL_CACHE);
+            void cache.put(request, response.clone());
+          }
+          return response;
+        } catch (err) {
+          const cached = await caches.match(request, { ignoreSearch: true });
+          if (cached) return cached;
+          const train = await caches.match("/train", { ignoreSearch: true });
+          if (train) return train;
+          throw err;
+        }
+      })()
+    );
+  }
 });
 
 function notifyRestDone(label, url, endsAt) {
