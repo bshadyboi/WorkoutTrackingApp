@@ -26,6 +26,12 @@ import {
   IconEye,
   IconPlay,
 } from "@/components/icons";
+import {
+  buildLiftSeries,
+  formatLiftWeight,
+  type LiftPoint,
+  type LiftSeries,
+} from "@/lib/liftProgress";
 
 type Day = {
   id: string;
@@ -804,24 +810,35 @@ function CalendarTab({
               key={key}
               type="button"
               onClick={() => setPickDate(c)}
-              className={`flex aspect-square flex-col items-center justify-center rounded-xl border text-[10px] ${
+              className={`flex aspect-square flex-col items-center justify-center gap-1 rounded-xl border ${
                 done
-                  ? "border-[var(--green)] text-[var(--green)]"
+                  ? "border-[var(--green)]/45 bg-[var(--green)]/10"
                   : isToday
-                    ? "border-[var(--blue)] text-white"
+                    ? "border-[var(--blue)] bg-[var(--blue)]/10"
                     : label
-                      ? "border-[var(--border-solid)] text-[var(--muted)]"
-                      : "border-transparent text-white"
+                      ? "border-[var(--border-solid)]"
+                      : "border-transparent"
               }`}
             >
-              <span className="font-bold text-white">{c.getDate()}</span>
+              <span
+                className={`text-[13px] font-bold tabular-nums ${
+                  isToday ? "text-[var(--blue)]" : "text-white"
+                }`}
+              >
+                {c.getDate()}
+              </span>
               {done ? (
-                <span className="truncate px-0.5 text-[8px]">
-                  {doneLabel === "Upper A" ? "✓UA" : doneLabel === "Upper B" ? "✓UB" : doneLabel === "Upper C" ? "✓UC" : "✓"}
-                </span>
+                <span
+                  className="h-[5px] w-[5px] rounded-full bg-[var(--green)]"
+                  title={doneLabel || "Completed"}
+                />
               ) : short ? (
-                <span className="truncate px-0.5">{short}</span>
-              ) : null}
+                <span className="truncate px-0.5 text-[9.5px] font-semibold text-[var(--muted)]">
+                  {short}
+                </span>
+              ) : (
+                <span className="h-[5px]" />
+              )}
             </button>
           );
         })}
@@ -971,40 +988,224 @@ function CalendarTab({
   );
 }
 
-function ProgressionTab({ history }: { history: Hist[] }) {
-  const byDay = useMemo(() => {
-    const weekAgo = Date.now() - 7 * 86400000;
-    const m = new Map<string, number>();
-    for (const h of history) {
-      if (new Date(h.startedAt).getTime() < weekAgo) continue;
-      m.set(h.dayName, (m.get(h.dayName) ?? 0) + h.volume);
-    }
-    return [...m.entries()].sort((a, b) => b[1] - a[1]);
-  }, [history]);
+/** Top-set weight over time, drawn as a flat baseline when the lift hasn't moved. */
+function Sparkline({ points }: { points: LiftPoint[] }) {
+  const w = 96;
+  const h = 28;
+  const weights = points.map((p) => p.weight);
+  const min = Math.min(...weights);
+  const max = Math.max(...weights);
+  const span = max - min || 1;
+  const step = points.length > 1 ? w / (points.length - 1) : 0;
 
-  const max = byDay[0]?.[1] || 1;
+  const coords = points.map((p, i) => {
+    const x = points.length > 1 ? i * step : w / 2;
+    const y = h - 3 - ((p.weight - min) / span) * (h - 6);
+    return `${x.toFixed(1)},${y.toFixed(1)}`;
+  });
+
+  const rising = weights[weights.length - 1] > weights[0];
+  const stroke = rising ? "var(--green)" : max === min ? "#5a6578" : "var(--blue)";
 
   return (
-    <div className="card space-y-3">
-      <div className="flex items-center justify-between">
-        <p className="font-semibold">This week&apos;s volume</p>
-        <span className="btn-pill bg-[#252b38] text-[var(--yellow)]">🏆 tonnage</span>
-      </div>
-      {byDay.length === 0 ? (
-        <p className="text-sm text-[var(--muted)]">Log workouts to see volume.</p>
-      ) : (
-        byDay.map(([name, vol]) => (
-          <div key={name} className="space-y-1">
-            <div className="flex justify-between text-sm">
-              <span className="font-semibold">{name}</span>
-              <span className="text-[var(--blue)]">{Math.round(vol).toLocaleString()} lb</span>
-            </div>
-            <div className="progress-track">
-              <div className="progress-fill" style={{ width: `${(vol / max) * 100}%` }} />
-            </div>
+    <svg width={w} height={h} viewBox={`0 0 ${w} ${h}`} aria-hidden className="shrink-0">
+      <polyline
+        points={coords.join(" ")}
+        fill="none"
+        stroke={stroke}
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      <circle
+        cx={coords[coords.length - 1]?.split(",")[0]}
+        cy={coords[coords.length - 1]?.split(",")[1]}
+        r="2.5"
+        fill={stroke}
+      />
+    </svg>
+  );
+}
+
+function TrendStat({
+  label,
+  value,
+  prev,
+  format,
+}: {
+  label: string;
+  value: number;
+  prev: number;
+  format?: (n: number) => string;
+}) {
+  const delta = value - prev;
+  const show = format ?? ((n: number) => String(Math.round(n)));
+  return (
+    <div className="rounded-xl border border-white/5 bg-[var(--surface)] px-3 py-2.5">
+      <p className="text-[17px] font-extrabold tabular-nums">{show(value)}</p>
+      <p className="text-[10.5px] font-semibold text-[var(--muted)]">{label}</p>
+      {prev > 0 || value > 0 ? (
+        <p
+          className={`mt-1 text-[10.5px] font-bold tabular-nums ${
+            delta > 0
+              ? "text-[var(--green)]"
+              : delta < 0
+                ? "text-[var(--muted)]"
+                : "text-[var(--muted)]"
+          }`}
+        >
+          {delta === 0 ? "same as last wk" : `${delta > 0 ? "+" : ""}${show(delta)} vs last wk`}
+        </p>
+      ) : null}
+    </div>
+  );
+}
+
+function ProgressionTab({ history }: { history: Hist[] }) {
+  const [series, setSeries] = useState<LiftSeries[] | null>(null);
+  const [loadError, setLoadError] = useState("");
+
+  // Set-level rows are only needed on this tab, so they load on demand rather
+  // than weighing down every Train tab visit.
+  useEffect(() => {
+    let cancelled = false;
+    void (async () => {
+      const supabase = createClient();
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+      const user = session?.user;
+      if (!user || cancelled) return;
+
+      const { data, error } = await supabase
+        .from("workout_sessions")
+        .select("started_at, set_logs(exercise_name, weight, reps, is_completed, is_warmup)")
+        .eq("user_id", user.id)
+        .not("ended_at", "is", null)
+        .order("started_at", { ascending: false })
+        .limit(60);
+
+      if (cancelled) return;
+      if (error) {
+        setLoadError(error.message);
+        setSeries([]);
+        return;
+      }
+      setSeries(buildLiftSeries(data ?? [], 10));
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const weeks = useMemo(() => {
+    const now = new Date();
+    const startOfWeek = new Date(
+      now.getFullYear(),
+      now.getMonth(),
+      now.getDate() - now.getDay()
+    );
+    const startOfLast = new Date(startOfWeek);
+    startOfLast.setDate(startOfLast.getDate() - 7);
+
+    const bucket = (from: Date, to: Date) => {
+      const rows = history.filter((h) => {
+        const t = new Date(h.startedAt);
+        return t >= from && t < to && !/rest/i.test(h.dayName.trim());
+      });
+      return {
+        sessions: rows.length,
+        volume: rows.reduce((n, h) => n + h.volume, 0),
+        sets: rows.reduce((n, h) => n + h.setCount, 0),
+      };
+    };
+
+    return {
+      this: bucket(startOfWeek, new Date(now.getTime() + 86400000)),
+      last: bucket(startOfLast, startOfWeek),
+    };
+  }, [history]);
+
+  const kLb = (n: number) =>
+    Math.abs(n) >= 1000 ? `${(n / 1000).toFixed(1)}k` : String(Math.round(n));
+
+  return (
+    <div className="space-y-5">
+      <section className="space-y-2.5">
+        <h2 className="text-[17px] font-bold">This week</h2>
+        <div className="grid grid-cols-3 gap-2">
+          <TrendStat
+            label="Sessions"
+            value={weeks.this.sessions}
+            prev={weeks.last.sessions}
+          />
+          <TrendStat
+            label="Volume lb"
+            value={weeks.this.volume}
+            prev={weeks.last.volume}
+            format={kLb}
+          />
+          <TrendStat label="Sets" value={weeks.this.sets} prev={weeks.last.sets} />
+        </div>
+      </section>
+
+      <section className="space-y-2.5">
+        <div className="flex items-baseline justify-between gap-2">
+          <h2 className="text-[17px] font-bold">Lift progression</h2>
+          <p className="text-[11.5px] font-semibold text-[var(--muted)]">
+            Heaviest set each session
+          </p>
+        </div>
+
+        {series === null ? (
+          <div className="space-y-2">
+            <div className="h-[62px] animate-pulse rounded-[18px] bg-[#1c212b]" />
+            <div className="h-[62px] animate-pulse rounded-[18px] bg-[#1c212b]" />
+            <div className="h-[62px] animate-pulse rounded-[18px] bg-[#1c212b]" />
           </div>
-        ))
-      )}
+        ) : loadError ? (
+          <p className="text-[13px] text-[var(--yellow)]">{loadError}</p>
+        ) : series.length === 0 ? (
+          <div className="rounded-[18px] border border-[var(--border)] bg-[var(--card)] p-4">
+            <p className="text-[13.5px] text-[var(--muted)]">
+              Log a lift on two separate days and its trend shows up here.
+            </p>
+          </div>
+        ) : (
+          <div className="overflow-hidden rounded-[18px] border border-[var(--border)] bg-[var(--card)]">
+            {series.map((s, i) => (
+              <div
+                key={s.name}
+                className={`flex items-center gap-3 px-4 py-3 ${
+                  i > 0 ? "border-t border-white/5" : ""
+                }`}
+              >
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-[14.5px] font-bold">{s.name}</p>
+                  <p className="mt-0.5 text-[12.5px] tabular-nums text-[var(--muted)]">
+                    {formatLiftWeight(s.latest.weight)} lb × {s.latest.reps}
+                    {" · "}
+                    {s.points.length} sessions
+                  </p>
+                </div>
+                <Sparkline points={s.points} />
+                <p
+                  className={`w-[52px] shrink-0 text-right text-[12.5px] font-bold tabular-nums ${
+                    s.deltaLb > 0
+                      ? "text-[var(--green)]"
+                      : s.deltaLb < 0
+                        ? "text-[var(--red)]"
+                        : "text-[var(--muted)]"
+                  }`}
+                >
+                  {s.deltaLb > 0 ? "+" : ""}
+                  {formatLiftWeight(s.deltaLb)}
+                </p>
+              </div>
+            ))}
+          </div>
+        )}
+      </section>
     </div>
   );
 }

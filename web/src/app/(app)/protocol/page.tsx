@@ -200,7 +200,7 @@ export default function ProtocolPage() {
 
           <div className="card !p-0 overflow-hidden">
             <div className="flex items-center justify-between border-b border-[var(--border)] px-4 py-3">
-              <p className="font-semibold">🧬 Due today</p>
+              <p className="font-semibold">Due today</p>
               <span className="btn-pill border border-[var(--yellow)] text-[var(--yellow)]">
                 {takenCount}/{due.length}
               </span>

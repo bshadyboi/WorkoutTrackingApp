@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState, useTransition } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { DEFAULT_TARGETS, type MacroTargets } from "@/lib/targets";
+import { IconDroplet, IconFootprint } from "@/components/icons";
 
 export function WaterStepsCards({
   date,
@@ -79,7 +80,10 @@ export function WaterStepsCards({
     <div className="grid grid-cols-2 gap-3">
       <div className="card flex min-w-0 flex-col gap-2 overflow-hidden !p-3">
         <div className="flex items-center justify-between gap-1">
-          <p className="shrink-0 text-sm font-semibold">💧 Water</p>
+          <p className="flex shrink-0 items-center gap-1.5 text-sm font-semibold">
+            <IconDroplet size={15} className="text-[var(--blue)]" />
+            Water
+          </p>
           <div className="flex shrink-0 gap-0.5 rounded-full bg-[var(--surface)] p-0.5 text-[10px] font-bold">
             {(["oz", "ml", "L"] as const).map((u) => (
               <button
@@ -128,7 +132,10 @@ export function WaterStepsCards({
 
       <div className="card flex min-w-0 flex-col justify-between gap-2 overflow-hidden !p-3">
         <div className="flex items-center justify-between gap-1">
-          <p className="text-sm font-semibold">👟 Steps</p>
+          <p className="flex items-center gap-1.5 text-sm font-semibold">
+            <IconFootprint size={15} className="text-[var(--blue)]" />
+            Steps
+          </p>
           <button
             type="button"
             className="shrink-0 rounded-lg border border-[var(--border-solid)] px-2 py-1 text-[11px] font-bold text-[var(--blue)]"

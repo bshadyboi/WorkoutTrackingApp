@@ -65,6 +65,24 @@ export function IconGear({ size = 22, strokeWidth = 2, className }: IconProps) {
   );
 }
 
+export function IconDroplet({ size = 16, strokeWidth = 2, className }: IconProps) {
+  return (
+    <svg {...base(size)} strokeWidth={strokeWidth} className={className}>
+      <path d="M12 3.5c3 3.6 5.5 6.5 5.5 9.4A5.5 5.5 0 0 1 12 18.4a5.5 5.5 0 0 1-5.5-5.5c0-2.9 2.5-5.8 5.5-9.4z" />
+    </svg>
+  );
+}
+
+export function IconFootprint({ size = 16, strokeWidth = 2, className }: IconProps) {
+  return (
+    <svg {...base(size)} strokeWidth={strokeWidth} className={className}>
+      <path d="M7 13.5c-1.6 0-2.5-1.4-2.5-3.6C4.5 6.4 5.8 3.5 8 3.5c1.6 0 2.3 1.5 2.3 3.6 0 2.6-1.3 6.4-3.3 6.4z" />
+      <path d="M6 16.5h3.2c.6 0 1 .5 1 1.1l-.2 1.8c0 .6-.5 1.1-1.1 1.1H7c-.6 0-1.1-.5-1.1-1.1z" />
+      <path d="M17.5 11c1.3 0 2 1.1 2 2.9 0 2.8-1.1 5.1-2.8 5.1-1.3 0-1.9-1.2-1.9-2.9 0-2.1 1-5.1 2.7-5.1z" />
+    </svg>
+  );
+}
+
 export function IconCalendar({ size = 20, strokeWidth = 2, className }: IconProps) {
   return (
     <svg {...base(size)} strokeWidth={strokeWidth} className={className}>

@@ -25,6 +25,12 @@ import {
 } from "@/lib/schedule";
 import { resolveWeekdayTodayAndTomorrow } from "@/lib/weekdaySchedule";
 import { syncWorkoutLibraryOnce } from "@/lib/workoutsClient";
+import {
+  IconClipboard,
+  IconDumbbell,
+  IconGear,
+  IconUtensils,
+} from "@/components/icons";
 
 type DashCache = {
   name: string;
@@ -331,7 +337,7 @@ export default function DashboardPage() {
       <div className="grid grid-cols-2 gap-3">
         <FeatureTile
           href="/train"
-          emoji="🏋️"
+          Icon={IconDumbbell}
           title="Training"
           subtitle={
             data.todayName
@@ -343,12 +349,12 @@ export default function DashboardPage() {
         />
         <FeatureTile
           href="/nutrition"
-          emoji="🥩"
+          Icon={IconUtensils}
           title="Nutrition"
           subtitle={targetsLabel(data.targets ?? DEFAULT_TARGETS)}
         />
-        <FeatureTile href="/protocol" emoji="🧬" title="Protocol" subtitle="Today’s stack" />
-        <FeatureTile href="/settings" emoji="⚙" title="Settings" subtitle="Targets & alerts" />
+        <FeatureTile href="/protocol" Icon={IconClipboard} title="Protocol" subtitle="Today’s stack" />
+        <FeatureTile href="/settings" Icon={IconGear} title="Settings" subtitle="Targets & alerts" />
       </div>
 
     </div>
@@ -357,18 +363,20 @@ export default function DashboardPage() {
 
 function FeatureTile({
   href,
-  emoji,
+  Icon,
   title,
   subtitle,
 }: {
   href: string;
-  emoji: string;
+  Icon: (props: { size?: number }) => React.ReactElement;
   title: string;
   subtitle: string;
 }) {
   return (
-    <Link href={href} prefetch className="card flex flex-col gap-2 !p-3.5">
-      <span className="text-2xl">{emoji}</span>
+    <Link href={href} prefetch className="card flex flex-col gap-2.5 !p-3.5">
+      <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#1c212b] text-[var(--blue)]">
+        <Icon size={19} />
+      </span>
       <div>
         <p className="font-bold">{title}</p>
         <p className="text-xs text-[var(--muted)]">{subtitle}</p>
