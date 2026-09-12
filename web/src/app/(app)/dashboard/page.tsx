@@ -1,22 +1,18 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { dateKey } from "@/lib/protocol";
 import { DailyWeightCard, type WeightPoint } from "@/components/WeeklyWeightCard";
 import { FastedBloodPressureCard, type BpReadings } from "@/components/FastedBloodPressureCard";
-import type { CheckinValues } from "@/components/MorningCheckinCard";
-import { BpWeightTrendCard } from "@/components/BpWeightTrendCard";
+import { MorningCheckinCard, type CheckinValues } from "@/components/MorningCheckinCard";
 import { WaterStepsCards } from "@/components/WaterStepsCards";
 import { RecompCheckinCard } from "@/components/RecompCheckinCard";
-import { KeyLiftsCard } from "@/components/KeyLiftsCard";
-import { LiftProgressCard } from "@/components/LiftProgressCard";
 import { readTabCache, writeTabCache } from "@/lib/tabCache";
 import {
   DEFAULT_TARGETS,
   normalizeTargets,
-  targetsLabel,
   type MacroTargets,
 } from "@/lib/targets";
 import {
@@ -25,12 +21,8 @@ import {
 } from "@/lib/schedule";
 import { resolveWeekdayTodayAndTomorrow } from "@/lib/weekdaySchedule";
 import { syncWorkoutLibraryOnce } from "@/lib/workoutsClient";
-import {
-  IconClipboard,
-  IconDumbbell,
-  IconGear,
-  IconUtensils,
-} from "@/components/icons";
+import { IconChevronRight } from "@/components/icons";
+import { DERRICK_CHECKPOINT_WEEK, derrickRecompWeek } from "@/lib/derrickRecomp";
 
 type DashCache = {
   name: string;
@@ -47,6 +39,8 @@ type DashCache = {
   checkin: CheckinValues;
   sessionCount: number;
   protein: number;
+  /** Optional so a cached dashboard from before this field existed still renders. */
+  intake?: { calories: number; carbs: number; fats: number };
   targets: MacroTargets;
 };
 
@@ -89,7 +83,7 @@ export default function DashboardPage() {
           supabase
             .from("daily_logs")
             .select(
-              "water_oz, steps_count, actual_protein, morning_weight, bp1_systolic, bp1_diastolic, bp2_systolic, bp2_diastolic, bp_logged_at, checkin_sleep, checkin_energy, checkin_pump"
+              "water_oz, steps_count, actual_calories, actual_protein, actual_carbs_pre, actual_carbs_post, actual_fats, morning_weight, bp1_systolic, bp1_diastolic, bp2_systolic, bp2_diastolic, bp_logged_at, checkin_sleep, checkin_energy, checkin_pump"
             )
             .eq("user_id", user.id)
             .eq("date", todayStr)
@@ -118,7 +112,11 @@ export default function DashboardPage() {
       let todayLog = todayLogRes.data as {
         water_oz?: number;
         steps_count?: number;
+        actual_calories?: number;
         actual_protein?: number;
+        actual_carbs_pre?: number;
+        actual_carbs_post?: number;
+        actual_fats?: number;
         morning_weight?: number;
         bp1_systolic?: number;
         bp1_diastolic?: number;
@@ -136,7 +134,7 @@ export default function DashboardPage() {
         if (msg.includes("bp") || msg.includes("checkin")) {
           const fallback = await supabase
             .from("daily_logs")
-            .select("water_oz, steps_count, actual_protein, morning_weight")
+            .select("water_oz, steps_count, actual_calories, actual_protein, actual_carbs_pre, actual_carbs_post, actual_fats, morning_weight")
             .eq("user_id", user.id)
             .eq("date", todayStr)
             .maybeSingle();
@@ -234,6 +232,11 @@ export default function DashboardPage() {
         checkin,
         sessionCount,
         protein: Number(todayLog?.actual_protein) || 0,
+        intake: {
+          calories: Number(todayLog?.actual_calories) || 0,
+          carbs: (Number(todayLog?.actual_carbs_pre) || 0) + (Number(todayLog?.actual_carbs_post) || 0),
+          fats: Number(todayLog?.actual_fats) || 0,
+        },
         targets,
       };
       writeTabCache("dashboard", next);
@@ -255,8 +258,39 @@ export default function DashboardPage() {
     );
   }
 
+  const targets = data.targets ?? DEFAULT_TARGETS;
+  const intake = data.intake ?? { calories: 0, carbs: 0, fats: 0 };
+  const calsLeft = Math.round(targets.target_calories - intake.calories);
+  const history = data.weightHistory ?? [];
+  // Compare against the latest weigh-in at least 7 days old, not "8 entries
+  // back" — logging isn't daily, so an entry count isn't a week.
+  const weekAgoKey = (() => {
+    const [y, m, d] = data.todayStr.split("-").map(Number);
+    const dt = new Date(y, m - 1, d - 7, 12);
+    return `${dt.getFullYear()}-${String(dt.getMonth() + 1).padStart(2, "0")}-${String(dt.getDate()).padStart(2, "0")}`;
+  })();
+  const weekAgoWeight = [...history].reverse().find((p) => p.date <= weekAgoKey)?.weight ?? 0;
+  const weightDelta = data.todayWeight && weekAgoWeight ? data.todayWeight - weekAgoWeight : null;
+  const bpLogged = Boolean(data.bp?.bp1_systolic);
+  const checkinDone = Boolean(data.checkin?.checkin_sleep || data.checkin?.checkin_energy || data.checkin?.checkin_pump);
+  // The weekly calorie check-in has nothing to decide before its checkpoint week.
+  const showCheckin = derrickRecompWeek(data.todayStr) >= DERRICK_CHECKPOINT_WEEK;
+
+  const next = data.libraryDay
+    ? { when: "Today", id: data.libraryDay.id, name: data.libraryDay.name, detail: null as string | null }
+    : data.tomorrowDay
+      ? {
+          when: "Tomorrow",
+          id: data.tomorrowDay.id,
+          name: data.tomorrowDay.name,
+          detail: `${data.tomorrowDay.exerciseCount} exercise${data.tomorrowDay.exerciseCount === 1 ? "" : "s"}`,
+        }
+      : null;
+  const nextHead = next?.name.split("·")[0]?.trim() ?? "";
+  const nextTail = next?.name.split("·").slice(1).join("·").trim() ?? "";
+
   return (
-    <div className="space-y-4">
+    <div className="space-y-5">
       <div className="flex items-baseline justify-between gap-2">
         <h1 className="text-[28px] font-bold tracking-tight">Let’s work, {data.name}.</h1>
         {refreshing ? (
@@ -264,123 +298,144 @@ export default function DashboardPage() {
         ) : null}
       </div>
 
-      <RecompCheckinCard />
+      {showCheckin ? <RecompCheckinCard /> : null}
 
-      <KeyLiftsCard />
-
-      {data.tomorrowDay || data.tomorrowName ? (
+      {next ? (
         <Link
-          href={
-            data.tomorrowDay
-              ? `/train/${data.tomorrowDay.id}`
-              : "/train"
-          }
+          href={`/train/${next.id}`}
           prefetch={false}
-          className="card reg flex items-center justify-between gap-3 !py-3.5 active:bg-white/5"
+          className="card reg flex items-center justify-between gap-3 !p-4 active:bg-white/5"
         >
           <div className="min-w-0">
-            <p className="text-[11px] font-bold uppercase tracking-wide text-[var(--blue)]">
-              Tomorrow
-            </p>
-            <p className="text-lg font-bold tracking-tight">
-              {data.tomorrowDay?.name ?? data.tomorrowName}
-            </p>
-            <p className="text-xs text-[var(--muted)]">
-              {data.tomorrowDay
-                ? `${data.tomorrowDay.exerciseCount} lift${
-                    data.tomorrowDay.exerciseCount === 1 ? "" : "s"
-                  } · tap to preview`
-                : "On the schedule · coming soon"}
+            <p className="text-[11px] font-bold uppercase tracking-[0.12em] text-[var(--blue)]">{next.when}</p>
+            <p className="mt-0.5 text-[24px] font-bold leading-tight tracking-tight">{nextHead}</p>
+            <p className="truncate text-[13px] text-[var(--muted)]">
+              {[nextTail, next.detail].filter(Boolean).join(" · ") || "Tap to preview"}
             </p>
           </div>
-          <span className="shrink-0 text-sm font-bold text-[var(--blue)]">→</span>
+          <span className="shrink-0 text-[var(--dim)]">
+            <IconChevronRight size={20} />
+          </span>
         </Link>
       ) : (
-        <div className="card !py-3.5">
-          <p className="text-[11px] font-bold uppercase tracking-wide text-[var(--muted)]">
-            Tomorrow
-          </p>
-          <p className="text-lg font-bold">Rest day</p>
-          <p className="text-xs text-[var(--muted)]">Recover and hit nutrition.</p>
+        <div className="card !p-4">
+          <p className="text-[11px] font-bold uppercase tracking-[0.12em] text-[var(--muted)]">Tomorrow</p>
+          <p className="text-[20px] font-bold">Rest day</p>
         </div>
       )}
 
-      <DailyWeightCard
-        key={`${data.todayStr}-${data.todayWeight}-${data.weightHistory?.length ?? 0}`}
-        date={data.todayStr}
-        initial={data.todayWeight}
-        history={data.weightHistory ?? []}
-        targets={data.targets ?? DEFAULT_TARGETS}
-      />
+      <Link href="/nutrition" prefetch={false} className="card block space-y-2.5 !p-4 active:bg-white/5">
+        <div className="flex items-baseline justify-between gap-2">
+          <span className="text-[11px] font-bold uppercase tracking-[0.12em] text-[var(--muted)]">
+            {calsLeft >= 0 ? "Calories left" : "Over target"}
+          </span>
+          <span className="text-[22px] font-bold leading-none tabular-nums">{Math.abs(calsLeft).toLocaleString()}</span>
+        </div>
+        <div className="progress-track">
+          <div
+            className="progress-fill"
+            style={{ width: `${Math.min(100, targets.target_calories ? (intake.calories / targets.target_calories) * 100 : 0)}%` }}
+          />
+        </div>
+        <p className="text-[11.5px] text-[var(--muted)] tabular-nums">
+          {Math.round(data.protein)}/{targets.target_protein}p · {Math.round(intake.carbs)}/{targets.target_carbs}c ·{" "}
+          {Math.round(intake.fats)}/{targets.target_fats}f
+        </p>
+      </Link>
 
-      <FastedBloodPressureCard
-        key={`bp-${data.todayStr}-${data.bp?.bp1_systolic ?? 0}-${data.bp?.bp2_systolic ?? 0}`}
-        date={data.todayStr}
-        initial={data.bp}
-        targets={data.targets ?? DEFAULT_TARGETS}
-      />
-
-      <BpWeightTrendCard />
-
-      <LiftProgressCard />
-
-      <WaterStepsCards
-        key={`${data.todayStr}-${data.waterOz}-${data.steps}`}
-        date={data.todayStr}
-        waterOz={data.waterOz}
-        steps={data.steps}
-        waterGoal={128}
-        targets={data.targets ?? DEFAULT_TARGETS}
-      />
-
-      <div className="grid grid-cols-2 gap-3">
-        <FeatureTile
-          href="/train"
-          Icon={IconDumbbell}
-          title="Training"
-          subtitle={
-            data.todayName
-              ? data.libraryDay
-                ? data.todayName
-                : `${data.todayName} · coming soon`
-              : "Rest day"
-          }
-        />
-        <FeatureTile
-          href="/nutrition"
-          Icon={IconUtensils}
-          title="Nutrition"
-          subtitle={targetsLabel(data.targets ?? DEFAULT_TARGETS)}
-        />
-        <FeatureTile href="/protocol" Icon={IconClipboard} title="Protocol" subtitle="Today’s stack" />
-        <FeatureTile href="/settings" Icon={IconGear} title="Settings" subtitle="Targets & alerts" />
-      </div>
-
+      <section className="space-y-2.5">
+        <h2 className="text-[11px] font-bold uppercase tracking-[0.12em] text-[var(--muted)]">Morning log</h2>
+        <div className="card !p-0">
+          <LogRow
+            label="Weight"
+            value={data.todayWeight ? data.todayWeight.toFixed(1) : null}
+            note={
+              weightDelta != null
+                ? `${weightDelta > 0 ? "+" : ""}${weightDelta.toFixed(1)} vs last week`
+                : undefined
+            }
+          >
+            <DailyWeightCard
+              key={`${data.todayStr}-${data.todayWeight}-${history.length}`}
+              date={data.todayStr}
+              initial={data.todayWeight}
+              history={history}
+              targets={targets}
+            />
+          </LogRow>
+          <LogRow
+            label="Fasted BP"
+            value={bpLogged ? `${data.bp.bp1_systolic}/${data.bp.bp1_diastolic}` : null}
+          >
+            <FastedBloodPressureCard
+              key={`bp-${data.todayStr}-${data.bp?.bp1_systolic ?? 0}-${data.bp?.bp2_systolic ?? 0}`}
+              date={data.todayStr}
+              initial={data.bp}
+              targets={targets}
+            />
+          </LogRow>
+          <LogRow
+            label="Water · Steps"
+            value={data.waterOz || data.steps ? `${data.waterOz} oz · ${data.steps.toLocaleString()}` : null}
+          >
+            <WaterStepsCards
+              key={`${data.todayStr}-${data.waterOz}-${data.steps}`}
+              date={data.todayStr}
+              waterOz={data.waterOz}
+              steps={data.steps}
+              waterGoal={128}
+              targets={targets}
+            />
+          </LogRow>
+          <LogRow label="Check-in" value={checkinDone ? "Done" : null}>
+            <MorningCheckinCard
+              key={`checkin-${data.todayStr}-${data.checkin?.checkin_sleep}-${data.checkin?.checkin_energy}-${data.checkin?.checkin_pump}`}
+              date={data.todayStr}
+              initial={data.checkin}
+              targets={targets}
+            />
+          </LogRow>
+        </div>
+      </section>
     </div>
   );
 }
 
-function FeatureTile({
-  href,
-  Icon,
-  title,
-  subtitle,
+/**
+ * One line of the morning log: today's value at a glance, and the full logging
+ * card only when tapped. Keeps Home to a single screen without losing any input.
+ */
+function LogRow({
+  label,
+  value,
+  note,
+  children,
 }: {
-  href: string;
-  Icon: (props: { size?: number }) => React.ReactElement;
-  title: string;
-  subtitle: string;
+  label: string;
+  value: string | null;
+  note?: string;
+  children: ReactNode;
 }) {
+  const [open, setOpen] = useState(false);
   return (
-    <Link href={href} prefetch className="card flex flex-col gap-2.5 !p-3.5">
-      <span className="flex h-9 w-9 items-center justify-center rounded-md bg-[var(--card-2)] text-[var(--blue)]">
-        <Icon size={19} />
-      </span>
-      <div>
-        <p className="font-bold">{title}</p>
-        <p className="text-xs text-[var(--muted)]">{subtitle}</p>
-      </div>
-    </Link>
+    <div className="border-b border-[var(--border)] last:border-0">
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        aria-expanded={open}
+        className="flex min-h-[52px] w-full items-center gap-3 px-4 py-3 text-left active:bg-white/5"
+      >
+        <span className={`flex-1 text-[15px] font-semibold ${value ? "" : "text-[var(--muted)]"}`}>{label}</span>
+        {note ? <span className="text-[11.5px] text-[var(--muted)] tabular-nums">{note}</span> : null}
+        {value ? (
+          <span className="text-[16px] font-bold tabular-nums">{value}</span>
+        ) : (
+          <span className="rounded-[4px] border border-[var(--accent)] px-2 py-0.5 text-[11px] font-bold uppercase tracking-[0.1em] text-[var(--accent)]">
+            {open ? "Close" : "Log"}
+          </span>
+        )}
+      </button>
+      {open ? <div className="px-3 pb-3">{children}</div> : null}
+    </div>
   );
 }
-
