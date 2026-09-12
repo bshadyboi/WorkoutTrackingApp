@@ -217,3 +217,24 @@ export function IconEye({ size = 20, strokeWidth = 2, className }: IconProps) {
     </svg>
   );
 }
+
+export function IconStar({
+  size = 16,
+  strokeWidth = 2,
+  className,
+  filled = false,
+}: IconProps & { filled?: boolean }) {
+  return (
+    <svg {...base(size)} strokeWidth={strokeWidth} className={className} fill={filled ? "currentColor" : "none"}>
+      <path d="M12 3.8l2.5 5.1 5.6.8-4 3.9 1 5.6-5.1-2.7-5.1 2.7 1-5.6-4-3.9 5.6-.8z" />
+    </svg>
+  );
+}
+
+export function IconPlus({ size = 16, strokeWidth = 2.4, className }: IconProps) {
+  return (
+    <svg {...base(size)} strokeWidth={strokeWidth} className={className}>
+      <path d="M12 5v14M5 12h14" />
+    </svg>
+  );
+}

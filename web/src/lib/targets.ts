@@ -5,13 +5,22 @@ export type MacroTargets = {
   target_fats: number;
 };
 
-/** Derrick Recomp baseline macros */
+/** Used only when the profile has no targets of its own. */
 export const DEFAULT_TARGETS: MacroTargets = {
-  target_calories: 2500,
-  target_protein: 185,
-  target_carbs: 280,
-  target_fats: 70,
+  target_calories: 2100,
+  target_protein: 190,
+  target_carbs: 222,
+  target_fats: 47,
 };
+
+export function hasOwnTargets(row: Partial<MacroTargets> | null | undefined): boolean {
+  return Boolean(
+    Number(row?.target_calories) ||
+      Number(row?.target_protein) ||
+      Number(row?.target_carbs) ||
+      Number(row?.target_fats)
+  );
+}
 
 export const DEFAULT_STEPS_GOAL = 11000;
 export const DEFAULT_STEPS_RANGE = "10,000–12,000";

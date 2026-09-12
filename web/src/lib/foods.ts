@@ -7,10 +7,25 @@ export type FoodHit = {
   carbs: number;
   fat: number;
   servingLabel: string;
-  source: "openfoodfacts" | "restaurant" | "manual";
+  source: "openfoodfacts" | "restaurant" | "manual" | "staple";
   barcode?: string;
   imageUrl?: string;
 };
+
+/**
+ * The lifter's own everyday foods, with the exact macros for the portion they
+ * eat. Listed ahead of everything else so an empty search opens on them.
+ */
+export const STAPLE_FOODS: FoodHit[] = [
+  { id: "staple-overnight-oats", name: "Overnight oats", brand: "50g Quaker oats · chia · ISO100 Fruity Pebbles · Silk almond milk · honey", calories: 437, protein: 34, carbs: 59, fat: 10, servingLabel: "1 jar", source: "staple" },
+  { id: "staple-cream-of-rice", name: "Cream of Rice", brand: "Huge Supplements", calories: 108, protein: 2, carbs: 25, fat: 0, servingLabel: "1 scoop", source: "staple" },
+  { id: "staple-ground-beef-93", name: "Ground beef 93/7", calories: 474, protein: 65.5, carbs: 0, fat: 21.5, servingLabel: "8 oz cooked", source: "staple" },
+  { id: "staple-bibigo-rice", name: "Sticky Rice bowl", brand: "Bibigo", calories: 290, protein: 6, carbs: 67, fat: 0.5, servingLabel: "210 g", source: "staple" },
+  { id: "staple-gold-potato", name: "Gold potato", calories: 164, protein: 4.4, carbs: 37, fat: 0, servingLabel: "1 medium", source: "staple" },
+  { id: "staple-quest-chips", name: "Quest chips", brand: "Quest", calories: 140, protein: 19, carbs: 21, fat: 4, servingLabel: "1 bag", source: "staple" },
+  { id: "staple-oikos-triple-zero", name: "Triple Zero yogurt", brand: "Oikos", calories: 90, protein: 15, carbs: 7, fat: 0, servingLabel: "1 cup", source: "staple" },
+  { id: "staple-nates-honey", name: "Honey", brand: "Nate's", calories: 60, protein: 0, carbs: 17, fat: 0, servingLabel: "1 tbsp", source: "staple" },
+];
 
 /** Curated restaurant / warehouse / grocery staples Open Food Facts often misses. */
 export const RESTAURANT_FOODS: FoodHit[] = [
@@ -91,8 +106,9 @@ function num(v: unknown) {
 
 export function searchLocalFoods(query: string, limit = 20): FoodHit[] {
   const q = query.trim().toLowerCase();
-  if (!q) return RESTAURANT_FOODS.slice(0, limit);
-  return RESTAURANT_FOODS.filter(
+  const pool = [...STAPLE_FOODS, ...RESTAURANT_FOODS];
+  if (!q) return pool.slice(0, limit);
+  return pool.filter(
     (f) =>
       f.name.toLowerCase().includes(q) ||
       (f.brand ?? "").toLowerCase().includes(q)

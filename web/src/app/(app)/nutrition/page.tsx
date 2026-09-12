@@ -1,29 +1,36 @@
 "use client";
 
-import { FormEvent, useCallback, useEffect, useMemo, useRef, useState, useTransition } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { WaterStepsCards } from "@/components/WaterStepsCards";
 import { FastedBloodPressureCard } from "@/components/FastedBloodPressureCard";
 import { MorningCheckinCard } from "@/components/MorningCheckinCard";
 import { FoodSearchModal, type MealItem } from "@/components/FoodSearchModal";
+import { MealBuilderSheet } from "@/components/MealBuilderSheet";
+import { MacroTargetsSheet } from "@/components/MacroTargetsSheet";
+import { NutritionTrend } from "@/components/NutritionTrend";
+import { IconChevronLeft, IconChevronRight, IconGear, IconHistory, IconPlus, IconStar, IconX } from "@/components/icons";
 import { DEFAULT_TARGETS, normalizeTargets, type MacroTargets } from "@/lib/targets";
+import { STAPLE_FOODS, type FoodHit } from "@/lib/foods";
+import {
+  MEAL_SLOTS,
+  deleteSavedMeal,
+  listSavedMeals,
+  mealTotals,
+  roundMacro,
+  saveMeal,
+  toLogItems,
+  type MealSlot,
+  type SavedMeal,
+  type SavedMealItem,
+} from "@/lib/savedMeals";
+import { DERRICK_RECOMP_BASELINE } from "@/lib/derrickRecomp";
 import { dateKey } from "@/lib/protocol";
 
 type DailyLog = {
   date: string;
-  target_calories: number;
-  target_protein: number;
-  target_carbs: number;
-  target_fats: number;
-  actual_calories: number;
-  actual_protein: number;
-  actual_carbs_pre: number;
-  actual_carbs_post: number;
-  actual_fats: number;
-  sleep_hours: number;
-  steps_count: number;
   water_oz: number;
-  morning_weight: number;
+  steps_count: number;
   bp1_systolic: number;
   bp1_diastolic: number;
   bp2_systolic: number;
@@ -32,7 +39,20 @@ type DailyLog = {
   checkin_sleep: number;
   checkin_energy: number;
   checkin_pump: number;
-  meals?: MealItem[];
+  actual_calories: number;
+  actual_protein: number;
+  actual_carbs_pre: number;
+  actual_carbs_post: number;
+  actual_fats: number;
+  meals: MealItem[];
+};
+
+/** The targets the lifter asked for; applied once over the untouched program baseline. */
+const REQUESTED_TARGETS: MacroTargets = {
+  target_calories: 2100,
+  target_protein: 190,
+  target_carbs: 222,
+  target_fats: 47,
 };
 
 function parseKey(key: string) {
@@ -40,19 +60,11 @@ function parseKey(key: string) {
   return new Date(y, m - 1, d, 12);
 }
 
-function emptyLog(date: string, targets: MacroTargets = DEFAULT_TARGETS): DailyLog {
+function emptyLog(date: string): DailyLog {
   return {
     date,
-    ...targets,
-    actual_calories: 0,
-    actual_protein: 0,
-    actual_carbs_pre: 0,
-    actual_carbs_post: 0,
-    actual_fats: 0,
-    sleep_hours: 0,
-    steps_count: 0,
     water_oz: 0,
-    morning_weight: 0,
+    steps_count: 0,
     bp1_systolic: 0,
     bp1_diastolic: 0,
     bp2_systolic: 0,
@@ -60,25 +72,65 @@ function emptyLog(date: string, targets: MacroTargets = DEFAULT_TARGETS): DailyL
     checkin_sleep: 0,
     checkin_energy: 0,
     checkin_pump: 0,
+    actual_calories: 0,
+    actual_protein: 0,
+    actual_carbs_pre: 0,
+    actual_carbs_post: 0,
+    actual_fats: 0,
     meals: [],
+  };
+}
+
+/** Which slot a one-tap food lands in, by the clock. */
+function slotForNow(): MealSlot {
+  const h = new Date().getHours() + new Date().getMinutes() / 60;
+  if (h < 10.5) return "Breakfast";
+  if (h < 15) return "Lunch";
+  if (h < 17) return "Snacks";
+  if (h < 21) return "Dinner";
+  return "Snacks";
+}
+
+function stapleToItem(f: FoodHit, slot: MealSlot, stamp: number): MealItem {
+  return {
+    id: `${stamp}-${f.id}`,
+    meal: slot,
+    name: f.name,
+    brand: f.brand,
+    calories: f.calories,
+    protein: f.protein,
+    carbs: f.carbs,
+    fat: f.fat,
+    servingLabel: f.servingLabel,
   };
 }
 
 export default function NutritionPage() {
   const todayKey = dateKey(new Date());
   const [selected, setSelected] = useState(todayKey);
+  const [view, setView] = useState<"day" | "trends">("day");
   const [targets, setTargets] = useState<MacroTargets>(DEFAULT_TARGETS);
-  const [form, setForm] = useState<DailyLog>(emptyLog(todayKey));
+  const [log, setLog] = useState<DailyLog>(emptyLog(todayKey));
   const [loading, setLoading] = useState(true);
-  const [msg, setMsg] = useState("");
-  const [planTab, setPlanTab] = useState<"plan" | "browse" | "trends">("plan");
-  const [searchMeal, setSearchMeal] = useState<MealItem["meal"] | null>(null);
   const [loggedDays, setLoggedDays] = useState<Set<string>>(new Set());
-  const [, startTransition] = useTransition();
+  const [error, setError] = useState("");
+  const [toast, setToast] = useState<{ text: string; undoIds?: string[] } | null>(null);
+  const [quickSlot, setQuickSlot] = useState<MealSlot>(slotForNow);
+  const [searchSlot, setSearchSlot] = useState<MealSlot | null>(null);
+  const [saved, setSaved] = useState<SavedMeal[]>([]);
+  const [deviceOnly, setDeviceOnly] = useState(false);
+  const [editingSaved, setEditingSaved] = useState(false);
+  const [builder, setBuilder] = useState<{ name: string; slot: MealSlot; items: SavedMealItem[] } | null>(null);
+  const [builderSaving, setBuilderSaving] = useState(false);
+  const [builderError, setBuilderError] = useState("");
+  const [editingTargets, setEditingTargets] = useState(false);
+  const [trendKey, setTrendKey] = useState(0);
   const supabaseRef = useRef(createClient());
-  const targetsRef = useRef(targets);
   const loadSeqRef = useRef(0);
-  targetsRef.current = targets;
+  const mealsRef = useRef<MealItem[]>([]);
+  const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  mealsRef.current = log.meals;
 
   useEffect(() => {
     void (async () => {
@@ -92,8 +144,31 @@ export default function NutritionPage() {
         .select("target_calories, target_protein, target_carbs, target_fats")
         .eq("id", user.id)
         .maybeSingle();
-      setTargets(normalizeTargets(profile));
+
+      const current = normalizeTargets(profile);
+      const untouchedBaseline =
+        Number(profile?.target_calories) === DERRICK_RECOMP_BASELINE.target_calories &&
+        Number(profile?.target_protein) === DERRICK_RECOMP_BASELINE.target_protein &&
+        Number(profile?.target_carbs) === DERRICK_RECOMP_BASELINE.target_carbs &&
+        Number(profile?.target_fats) === DERRICK_RECOMP_BASELINE.target_fats;
+
+      if (untouchedBaseline) {
+        const { error: err } = await supabaseRef.current
+          .from("profiles")
+          .update(REQUESTED_TARGETS)
+          .eq("id", user.id);
+        setTargets(err ? current : REQUESTED_TARGETS);
+      } else {
+        setTargets(current);
+      }
     })();
+
+    void listSavedMeals()
+      .then((r) => {
+        setSaved(r.meals);
+        setDeviceOnly(r.deviceOnly);
+      })
+      .catch((e: Error) => setError(e.message));
   }, []);
 
   const week = useMemo(() => {
@@ -107,475 +182,609 @@ export default function NutritionPage() {
     });
   }, [selected]);
 
-  const load = useCallback(async (date: string) => {
-    const seq = ++loadSeqRef.current;
-    setLoading(true);
-    setMsg("");
-    const {
-      data: { user },
-    } = await supabaseRef.current.auth.getUser();
-    if (!user) return;
+  const load = useCallback(
+    async (date: string) => {
+      const seq = ++loadSeqRef.current;
+      setLoading(true);
+      const {
+        data: { session },
+      } = await supabaseRef.current.auth.getSession();
+      const user = session?.user;
+      if (!user) return;
 
-    const t = targetsRef.current;
-    const { data } = await supabaseRef.current
-      .from("daily_logs")
-      .select("*")
-      .eq("user_id", user.id)
-      .eq("date", date)
-      .maybeSingle();
+      const [{ data }, { data: weekLogs }] = await Promise.all([
+        supabaseRef.current.from("daily_logs").select("*").eq("user_id", user.id).eq("date", date).maybeSingle(),
+        supabaseRef.current
+          .from("daily_logs")
+          .select("date, actual_calories, meals")
+          .eq("user_id", user.id)
+          .gte("date", dateKey(week[0]))
+          .lte("date", dateKey(week[6])),
+      ]);
+      if (seq !== loadSeqRef.current) return;
 
-    if (seq !== loadSeqRef.current) return;
-
-    if (data) {
-      const meals = Array.isArray(data.meals) ? (data.meals as MealItem[]) : [];
-      setForm({
-        ...emptyLog(date, t),
-        ...data,
-        ...t,
-        meals,
-      });
-    } else {
-      setForm(emptyLog(date, t));
-    }
-
-    const start = week[0] ? dateKey(week[0]) : date;
-    const end = week[6] ? dateKey(week[6]) : date;
-    const { data: weekLogs } = await supabaseRef.current
-      .from("daily_logs")
-      .select("date, actual_calories, steps_count, meals")
-      .eq("user_id", user.id)
-      .gte("date", start)
-      .lte("date", end);
-
-    if (seq !== loadSeqRef.current) return;
-
-    const set = new Set<string>();
-    for (const row of weekLogs ?? []) {
-      const hasMeals = Array.isArray(row.meals) && row.meals.length > 0;
-      if (row.actual_calories > 0 || row.steps_count > 0 || hasMeals) {
-        set.add(row.date);
-      }
-    }
-    setLoggedDays(set);
-    setLoading(false);
-  }, [week]);
+      setLog(
+        data
+          ? { ...emptyLog(date), ...data, meals: Array.isArray(data.meals) ? (data.meals as MealItem[]) : [] }
+          : emptyLog(date)
+      );
+      setLoggedDays(
+        new Set(
+          (weekLogs ?? [])
+            .filter((r) => r.actual_calories > 0 || (Array.isArray(r.meals) && r.meals.length > 0))
+            .map((r) => String(r.date))
+        )
+      );
+      setLoading(false);
+    },
+    [week]
+  );
 
   useEffect(() => {
     void load(selected);
   }, [selected, load]);
 
-  const meals = useMemo(() => form.meals ?? [], [form.meals]);
-  const mealTotals = useMemo(() => {
-    return meals.reduce(
-      (a, m) => ({
-        cal: a.cal + m.calories,
-        p: a.p + m.protein,
-        c: a.c + m.carbs,
-        f: a.f + m.fat,
-      }),
-      { cal: 0, p: 0, c: 0, f: 0 }
-    );
-  }, [meals]);
+  const totals = useMemo(() => {
+    if (log.meals.length) return mealTotals(log.meals);
+    return {
+      calories: log.actual_calories,
+      protein: log.actual_protein,
+      carbs: log.actual_carbs_pre + log.actual_carbs_post,
+      fat: log.actual_fats,
+    };
+  }, [log]);
 
-  const displayCal = meals.length ? mealTotals.cal : form.actual_calories;
-  const displayPro = meals.length ? mealTotals.p : form.actual_protein;
-  const displayCarb = meals.length
-    ? mealTotals.c
-    : form.actual_carbs_pre + form.actual_carbs_post;
-  const displayFat = meals.length ? mealTotals.f : form.actual_fats;
-  const calsLeft = targets.target_calories - displayCal;
+  function showToast(text: string, undoIds?: string[]) {
+    if (toastTimer.current) clearTimeout(toastTimer.current);
+    setToast({ text, undoIds });
+    toastTimer.current = setTimeout(() => setToast(null), 5000);
+  }
 
-  function persistPatch(patch: Partial<DailyLog> & { meals?: MealItem[] }) {
-    startTransition(async () => {
-      const {
-        data: { user },
-      } = await supabaseRef.current.auth.getUser();
-      if (!user) return;
+  /**
+   * Writes only the meal list and the totals derived from it. The water, steps,
+   * check-in and blood-pressure cards on this screen save those columns
+   * themselves; upserting the whole row from page state used to put back
+   * whatever they held when the page loaded, silently undoing a water log.
+   */
+  async function persistMeals(next: MealItem[]) {
+    const date = selected;
+    setLog((l) => ({ ...l, meals: next }));
+    const {
+      data: { session },
+    } = await supabaseRef.current.auth.getSession();
+    const user = session?.user;
+    if (!user) return;
 
-      let nextForm: DailyLog | null = null;
-      setForm((prev) => {
-        const next = { ...prev, ...patch, ...targetsRef.current, date: selected, user_id: user.id } as DailyLog & { user_id: string };
-        if (patch.meals) {
-          const t = patch.meals.reduce(
-            (a, m) => ({
-              cal: a.cal + m.calories,
-              p: a.p + m.protein,
-              c: a.c + m.carbs,
-              f: a.f + m.fat,
-            }),
-            { cal: 0, p: 0, c: 0, f: 0 }
-          );
-          next.actual_calories = t.cal;
-          next.actual_protein = t.p;
-          next.actual_carbs_pre = t.c;
-          next.actual_carbs_post = 0;
-          next.actual_fats = t.f;
-        }
-        nextForm = next;
-        return next;
-      });
-
-      if (!nextForm) return;
-      const payload = nextForm as DailyLog & { user_id: string };
-
-      const { error } = await supabaseRef.current
-        .from("daily_logs")
-        .upsert(payload, { onConflict: "user_id,date" });
-      if (error) {
-        if (error.message.toLowerCase().includes("meals")) {
-          const rest = { ...payload };
-          delete (rest as { meals?: MealItem[] }).meals;
-          await supabaseRef.current.from("daily_logs").upsert(rest, {
-            onConflict: "user_id,date",
-          });
-          setMsg("Saved macros (run schema_meals.sql for meal items)");
-        } else {
-          setMsg(error.message);
-        }
-      } else {
-        setMsg("Saved");
-        setLoggedDays((s) => new Set(s).add(selected));
-      }
+    const t = mealTotals(next);
+    const payload = {
+      user_id: user.id,
+      date,
+      meals: next,
+      actual_calories: Math.round(t.calories),
+      actual_protein: Math.round(t.protein),
+      actual_carbs_pre: Math.round(t.carbs),
+      actual_carbs_post: 0,
+      actual_fats: Math.round(t.fat),
+      ...targets,
+    };
+    const { error: err } = await supabaseRef.current.from("daily_logs").upsert(payload, { onConflict: "user_id,date" });
+    if (err) {
+      setError(err.message);
+      return;
+    }
+    setError("");
+    setLoggedDays((s) => {
+      const copy = new Set(s);
+      if (next.length) copy.add(date);
+      else copy.delete(date);
+      return copy;
     });
+    setTrendKey((k) => k + 1);
   }
 
-  function onSubmit(e: FormEvent) {
-    e.preventDefault();
-    setMsg("");
-    persistPatch(form);
+  function addItems(items: MealItem[], label: string) {
+    const next = [...mealsRef.current, ...items];
+    void persistMeals(next);
+    showToast(label, items.map((i) => i.id));
   }
 
-  function addMealItem(item: MealItem) {
-    const next = [...meals, item];
-    setForm((f) => ({ ...f, meals: next }));
-    persistPatch({ meals: next });
+  function removeItems(ids: string[]) {
+    void persistMeals(mealsRef.current.filter((m) => !ids.includes(m.id)));
   }
 
-  function removeMeal(id: string) {
-    const next = meals.filter((m) => m.id !== id);
-    setForm((f) => ({ ...f, meals: next }));
-    persistPatch({ meals: next });
+  function logStaple(f: FoodHit) {
+    addItems([stapleToItem(f, quickSlot, Date.now())], `Added ${f.name} to ${quickSlot}`);
   }
 
-  async function copyYesterday(meal: MealItem["meal"]) {
+  function logSaved(meal: SavedMeal) {
+    addItems(toLogItems(meal), `Logged ${meal.name} to ${meal.meal}`);
+  }
+
+  async function copyYesterday(slot: MealSlot) {
     const d = parseKey(selected);
     d.setDate(d.getDate() - 1);
-    const yKey = dateKey(d);
     const {
-      data: { user },
-    } = await supabaseRef.current.auth.getUser();
+      data: { session },
+    } = await supabaseRef.current.auth.getSession();
+    const user = session?.user;
     if (!user) return;
     const { data } = await supabaseRef.current
       .from("daily_logs")
-      .select("meals, actual_calories, actual_protein, actual_carbs_pre, actual_carbs_post, actual_fats")
+      .select("meals")
       .eq("user_id", user.id)
-      .eq("date", yKey)
+      .eq("date", dateKey(d))
       .maybeSingle();
-    if (!data) {
-      setMsg("Nothing logged yesterday");
+    const prior = (Array.isArray(data?.meals) ? (data.meals as MealItem[]) : []).filter((m) => m.meal === slot);
+    if (!prior.length) {
+      showToast(`Nothing logged for ${slot} yesterday`);
       return;
     }
-    const yMeals = Array.isArray(data.meals) ? (data.meals as MealItem[]) : [];
-    const fromMeal = yMeals.filter((m) => m.meal === meal);
-    if (fromMeal.length) {
-      const copied = fromMeal.map((m) => ({
-        ...m,
-        id: `${Date.now()}-${m.id}`,
-      }));
-      const next = [...meals, ...copied];
-      setForm((f) => ({ ...f, meals: next }));
-      persistPatch({ meals: next });
-      setMsg(`Copied ${meal} from yesterday`);
-      return;
+    const stamp = Date.now();
+    addItems(
+      prior.map((m, i) => ({ ...m, id: `${stamp}-${i}-copy` })),
+      `Copied yesterday's ${slot}`
+    );
+  }
+
+  async function handleSaveMeal(meal: Omit<SavedMeal, "id">) {
+    setBuilderSaving(true);
+    setBuilderError("");
+    try {
+      const r = await saveMeal(meal);
+      setSaved(r.meals);
+      setDeviceOnly(r.deviceOnly);
+      setBuilder(null);
+      showToast(`Saved ${meal.name}`);
+    } catch (e) {
+      setBuilderError(e instanceof Error ? e.message : "Could not save");
+    } finally {
+      setBuilderSaving(false);
     }
-    // Fallback: split yesterday totals into this meal roughly
-    setMsg("No meal items yesterday — use Search / Manual");
+  }
+
+  async function handleDeleteSaved(id: string) {
+    try {
+      const r = await deleteSavedMeal(id);
+      setSaved(r.meals);
+      setDeviceOnly(r.deviceOnly);
+      if (!r.meals.length) setEditingSaved(false);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Could not delete");
+    }
   }
 
   function shiftDay(delta: number) {
     const d = parseKey(selected);
     d.setDate(d.getDate() + delta);
     const key = dateKey(d);
-    if (key > todayKey) return;
-    setSelected(key);
+    if (key <= todayKey) setSelected(key);
   }
 
   const isToday = selected === todayKey;
-  const selectedLabel = parseKey(selected).toLocaleDateString(undefined, {
-    weekday: "short",
-    month: "short",
-    day: "numeric",
-  });
+  const dateLabel = parseKey(selected).toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric" });
+  const calsLeft = Math.round(targets.target_calories - totals.calories);
 
   return (
-    <form onSubmit={onSubmit} className="space-y-4">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold">{isToday ? "Today" : selectedLabel}</h1>
-          {!isToday ? (
-            <button
-              type="button"
-              className="text-xs font-semibold text-[var(--blue)]"
-              onClick={() => setSelected(todayKey)}
-            >
-              Jump to today
-            </button>
-          ) : null}
+    <div className="space-y-5">
+      <div className="flex items-center justify-between gap-3">
+        <div className="min-w-0">
+          <h1 className="text-[26px] font-extrabold leading-tight tracking-tight">Nutrition</h1>
+          <p className="mt-0.5 text-[13px] font-semibold text-[var(--muted)]">
+            {isToday ? `Today · ${dateLabel}` : dateLabel}
+            {!isToday ? (
+              <button type="button" className="ml-2 font-bold text-[var(--blue)]" onClick={() => setSelected(todayKey)}>
+                Jump to today
+              </button>
+            ) : null}
+          </p>
         </div>
-        <span className="flex h-9 w-9 items-center justify-center rounded-xl border border-[var(--border-solid)] text-[11px] font-bold text-[var(--muted)]">
-          {parseKey(selected).getDate()}
-        </span>
+        <button
+          type="button"
+          aria-label="Edit daily targets"
+          onClick={() => setEditingTargets(true)}
+          className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-[var(--border)] bg-[var(--card)] text-[var(--muted)] active:bg-white/5"
+        >
+          <IconGear size={18} />
+        </button>
       </div>
 
       <div className="flex items-center gap-1">
-        <button type="button" className="px-2 text-[var(--muted)]" onClick={() => shiftDay(-1)}>
-          ‹
+        <button type="button" aria-label="Previous day" className="flex h-11 w-7 items-center justify-center text-[var(--muted)]" onClick={() => shiftDay(-1)}>
+          <IconChevronLeft size={18} />
         </button>
-        <div className="flex flex-1 gap-1.5 overflow-x-auto [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+        <div className="flex flex-1 justify-between gap-1">
           {week.map((d) => {
             const key = dateKey(d);
             const isSel = key === selected;
             const future = key > todayKey;
-            const done = loggedDays.has(key);
             return (
               <button
                 key={key}
                 type="button"
                 disabled={future}
                 onClick={() => setSelected(key)}
-                className={`flex h-[58px] w-11 shrink-0 flex-col items-center justify-center rounded-xl border ${
-                  isSel
-                    ? "border-[var(--blue)]"
-                    : future
-                      ? "border-transparent opacity-30"
-                      : "border-[var(--border-solid)]"
+                className={`flex h-[54px] flex-1 flex-col items-center justify-center gap-0.5 rounded-xl border ${
+                  isSel ? "border-[var(--blue)] bg-[var(--blue)]/10" : future ? "border-transparent opacity-30" : "border-[var(--border-solid)]"
                 }`}
               >
-                <span className="text-[10px] text-[var(--muted)]">
-                  {d.toLocaleDateString(undefined, { weekday: "narrow" })}
-                </span>
-                <span className="text-sm font-bold">{d.getDate()}</span>
-                {done ? <span className="text-[9px] text-[var(--green)]">✓</span> : null}
+                <span className="text-[10.5px] font-semibold text-[var(--muted)]">{d.toLocaleDateString(undefined, { weekday: "narrow" })}</span>
+                <span className={`text-[13px] font-bold tabular-nums ${isSel ? "text-[var(--blue)]" : ""}`}>{d.getDate()}</span>
+                <span className={`h-[4px] w-[4px] rounded-full ${loggedDays.has(key) ? "bg-[var(--green)]" : "bg-transparent"}`} />
               </button>
             );
           })}
         </div>
-        <button
-          type="button"
-          className="px-2 text-[var(--muted)] disabled:opacity-30"
-          disabled={isToday}
-          onClick={() => shiftDay(1)}
-        >
-          ›
+        <button type="button" aria-label="Next day" disabled={isToday} className="flex h-11 w-7 items-center justify-center text-[var(--muted)] disabled:opacity-30" onClick={() => shiftDay(1)}>
+          <IconChevronRight size={18} />
         </button>
       </div>
 
-      {loading ? (
-        <p className="text-sm text-[var(--muted)]">Loading…</p>
+      <div className="flex gap-1 rounded-[22px] border border-white/5 bg-[var(--surface)] p-1">
+        {(
+          [
+            ["day", "Day"],
+            ["trends", "Weekly trend"],
+          ] as const
+        ).map(([key, label]) => (
+          <button
+            key={key}
+            type="button"
+            onClick={() => setView(key)}
+            className={`h-9 flex-1 rounded-[18px] text-[14px] ${view === key ? "bg-[#253449] font-bold text-white" : "font-semibold text-[var(--muted)]"}`}
+          >
+            {label}
+          </button>
+        ))}
+      </div>
+
+      {error ? <p className="text-[13px] text-[var(--yellow)]">{error}</p> : null}
+
+      {view === "trends" ? (
+        <NutritionTrend endDate={selected} targets={targets} refreshKey={trendKey} />
+      ) : loading ? (
+        <div className="space-y-3">
+          <div className="h-40 animate-pulse rounded-[20px] bg-[var(--card-2)]" />
+          <div className="h-24 animate-pulse rounded-[18px] bg-[var(--card-2)]" />
+        </div>
       ) : (
         <>
-          <div className="card space-y-3">
-            <div className="grid grid-cols-4 gap-2">
-              <MacroTile label="Calories" value={displayCal} target={targets.target_calories} />
-              <MacroTile label="Protein" value={displayPro} target={targets.target_protein} />
-              <MacroTile label="Carbs" value={displayCarb} target={targets.target_carbs} />
-              <MacroTile label="Fat" value={displayFat} target={targets.target_fats} />
+          <section className="space-y-4 rounded-[20px] border border-white/10 bg-[var(--card)] p-5">
+            <div className="flex items-end justify-between gap-3">
+              <div>
+                <p className="text-[11px] font-bold tracking-[0.12em] text-[var(--muted)]">
+                  {calsLeft >= 0 ? "CALORIES LEFT" : "OVER TARGET"}
+                </p>
+                <p className="text-[34px] font-extrabold leading-none tracking-tight tabular-nums">
+                  {Math.abs(calsLeft).toLocaleString()}
+                </p>
+              </div>
+              <p className="pb-1 text-right text-[13px] tabular-nums text-[var(--muted)]">
+                <span className="font-bold text-white">{Math.round(totals.calories).toLocaleString()}</span> of{" "}
+                {targets.target_calories.toLocaleString()} cal
+              </p>
             </div>
-            <p className="text-center text-xs text-white">
-              {calsLeft} cal left ·{" "}
-              <span className="text-[var(--blue)]">full breakdown ▸</span>
-            </p>
-          </div>
+            <MacroBar label="Calories" value={totals.calories} target={targets.target_calories} unit="" />
+            <div className="grid grid-cols-3 gap-3">
+              <MacroBar label="Protein" value={totals.protein} target={targets.target_protein} unit="g" compact />
+              <MacroBar label="Carbs" value={totals.carbs} target={targets.target_carbs} unit="g" compact />
+              <MacroBar label="Fat" value={totals.fat} target={targets.target_fats} unit="g" compact />
+            </div>
+          </section>
 
-          <WaterStepsCards
-            date={selected}
-            waterOz={form.water_oz}
-            steps={form.steps_count}
-            waterGoal={128}
-            targets={targets}
-          />
-
-          <MorningCheckinCard
-            key={`checkin-${selected}-${form.checkin_sleep}-${form.checkin_energy}-${form.checkin_pump}`}
-            date={selected}
-            initial={{
-              checkin_sleep: form.checkin_sleep,
-              checkin_energy: form.checkin_energy,
-              checkin_pump: form.checkin_pump,
-            }}
-            targets={targets}
-          />
-
-          <FastedBloodPressureCard
-            key={`bp-${selected}-${form.bp1_systolic}-${form.bp2_systolic}`}
-            date={selected}
-            initial={{
-              bp1_systolic: form.bp1_systolic,
-              bp1_diastolic: form.bp1_diastolic,
-              bp2_systolic: form.bp2_systolic,
-              bp2_diastolic: form.bp2_diastolic,
-              bp_logged_at: form.bp_logged_at,
-            }}
-            targets={targets}
-          />
-
-          <div className="grid grid-cols-[1.4fr_0.8fr] gap-2">
-            <button
-              type="button"
-              className="btn-primary !py-3 text-sm"
-              onClick={() => setSearchMeal("Snacks")}
-            >
-              📷 Snap / search
-            </button>
-            <button
-              type="button"
-              className="btn-primary !py-3 text-sm"
-              onClick={() => setSearchMeal("Snacks")}
-            >
-              ⊞ Scan
-            </button>
-          </div>
-
-          <div className="card !p-0 overflow-hidden">
-            {(
-              [
-                ["Breakfast", "🍳"],
-                ["Lunch", "🥪"],
-                ["Dinner", "🍽️"],
-                ["Snacks", "🍿"],
-              ] as const
-            ).map(([meal, emoji]) => {
-              const items = meals.filter((m) => m.meal === meal);
-              return (
-                <div
-                  key={meal}
-                  className="border-b border-[var(--border)] px-3 py-3 last:border-0"
+          <section className="space-y-2.5">
+            <div className="flex items-baseline justify-between gap-2">
+              <h2 className="text-[17px] font-bold">Saved meals</h2>
+              <div className="flex items-center gap-3">
+                {saved.length ? (
+                  <button type="button" className="text-[13px] font-bold text-[var(--muted)]" onClick={() => setEditingSaved((v) => !v)}>
+                    {editingSaved ? "Done" : "Edit"}
+                  </button>
+                ) : null}
+                <button
+                  type="button"
+                  className="text-[13px] font-bold text-[var(--blue)]"
+                  onClick={() => {
+                    setBuilderError("");
+                    setBuilder({ name: "", slot: quickSlot, items: [] });
+                  }}
                 >
-                  <p className="mb-2 text-sm font-semibold">
-                    {emoji} {meal}
-                  </p>
-                  {items.length ? (
-                    <div className="mb-2 space-y-1.5">
-                      {items.map((it) => (
-                        <div
-                          key={it.id}
-                          className="flex items-start justify-between gap-2 rounded-lg bg-[var(--surface)] px-2.5 py-2"
+                  New
+                </button>
+              </div>
+            </div>
+            {saved.length ? (
+              <div className="overflow-hidden rounded-[18px] border border-[var(--border)] bg-[var(--card)]">
+                {saved.map((m, i) => {
+                  const t = mealTotals(m.items);
+                  return (
+                    <div key={m.id} className={`flex items-center gap-3 px-4 py-3 ${i > 0 ? "border-t border-white/5" : ""}`}>
+                      <div className="min-w-0 flex-1">
+                        <p className="truncate text-[15px] font-bold">{m.name}</p>
+                        <p className="truncate text-[12.5px] tabular-nums text-[var(--muted)]">
+                          {m.meal} · {m.items.length} {m.items.length === 1 ? "food" : "foods"} · {roundMacro(t.calories)} cal · {roundMacro(t.protein)}p
+                        </p>
+                      </div>
+                      {editingSaved ? (
+                        <button
+                          type="button"
+                          aria-label={`Delete ${m.name}`}
+                          onClick={() => void handleDeleteSaved(m.id)}
+                          className="flex h-10 shrink-0 items-center rounded-xl border border-[var(--red)]/40 px-3 text-[13px] font-bold text-[var(--red)]"
                         >
-                          <div className="min-w-0">
-                            <p className="truncate text-xs font-semibold">{it.name}</p>
-                            <p className="text-[10px] text-[var(--muted)]">
-                              {it.calories} cal · {it.protein}p · {it.carbs}c · {it.fat}f
-                            </p>
-                          </div>
-                          <button
-                            type="button"
-                            className="text-[var(--muted)]"
-                            onClick={() => removeMeal(it.id)}
-                          >
-                            ×
-                          </button>
-                        </div>
-                      ))}
+                          Delete
+                        </button>
+                      ) : (
+                        <button
+                          type="button"
+                          onClick={() => logSaved(m)}
+                          className="flex h-10 shrink-0 items-center gap-1.5 rounded-xl bg-[var(--green)] px-3.5 text-[13.5px] font-extrabold text-[var(--on-green)] active:scale-95"
+                        >
+                          <IconPlus size={14} /> Log
+                        </button>
+                      )}
                     </div>
-                  ) : null}
-                  <div className="grid grid-cols-3 gap-1.5">
-                    <button
-                      type="button"
-                      className="rounded-lg bg-[var(--raised)] py-2 text-[11px] font-semibold text-[var(--blue)]"
-                      onClick={() => setSearchMeal(meal)}
-                    >
-                      + Log
-                    </button>
-                    <button
-                      type="button"
-                      className="rounded-lg bg-[var(--raised)] py-2 text-[11px] font-semibold text-[var(--blue)]"
-                      onClick={() => setSearchMeal(meal)}
-                    >
-                      📷 Snap
-                    </button>
-                    <button
-                      type="button"
-                      className="rounded-lg bg-[var(--raised)] py-2 text-[11px] font-semibold text-[var(--blue)]"
-                      onClick={() => void copyYesterday(meal)}
-                    >
-                      🔄 Copy
-                    </button>
+                  );
+                })}
+              </div>
+            ) : (
+              <p className="rounded-[18px] border border-dashed border-[var(--border-solid)] px-4 py-4 text-[13px] text-[var(--muted)]">
+                Save a meal you eat often and log it here in one tap.
+              </p>
+            )}
+            {deviceOnly ? (
+              <p className="text-[11.5px] text-[var(--dim)]">
+                Saved on this phone only until schema_saved_meals.sql is run in Supabase.
+              </p>
+            ) : null}
+          </section>
+
+          <section className="space-y-2.5">
+            <div className="flex items-baseline justify-between gap-2">
+              <h2 className="text-[17px] font-bold">Staples</h2>
+              <p className="text-[12px] font-semibold text-[var(--muted)]">Tap to add to</p>
+            </div>
+            <div className="grid grid-cols-4 gap-1.5">
+              {MEAL_SLOTS.map((s) => (
+                <button
+                  key={s}
+                  type="button"
+                  onClick={() => setQuickSlot(s)}
+                  className={`h-9 rounded-xl text-[12.5px] font-semibold ${quickSlot === s ? "bg-[var(--blue)] text-[var(--on-blue)]" : "bg-[var(--card-2)] text-[var(--muted)]"}`}
+                >
+                  {s}
+                </button>
+              ))}
+            </div>
+            <div className="grid grid-cols-2 gap-2">
+              {STAPLE_FOODS.map((f) => (
+                <button
+                  key={f.id}
+                  type="button"
+                  onClick={() => logStaple(f)}
+                  className="flex min-h-[64px] flex-col items-start justify-center rounded-2xl border border-[var(--border)] bg-[var(--card)] px-3 py-2.5 text-left active:bg-white/5"
+                >
+                  <span className="w-full truncate text-[13.5px] font-bold">{f.name}</span>
+                  <span className="w-full truncate text-[11.5px] tabular-nums text-[var(--muted)]">
+                    {f.servingLabel} · {f.calories} cal · {f.protein}p
+                  </span>
+                </button>
+              ))}
+            </div>
+          </section>
+
+          <section className="space-y-2.5">
+            <h2 className="text-[17px] font-bold">Meals</h2>
+            <div className="overflow-hidden rounded-[18px] border border-[var(--border)] bg-[var(--card)]">
+              {MEAL_SLOTS.map((slot, idx) => {
+                const items = log.meals.filter((m) => m.meal === slot);
+                const t = mealTotals(items);
+                return (
+                  <div key={slot} className={`px-4 py-3.5 ${idx > 0 ? "border-t border-white/5" : ""}`}>
+                    <div className="flex items-center justify-between gap-2">
+                      <p className="text-[15px] font-bold">{slot}</p>
+                      {items.length ? (
+                        <p className="text-[12.5px] tabular-nums text-[var(--muted)]">
+                          {roundMacro(t.calories)} cal · {roundMacro(t.protein)}p
+                        </p>
+                      ) : null}
+                    </div>
+                    {items.length ? (
+                      <div className="mt-2 space-y-1.5">
+                        {items.map((it) => (
+                          <div key={it.id} className="flex items-center gap-2 rounded-xl bg-[var(--surface)] py-2 pl-3 pr-1">
+                            <div className="min-w-0 flex-1">
+                              <p className="truncate text-[13.5px] font-semibold">{it.name}</p>
+                              <p className="truncate text-[11.5px] tabular-nums text-[var(--muted)]">
+                                {it.servingLabel ? `${it.servingLabel} · ` : ""}
+                                {roundMacro(it.calories)} cal · {roundMacro(it.protein)}p · {roundMacro(it.carbs)}c · {roundMacro(it.fat)}f
+                              </p>
+                            </div>
+                            <button
+                              type="button"
+                              aria-label={`Remove ${it.name}`}
+                              onClick={() => removeItems([it.id])}
+                              className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg text-[var(--muted)] active:text-white"
+                            >
+                              <IconX size={15} />
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    ) : null}
+                    <div className="mt-2.5 flex gap-1.5">
+                      <button
+                        type="button"
+                        onClick={() => setSearchSlot(slot)}
+                        className="flex h-10 flex-1 items-center justify-center gap-1.5 rounded-xl bg-[var(--raised)] text-[12.5px] font-bold text-[var(--blue)]"
+                      >
+                        <IconPlus size={14} /> Add food
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => void copyYesterday(slot)}
+                        className="flex h-10 flex-1 items-center justify-center gap-1.5 rounded-xl bg-[var(--raised)] text-[12.5px] font-bold text-[var(--muted)]"
+                      >
+                        <IconHistory size={14} /> Yesterday
+                      </button>
+                      {items.length ? (
+                        <button
+                          type="button"
+                          aria-label={`Save ${slot} as a meal`}
+                          onClick={() => {
+                            setBuilderError("");
+                            setBuilder({
+                              name: "",
+                              slot,
+                              items: items.map((m) => ({
+                                name: m.name,
+                                brand: m.brand,
+                                calories: m.calories,
+                                protein: m.protein,
+                                carbs: m.carbs,
+                                fat: m.fat,
+                                servingLabel: m.servingLabel,
+                              })),
+                            });
+                          }}
+                          className="flex h-10 flex-1 items-center justify-center gap-1.5 rounded-xl bg-[var(--raised)] text-[12.5px] font-bold text-[var(--muted)]"
+                        >
+                          <IconStar size={14} /> Save
+                        </button>
+                      ) : null}
+                    </div>
                   </div>
-                </div>
-              );
-            })}
-          </div>
+                );
+              })}
+            </div>
+          </section>
 
-          <div className="grid grid-cols-3 gap-1.5">
-            {(["plan", "browse", "trends"] as const).map((t) => (
-              <button
-                key={t}
-                type="button"
-                className={`rounded-full px-2 py-1.5 text-[12px] font-semibold ${
-                  planTab === t
-                    ? "border border-[var(--blue)] bg-[#1a3050] text-white"
-                    : "bg-[var(--card-2)] text-[var(--muted)]"
-                }`}
-                onClick={() => setPlanTab(t)}
-              >
-                {t === "plan" ? "📋 My Plan" : t === "browse" ? "🥩 Browse" : "📈 Trends"}
-              </button>
-            ))}
-          </div>
-          <div className="card text-sm text-[var(--muted)]">
-            {planTab === "plan" ? "No meal plan assigned yet." : null}
-            {planTab === "browse" ? "Use + Log to search Open Food Facts + restaurant items." : null}
-            {planTab === "trends" ? "Pick past days above to backfill nutrition." : null}
-          </div>
-
-          <button className="btn-green w-full" type="submit">
-            Save {isToday ? "today" : selectedLabel}
-          </button>
-          {msg ? (
-            <p
-              className={`text-center text-sm ${
-                msg.startsWith("Saved") || msg.startsWith("Copied")
-                  ? "text-[var(--green)]"
-                  : "text-[var(--yellow)]"
-              }`}
-            >
-              {msg}
-            </p>
-          ) : null}
+          <section className="space-y-3">
+            <h2 className="text-[17px] font-bold">Daily check-ins</h2>
+            <WaterStepsCards date={selected} waterOz={log.water_oz} steps={log.steps_count} waterGoal={128} targets={targets} />
+            <MorningCheckinCard
+              key={`checkin-${selected}-${log.checkin_sleep}-${log.checkin_energy}-${log.checkin_pump}`}
+              date={selected}
+              initial={{ checkin_sleep: log.checkin_sleep, checkin_energy: log.checkin_energy, checkin_pump: log.checkin_pump }}
+              targets={targets}
+            />
+            <FastedBloodPressureCard
+              key={`bp-${selected}-${log.bp1_systolic}-${log.bp2_systolic}`}
+              date={selected}
+              initial={{
+                bp1_systolic: log.bp1_systolic,
+                bp1_diastolic: log.bp1_diastolic,
+                bp2_systolic: log.bp2_systolic,
+                bp2_diastolic: log.bp2_diastolic,
+                bp_logged_at: log.bp_logged_at,
+              }}
+              targets={targets}
+            />
+          </section>
         </>
       )}
 
-      {searchMeal ? (
+      {toast ? (
+        <div
+          className="fixed inset-x-0 z-40 mx-auto flex max-w-lg px-4"
+          style={{ bottom: "calc(92px + env(safe-area-inset-bottom, 0px))" }}
+          role="status"
+        >
+          <div className="flex w-full items-center gap-3 rounded-2xl border border-[var(--border)] bg-[var(--card-2)] px-4 py-3 shadow-lg shadow-black/40">
+            <p className="min-w-0 flex-1 truncate text-[13.5px] font-semibold">{toast.text}</p>
+            {toast.undoIds?.length ? (
+              <button
+                type="button"
+                className="shrink-0 text-[13.5px] font-bold text-[var(--blue)]"
+                onClick={() => {
+                  removeItems(toast.undoIds!);
+                  setToast(null);
+                }}
+              >
+                Undo
+              </button>
+            ) : null}
+          </div>
+        </div>
+      ) : null}
+
+      {searchSlot ? (
         <FoodSearchModal
-          meal={searchMeal}
-          onClose={() => setSearchMeal(null)}
-          onAdd={addMealItem}
+          meal={searchSlot}
+          onClose={() => setSearchSlot(null)}
+          onAdd={(item) => addItems([item], `Added ${item.name} to ${item.meal}`)}
         />
       ) : null}
-    </form>
+
+      {builder ? (
+        <MealBuilderSheet
+          initialName={builder.name}
+          initialSlot={builder.slot}
+          initialItems={builder.items}
+          saving={builderSaving}
+          error={builderError}
+          onClose={() => setBuilder(null)}
+          onSave={(m) => void handleSaveMeal(m)}
+        />
+      ) : null}
+
+      {editingTargets ? (
+        <MacroTargetsSheet
+          targets={targets}
+          onClose={() => setEditingTargets(false)}
+          onSaved={(t) => {
+            setTargets(t);
+            setEditingTargets(false);
+            setTrendKey((k) => k + 1);
+            showToast("Targets updated");
+          }}
+        />
+      ) : null}
+    </div>
   );
 }
 
-function MacroTile({
+function MacroBar({
   label,
   value,
   target,
+  unit,
+  compact,
 }: {
   label: string;
   value: number;
   target: number;
+  unit: string;
+  compact?: boolean;
 }) {
-  const pct = Math.min(100, Math.round((value / target) * 100));
+  const pct = target ? Math.min(100, (value / target) * 100) : 0;
+  const over = target > 0 && value > target;
+  const shown = roundMacro(value);
   return (
-    <div className="min-w-0 rounded-xl bg-[var(--surface)] px-1.5 py-2.5 text-center">
-      <p className="text-[13px] font-bold leading-tight">{value}</p>
-      <p className="mt-0.5 truncate text-[9px] font-semibold uppercase tracking-wide text-[var(--muted)]">
-        {label}
-      </p>
-      <p className="text-[10px] text-[var(--muted)]">/ {target}</p>
-      <div className="mx-auto mt-2 h-1 w-full max-w-[48px] overflow-hidden rounded-full bg-[var(--border-solid)]">
+    <div className="min-w-0">
+      <div className="flex items-baseline justify-between gap-1">
+        <span className={`font-bold text-[var(--muted)] ${compact ? "text-[11.5px]" : "text-[12.5px]"}`}>{label}</span>
+        {!compact ? (
+          <span className="text-[12px] tabular-nums text-[var(--muted)]">{Math.round(pct)}%</span>
+        ) : null}
+      </div>
+      {compact ? (
+        <p className="mt-0.5 text-[15px] font-extrabold tabular-nums">
+          {shown}
+          <span className="text-[11.5px] font-semibold text-[var(--muted)]">
+            /{target}
+            {unit}
+          </span>
+        </p>
+      ) : null}
+      <div className="mt-1.5 h-1.5 overflow-hidden rounded-full bg-[var(--border-solid)]">
         <div className="h-full rounded-full bg-[var(--blue)]" style={{ width: `${pct}%` }} />
       </div>
+      {over ? (
+        <p className="mt-1 text-[11px] font-semibold tabular-nums text-[var(--yellow)]">
+          {roundMacro(value - target)}
+          {unit} over
+        </p>
+      ) : null}
     </div>
   );
 }
