@@ -368,7 +368,7 @@ export default function NutritionPage() {
     <div className="space-y-5">
       <div className="flex items-center justify-between gap-3">
         <div className="min-w-0">
-          <h1 className="text-[26px] font-extrabold leading-tight tracking-tight">Nutrition</h1>
+          <h1 className="text-[26px] font-extrabold leading-tight tracking-tight">Fuel</h1>
           <p className="mt-0.5 text-[13px] font-semibold text-[var(--muted)]">
             {isToday ? `Today · ${dateLabel}` : dateLabel}
             {!isToday ? (
@@ -403,7 +403,7 @@ export default function NutritionPage() {
                 type="button"
                 disabled={future}
                 onClick={() => setSelected(key)}
-                className={`flex h-[54px] flex-1 flex-col items-center justify-center gap-0.5 rounded-xl border ${
+                className={`flex h-[54px] flex-1 flex-col items-center justify-center gap-0.5 rounded-md border ${
                   isSel ? "border-[var(--blue)] bg-[var(--blue)]/10" : future ? "border-transparent opacity-30" : "border-[var(--border-solid)]"
                 }`}
               >
@@ -419,7 +419,7 @@ export default function NutritionPage() {
         </button>
       </div>
 
-      <div className="flex gap-1 rounded-[22px] border border-white/5 bg-[var(--surface)] p-1">
+      <div className="flex gap-1 rounded-md border border-white/5 bg-[var(--surface)] p-1">
         {(
           [
             ["day", "Day"],
@@ -430,7 +430,7 @@ export default function NutritionPage() {
             key={key}
             type="button"
             onClick={() => setView(key)}
-            className={`h-9 flex-1 rounded-[18px] text-[14px] ${view === key ? "bg-[#253449] font-bold text-white" : "font-semibold text-[var(--muted)]"}`}
+            className={`h-9 flex-1 rounded-md text-[14px] ${view === key ? "bg-[var(--raised)] font-bold text-[var(--text)]" : "font-semibold text-[var(--muted)]"}`}
           >
             {label}
           </button>
@@ -443,12 +443,12 @@ export default function NutritionPage() {
         <NutritionTrend endDate={selected} targets={targets} refreshKey={trendKey} />
       ) : loading ? (
         <div className="space-y-3">
-          <div className="h-40 animate-pulse rounded-[20px] bg-[var(--card-2)]" />
-          <div className="h-24 animate-pulse rounded-[18px] bg-[var(--card-2)]" />
+          <div className="h-40 animate-pulse rounded-md bg-[var(--card-2)]" />
+          <div className="h-24 animate-pulse rounded-md bg-[var(--card-2)]" />
         </div>
       ) : (
         <>
-          <section className="space-y-4 rounded-[20px] border border-white/10 bg-[var(--card)] p-5">
+          <section className="reg space-y-4 rounded-md border border-[var(--border-solid)] bg-[var(--card)] p-5">
             <div className="flex items-end justify-between gap-3">
               <div>
                 <p className="text-[11px] font-bold tracking-[0.12em] text-[var(--muted)]">
@@ -459,7 +459,7 @@ export default function NutritionPage() {
                 </p>
               </div>
               <p className="pb-1 text-right text-[13px] tabular-nums text-[var(--muted)]">
-                <span className="font-bold text-white">{Math.round(totals.calories).toLocaleString()}</span> of{" "}
+                <span className="font-bold text-[var(--text)]">{Math.round(totals.calories).toLocaleString()}</span> of{" "}
                 {targets.target_calories.toLocaleString()} cal
               </p>
             </div>
@@ -493,7 +493,7 @@ export default function NutritionPage() {
               </div>
             </div>
             {saved.length ? (
-              <div className="overflow-hidden rounded-[18px] border border-[var(--border)] bg-[var(--card)]">
+              <div className="overflow-hidden rounded-md border border-[var(--border)] bg-[var(--card)]">
                 {saved.map((m, i) => {
                   const t = mealTotals(m.items);
                   return (
@@ -509,7 +509,7 @@ export default function NutritionPage() {
                           type="button"
                           aria-label={`Delete ${m.name}`}
                           onClick={() => void handleDeleteSaved(m.id)}
-                          className="flex h-10 shrink-0 items-center rounded-xl border border-[var(--red)]/40 px-3 text-[13px] font-bold text-[var(--red)]"
+                          className="flex h-10 shrink-0 items-center rounded-md border border-[var(--red)]/40 px-3 text-[13px] font-bold text-[var(--red)]"
                         >
                           Delete
                         </button>
@@ -517,7 +517,7 @@ export default function NutritionPage() {
                         <button
                           type="button"
                           onClick={() => logSaved(m)}
-                          className="flex h-10 shrink-0 items-center gap-1.5 rounded-xl bg-[var(--green)] px-3.5 text-[13.5px] font-extrabold text-[var(--on-green)] active:scale-95"
+                          className="flex h-10 shrink-0 items-center gap-1.5 rounded-md bg-[var(--accent)] px-3.5 text-[13.5px] font-extrabold text-[var(--on-accent)] active:scale-95"
                         >
                           <IconPlus size={14} /> Log
                         </button>
@@ -527,7 +527,7 @@ export default function NutritionPage() {
                 })}
               </div>
             ) : (
-              <p className="rounded-[18px] border border-dashed border-[var(--border-solid)] px-4 py-4 text-[13px] text-[var(--muted)]">
+              <p className="rounded-md border border-dashed border-[var(--border-solid)] px-4 py-4 text-[13px] text-[var(--muted)]">
                 Save a meal you eat often and log it here in one tap.
               </p>
             )}
@@ -549,7 +549,7 @@ export default function NutritionPage() {
                   key={s}
                   type="button"
                   onClick={() => setQuickSlot(s)}
-                  className={`h-9 rounded-xl text-[12.5px] font-semibold ${quickSlot === s ? "bg-[var(--blue)] text-[var(--on-blue)]" : "bg-[var(--card-2)] text-[var(--muted)]"}`}
+                  className={`h-9 rounded-md text-[12.5px] font-semibold ${quickSlot === s ? "bg-[var(--blue)] text-[var(--on-blue)]" : "bg-[var(--card-2)] text-[var(--muted)]"}`}
                 >
                   {s}
                 </button>
@@ -561,7 +561,7 @@ export default function NutritionPage() {
                   key={f.id}
                   type="button"
                   onClick={() => logStaple(f)}
-                  className="flex min-h-[64px] flex-col items-start justify-center rounded-2xl border border-[var(--border)] bg-[var(--card)] px-3 py-2.5 text-left active:bg-white/5"
+                  className="flex min-h-[64px] flex-col items-start justify-center rounded-md border border-[var(--border)] bg-[var(--card)] px-3 py-2.5 text-left active:bg-white/5"
                 >
                   <span className="w-full truncate text-[13.5px] font-bold">{f.name}</span>
                   <span className="w-full truncate text-[11.5px] tabular-nums text-[var(--muted)]">
@@ -574,7 +574,7 @@ export default function NutritionPage() {
 
           <section className="space-y-2.5">
             <h2 className="text-[17px] font-bold">Meals</h2>
-            <div className="overflow-hidden rounded-[18px] border border-[var(--border)] bg-[var(--card)]">
+            <div className="overflow-hidden rounded-md border border-[var(--border)] bg-[var(--card)]">
               {MEAL_SLOTS.map((slot, idx) => {
                 const items = log.meals.filter((m) => m.meal === slot);
                 const t = mealTotals(items);
@@ -591,7 +591,7 @@ export default function NutritionPage() {
                     {items.length ? (
                       <div className="mt-2 space-y-1.5">
                         {items.map((it) => (
-                          <div key={it.id} className="flex items-center gap-2 rounded-xl bg-[var(--surface)] py-2 pl-3 pr-1">
+                          <div key={it.id} className="flex items-center gap-2 rounded-md bg-[var(--surface)] py-2 pl-3 pr-1">
                             <div className="min-w-0 flex-1">
                               <p className="truncate text-[13.5px] font-semibold">{it.name}</p>
                               <p className="truncate text-[11.5px] tabular-nums text-[var(--muted)]">
@@ -603,7 +603,7 @@ export default function NutritionPage() {
                               type="button"
                               aria-label={`Remove ${it.name}`}
                               onClick={() => removeItems([it.id])}
-                              className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg text-[var(--muted)] active:text-white"
+                              className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[4px] text-[var(--muted)] active:text-[var(--text)]"
                             >
                               <IconX size={15} />
                             </button>
@@ -615,14 +615,14 @@ export default function NutritionPage() {
                       <button
                         type="button"
                         onClick={() => setSearchSlot(slot)}
-                        className="flex h-10 flex-1 items-center justify-center gap-1.5 rounded-xl bg-[var(--raised)] text-[12.5px] font-bold text-[var(--blue)]"
+                        className="flex h-10 flex-1 items-center justify-center gap-1.5 rounded-md bg-[var(--raised)] text-[12.5px] font-bold text-[var(--blue)]"
                       >
                         <IconPlus size={14} /> Add food
                       </button>
                       <button
                         type="button"
                         onClick={() => void copyYesterday(slot)}
-                        className="flex h-10 flex-1 items-center justify-center gap-1.5 rounded-xl bg-[var(--raised)] text-[12.5px] font-bold text-[var(--muted)]"
+                        className="flex h-10 flex-1 items-center justify-center gap-1.5 rounded-md bg-[var(--raised)] text-[12.5px] font-bold text-[var(--muted)]"
                       >
                         <IconHistory size={14} /> Yesterday
                       </button>
@@ -646,7 +646,7 @@ export default function NutritionPage() {
                               })),
                             });
                           }}
-                          className="flex h-10 flex-1 items-center justify-center gap-1.5 rounded-xl bg-[var(--raised)] text-[12.5px] font-bold text-[var(--muted)]"
+                          className="flex h-10 flex-1 items-center justify-center gap-1.5 rounded-md bg-[var(--raised)] text-[12.5px] font-bold text-[var(--muted)]"
                         >
                           <IconStar size={14} /> Save
                         </button>
@@ -689,7 +689,7 @@ export default function NutritionPage() {
           style={{ bottom: "calc(92px + env(safe-area-inset-bottom, 0px))" }}
           role="status"
         >
-          <div className="flex w-full items-center gap-3 rounded-2xl border border-[var(--border)] bg-[var(--card-2)] px-4 py-3 shadow-lg shadow-black/40">
+          <div className="flex w-full items-center gap-3 rounded-md border border-[var(--border)] bg-[var(--card-2)] px-4 py-3 shadow-lg shadow-black/40">
             <p className="min-w-0 flex-1 truncate text-[13.5px] font-semibold">{toast.text}</p>
             {toast.undoIds?.length ? (
               <button

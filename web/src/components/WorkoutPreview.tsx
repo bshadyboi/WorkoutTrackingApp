@@ -200,7 +200,7 @@ export function WorkoutPreview({
           href="/train"
           prefetch={false}
           aria-label="Back to Train"
-          className="absolute left-4 z-10 flex h-[42px] w-[42px] items-center justify-center rounded-full border border-white/10 bg-black/45 text-white backdrop-blur-sm active:bg-black/60"
+          className="absolute left-4 z-10 flex h-[42px] w-[42px] items-center justify-center rounded-full border border-white/10 bg-black/45 text-[var(--text)] backdrop-blur-sm active:bg-black/60"
           style={{ top: "max(12px, env(safe-area-inset-top, 0px))" }}
         >
           <IconChevronLeft size={20} />
@@ -216,7 +216,7 @@ export function WorkoutPreview({
                   ? subtitle.split("·")[0].trim()
                   : "Training"}
           </p>
-          <h1 className="mt-1 text-[27px] font-extrabold leading-[1.12] tracking-tight text-white">
+          <h1 className="mt-1 text-[27px] font-extrabold leading-[1.12] tracking-tight text-[var(--text)]">
             {titleHead}
           </h1>
           {titleTail ? (
@@ -233,7 +233,7 @@ export function WorkoutPreview({
             {muscles.map((m) => (
               <span
                 key={m}
-                className="rounded-[10px] bg-[var(--card-2)] px-2.5 py-1 text-[11.5px] font-bold text-[var(--muted)]"
+                className="rounded-[4px] bg-[var(--card-2)] px-2.5 py-1 text-[11.5px] font-bold text-[var(--muted)]"
               >
                 {m}
               </span>
@@ -242,7 +242,7 @@ export function WorkoutPreview({
         ) : null}
 
         <div className="mb-5 grid grid-cols-3 gap-2">
-          <div className="rounded-xl border border-white/5 bg-[var(--surface)] px-3 py-2.5">
+          <div className="rounded-md border border-white/5 bg-[var(--surface)] px-3 py-2.5">
             <p className="text-[20px] font-extrabold leading-none tabular-nums">
               {main.length}
             </p>
@@ -250,13 +250,13 @@ export function WorkoutPreview({
               Exercises
             </p>
           </div>
-          <div className="rounded-xl border border-white/5 bg-[var(--surface)] px-3 py-2.5">
+          <div className="rounded-md border border-white/5 bg-[var(--surface)] px-3 py-2.5">
             <p className="text-[20px] font-extrabold leading-none tabular-nums">
               {totalSets}
             </p>
             <p className="mt-1 text-[10.5px] font-semibold text-[var(--muted)]">Sets</p>
           </div>
-          <div className="rounded-xl border border-white/5 bg-[var(--surface)] px-3 py-2.5">
+          <div className="rounded-md border border-white/5 bg-[var(--surface)] px-3 py-2.5">
             <p className="text-[20px] font-extrabold leading-none tabular-nums">
               {minutes}
             </p>
@@ -268,43 +268,43 @@ export function WorkoutPreview({
           <Link
             href="/train/schedule"
             prefetch={false}
-            className="flex flex-col items-center gap-1.5 rounded-xl border border-[var(--border)] bg-[var(--card)] py-3 text-[var(--muted)] active:bg-white/5"
+            className="flex flex-col items-center gap-1.5 rounded-md border border-[var(--border)] bg-[var(--card)] py-3 text-[var(--muted)] active:bg-white/5"
           >
             <IconCalendar size={19} />
-            <span className="text-[11.5px] font-semibold text-white">Schedule</span>
+            <span className="text-[11.5px] font-semibold text-[var(--text)]">Schedule</span>
           </Link>
           <Link
             href="/train"
             prefetch={false}
-            className="flex flex-col items-center gap-1.5 rounded-xl border border-[var(--border)] bg-[var(--card)] py-3 text-[var(--muted)] active:bg-white/5"
+            className="flex flex-col items-center gap-1.5 rounded-md border border-[var(--border)] bg-[var(--card)] py-3 text-[var(--muted)] active:bg-white/5"
           >
             <IconHistory size={19} />
-            <span className="text-[11.5px] font-semibold text-white">History</span>
+            <span className="text-[11.5px] font-semibold text-[var(--text)]">History</span>
           </Link>
           <Link
             href={`/train/manage/${dayId}`}
             prefetch={false}
-            className="flex flex-col items-center gap-1.5 rounded-xl border border-[var(--border)] bg-[var(--card)] py-3 text-[var(--muted)] active:bg-white/5"
+            className="flex flex-col items-center gap-1.5 rounded-md border border-[var(--border)] bg-[var(--card)] py-3 text-[var(--muted)] active:bg-white/5"
           >
             <IconPencil size={19} />
-            <span className="text-[11.5px] font-semibold text-white">Edit</span>
+            <span className="text-[11.5px] font-semibold text-[var(--text)]">Edit</span>
           </Link>
         </div>
 
         {hasDraft ? (
-          <div className="mb-5 rounded-2xl border border-[var(--blue)]/30 bg-[var(--blue)]/10 p-3.5">
+          <div className="mb-5 rounded-md border border-[var(--blue)]/30 bg-[var(--blue)]/10 p-3.5">
             <p className="text-[14px] font-bold">Saved session on this device</p>
             <div className="mt-2.5 flex gap-2">
               <Link
                 href={startHref}
                 prefetch={false}
-                className="flex min-h-[44px] flex-1 items-center justify-center rounded-xl bg-[var(--green)] text-[14px] font-extrabold text-[var(--on-green)]"
+                className="flex min-h-[44px] flex-1 items-center justify-center rounded-md bg-[var(--accent)] text-[14px] font-extrabold text-[var(--on-accent)]"
               >
                 Resume
               </Link>
               <button
                 type="button"
-                className="min-h-[44px] rounded-xl bg-[var(--card-2)] px-4 text-[13px] font-bold text-[var(--muted)]"
+                className="min-h-[44px] rounded-md bg-[var(--card-2)] px-4 text-[13px] font-bold text-[var(--muted)]"
                 onClick={discardDraft}
               >
                 Discard
@@ -314,7 +314,7 @@ export function WorkoutPreview({
         ) : null}
 
         {warmups.length ? (
-          <section className="mb-5 rounded-[18px] border border-[var(--yellow)]/20 bg-[var(--card)] p-4">
+          <section className="mb-5 rounded-md border border-[var(--yellow)]/20 bg-[var(--card)] p-4">
             <div className="flex items-baseline justify-between gap-2">
               <h2 className="text-[16px] font-bold">Warm-up</h2>
               <p className="text-[11.5px] font-semibold text-[var(--muted)]">
@@ -330,7 +330,7 @@ export function WorkoutPreview({
                   <li key={ex.id} className="flex items-center gap-3 py-1.5">
                     <span className="h-[22px] w-[22px] shrink-0 rounded-md border-2 border-[var(--dim)]" />
                     <span className="min-w-0 flex-1">
-                      <span className="block truncate text-[14px] font-semibold text-white">
+                      <span className="block truncate text-[14px] font-semibold text-[var(--text)]">
                         {ex.name}
                       </span>
                       <span className="block truncate text-[12px] text-[var(--muted)]">
@@ -342,7 +342,7 @@ export function WorkoutPreview({
                       target="_blank"
                       rel="noreferrer"
                       aria-label={`Form video for ${ex.name}`}
-                      className="flex h-[32px] w-[32px] shrink-0 items-center justify-center rounded-[10px] bg-[var(--card-2)] text-[var(--muted)] active:text-white"
+                      className="flex h-[32px] w-[32px] shrink-0 items-center justify-center rounded-[4px] bg-[var(--card-2)] text-[var(--muted)] active:text-[var(--text)]"
                     >
                       <IconPlayCircle size={16} />
                     </a>
@@ -356,7 +356,7 @@ export function WorkoutPreview({
         <h2 className="mb-2 text-[16px] font-bold">
           {warmups.length ? "Workout" : "Exercises"}
         </h2>
-        <div className="overflow-hidden rounded-[18px] border border-[var(--border)] bg-[var(--card)]">
+        <div className="overflow-hidden rounded-md border border-[var(--border)] bg-[var(--card)]">
           {main.map((ex, i) => {
             const cat = catalogEntry(ex.name);
             const thumb = youtubeThumb(cat?.youtubeUrl);
@@ -376,7 +376,7 @@ export function WorkoutPreview({
                     target="_blank"
                     rel="noreferrer"
                     aria-label={`Form video for ${ex.name}`}
-                    className="relative h-[52px] w-[52px] shrink-0 overflow-hidden rounded-[10px] bg-[var(--card-2)]"
+                    className="relative h-[52px] w-[52px] shrink-0 overflow-hidden rounded-[4px] bg-[var(--card-2)]"
                   >
                     {thumb ? (
                       // eslint-disable-next-line @next/next/no-img-element
@@ -388,14 +388,14 @@ export function WorkoutPreview({
                     ) : null}
                     <span
                       className={`absolute inset-0 flex items-center justify-center ${
-                        thumb ? "text-white" : "text-[var(--dim)]"
+                        thumb ? "text-[var(--text)]" : "text-[var(--dim)]"
                       }`}
                     >
                       <IconPlayCircle size={20} />
                     </span>
                   </a>
                   <div className="min-w-0 flex-1">
-                    <p className="text-[15px] font-bold leading-snug text-white">
+                    <p className="text-[15px] font-bold leading-snug text-[var(--text)]">
                       {ex.name}
                     </p>
                     <p className="mt-0.5 text-[12.5px] font-semibold text-[var(--blue)]">
@@ -435,7 +435,7 @@ export function WorkoutPreview({
                       href={formVideoUrl(ex.name)}
                       target="_blank"
                       rel="noreferrer"
-                      className="block font-bold text-white"
+                      className="block font-bold text-[var(--text)]"
                     >
                       {cat?.youtubeUrl ? "Watch form video" : "Find a form video"}
                     </a>
@@ -454,13 +454,13 @@ export function WorkoutPreview({
         </div>
 
         {equipment.length ? (
-          <div className="mt-3 overflow-hidden rounded-[18px] border border-white/5 bg-[var(--surface)]">
+          <div className="mt-3 overflow-hidden rounded-md border border-white/5 bg-[var(--surface)]">
             <button
               type="button"
               className="flex w-full items-center justify-between px-4 py-3.5 text-left"
               onClick={() => setShowGear((v) => !v)}
             >
-              <p className="text-[14.5px] font-bold text-white">
+              <p className="text-[14.5px] font-bold text-[var(--text)]">
                 Equipment ({equipment.length})
               </p>
               <span
@@ -491,7 +491,7 @@ export function WorkoutPreview({
         <Link
           href={startHref}
           prefetch={false}
-          className="flex min-h-[54px] w-full items-center justify-center gap-2 rounded-2xl bg-[var(--green)] text-[16px] font-extrabold text-[var(--on-green)] active:scale-[0.99]"
+          className="flex min-h-[54px] w-full items-center justify-center gap-2 rounded-md bg-[var(--accent)] text-[16px] font-extrabold text-[var(--on-accent)] active:scale-[0.99]"
         >
           <IconPlay size={15} />
           {hasDraft ? "Resume Workout" : "Start Workout"}

@@ -191,18 +191,18 @@ export function ProgramHome({
           className="flex min-w-0 items-center gap-2 active:opacity-70"
         >
           <span
-            className="grid h-7 w-7 shrink-0 place-items-center rounded-md bg-[#7c5cbf] text-[11px] font-black text-white"
+            className="grid h-7 w-7 shrink-0 place-items-center rounded-md bg-[#7c5cbf] text-[11px] font-black text-[var(--text)]"
             aria-hidden
           >
             ≡
           </span>
-          <span className="truncate text-[17px] font-bold text-white">
+          <span className="truncate text-[17px] font-bold text-[var(--text)]">
             {programName} <span className="text-white/50">›</span>
           </span>
         </Link>
         <button
           type="button"
-          className="grid h-10 w-10 place-items-center text-xl text-white"
+          className="grid h-10 w-10 place-items-center text-xl text-[var(--text)]"
           aria-label="Menu"
           onClick={() => setMenu((v) => !v)}
         >
@@ -211,12 +211,12 @@ export function ProgramHome({
       </div>
 
       {menu ? (
-        <div className="rounded-2xl border border-white/10 bg-[#161616] p-2 text-sm">
+        <div className="rounded-md border border-white/10 bg-[#161616] p-2 text-sm">
           <MenuRow href="/train/schedule" label="Switch program / week" />
           <MenuRow href="/train/manage" label="Edit days" />
           <button
             type="button"
-            className="flex w-full items-center justify-between rounded-xl px-3 py-2.5 text-left active:bg-white/5"
+            className="flex w-full items-center justify-between rounded-md px-3 py-2.5 text-left active:bg-white/5"
             onClick={() => {
               setMenu(false);
               onOpenCalendar();
@@ -226,7 +226,7 @@ export function ProgramHome({
           </button>
           <button
             type="button"
-            className="flex w-full items-center justify-between rounded-xl px-3 py-2.5 text-left active:bg-white/5"
+            className="flex w-full items-center justify-between rounded-md px-3 py-2.5 text-left active:bg-white/5"
             onClick={() => {
               setMenu(false);
               onOpenProgress();
@@ -245,10 +245,10 @@ export function ProgramHome({
         </div>
       ) : null}
 
-      <div className="rounded-2xl bg-[#1a1a1a] px-4 py-3.5">
+      <div className="rounded-md bg-[#1a1a1a] px-4 py-3.5">
         <div className="flex items-start justify-between gap-3">
           <div>
-            <p className="text-[15px] font-bold text-white">Accelerate Your Transformation</p>
+            <p className="text-[15px] font-bold text-[var(--text)]">Accelerate Your Transformation</p>
             <p className="mt-1 text-[12px] italic text-[var(--muted)]">
               4 workouts = 4x more likely to transform.
             </p>
@@ -278,7 +278,7 @@ export function ProgramHome({
           >
             ‹
           </button>
-          <p className="text-[15px] font-semibold text-white">
+          <p className="text-[15px] font-semibold text-[var(--text)]">
             Week {week === "A" ? "1" : "2"}
             {weekBusy ? "…" : ""}
           </p>
@@ -311,12 +311,12 @@ export function ProgramHome({
                 <>
                   <span
                     className={`text-[10px] font-bold tracking-wide ${
-                      on ? "text-white" : "text-[var(--dim)]"
+                      on ? "text-[var(--text)]" : "text-[var(--dim)]"
                     }`}
                   >
                     REST
                   </span>
-                  <span className={`text-[13px] ${on ? "text-white" : "text-[var(--dim)]"}`}>
+                  <span className={`text-[13px] ${on ? "text-[var(--text)]" : "text-[var(--dim)]"}`}>
                     ☾
                   </span>
                 </>
@@ -324,14 +324,14 @@ export function ProgramHome({
                 <>
                   <span
                     className={`text-[10px] font-bold tracking-wide ${
-                      on ? "text-white" : "text-[var(--dim)]"
+                      on ? "text-[var(--text)]" : "text-[var(--dim)]"
                     }`}
                   >
                     DAY
                   </span>
                   <span
                     className={`text-[15px] font-semibold leading-none ${
-                      on ? "text-white" : "text-[var(--dim)]"
+                      on ? "text-[var(--text)]" : "text-[var(--dim)]"
                     }`}
                   >
                     {c.programDay}
@@ -343,7 +343,7 @@ export function ProgramHome({
         })}
       </div>
 
-      <div className="overflow-hidden rounded-[22px] bg-[#111]">
+      <div className="overflow-hidden rounded-md bg-[#111]">
         <div className="relative h-[38vh] min-h-[240px]">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
@@ -353,7 +353,7 @@ export function ProgramHome({
           />
           <div className="absolute inset-0 bg-gradient-to-t from-black via-black/50 to-black/20" />
           <div className="absolute inset-x-0 bottom-0 px-5 pb-4 text-center">
-            <h2 className="text-[28px] font-bold leading-tight tracking-tight text-white">
+            <h2 className="text-[28px] font-bold leading-tight tracking-tight text-[var(--text)]">
               {slot.rest ? "Rest Day" : title}
             </h2>
             {slot.rest ? (
@@ -368,15 +368,15 @@ export function ProgramHome({
         {!slot.rest ? (
           <div className="grid grid-cols-3 border-t border-white/10 bg-black/80 py-3 text-center">
             <div>
-              <p className="text-[20px] font-bold text-white">{exCount || "—"}</p>
+              <p className="text-[20px] font-bold text-[var(--text)]">{exCount || "—"}</p>
               <p className="text-[11px] text-[var(--muted)]">Exercises</p>
             </div>
             <div>
-              <p className="text-[20px] font-bold text-white">{setCount || "—"}</p>
+              <p className="text-[20px] font-bold text-[var(--text)]">{setCount || "—"}</p>
               <p className="text-[11px] text-[var(--muted)]">Sets</p>
             </div>
             <div>
-              <p className="text-[20px] font-bold text-white">{minutes}</p>
+              <p className="text-[20px] font-bold text-[var(--text)]">{minutes}</p>
               <p className="text-[11px] text-[var(--muted)]">Minutes</p>
             </div>
           </div>
@@ -388,7 +388,7 @@ export function ProgramHome({
           {isToday && !todayDone ? (
             <button
               type="button"
-              className="flex min-h-[48px] w-full items-center justify-center rounded-xl bg-[var(--blue)] text-[15px] font-bold text-[var(--on-blue)] active:scale-[0.98]"
+              className="flex min-h-[48px] w-full items-center justify-center rounded-md bg-[var(--blue)] text-[15px] font-bold text-[var(--on-blue)] active:scale-[0.98]"
               disabled={restBusy}
               onClick={() => void completeRest()}
             >
@@ -412,7 +412,7 @@ export function ProgramHome({
             <Link
               href={viewHref}
               prefetch={false}
-              className="flex min-h-[48px] items-center justify-center rounded-xl bg-[#2a2a2a] text-[15px] font-semibold text-white active:scale-[0.98]"
+              className="flex min-h-[48px] items-center justify-center rounded-md bg-[#2a2a2a] text-[15px] font-semibold text-[var(--text)] active:scale-[0.98]"
             >
               View workout
             </Link>
@@ -421,7 +421,7 @@ export function ProgramHome({
             <Link
               href={startHref}
               prefetch={false}
-              className="flex min-h-[48px] items-center justify-center rounded-xl bg-[var(--blue)] text-[15px] font-bold text-[var(--on-blue)] active:scale-[0.98]"
+              className="flex min-h-[48px] items-center justify-center rounded-md bg-[var(--blue)] text-[15px] font-bold text-[var(--on-blue)] active:scale-[0.98]"
             >
               Start Day {slot.programDay}
             </Link>
@@ -437,7 +437,7 @@ function MenuRow({ href, label }: { href: string; label: string }) {
     <Link
       href={href}
       prefetch={false}
-      className="flex w-full items-center justify-between rounded-xl px-3 py-2.5 active:bg-white/5"
+      className="flex w-full items-center justify-between rounded-md px-3 py-2.5 active:bg-white/5"
     >
       {label}
     </Link>

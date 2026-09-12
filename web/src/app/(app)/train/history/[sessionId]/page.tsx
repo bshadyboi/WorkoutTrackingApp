@@ -319,7 +319,7 @@ function SessionRecapInner() {
   }
 
   if (loading) {
-    return <div className="h-40 animate-pulse rounded-2xl bg-[var(--card-2)]" />;
+    return <div className="h-40 animate-pulse rounded-md bg-[var(--card-2)]" />;
   }
 
   if (err || !review) {
@@ -381,7 +381,7 @@ function SessionRecapInner() {
         ) : (
           <ul className="space-y-1.5">
             {review.highlights.map((h) => (
-              <li key={h} className="text-sm leading-snug text-white">
+              <li key={h} className="text-sm leading-snug text-[var(--text)]">
                 {h}
               </li>
             ))}
@@ -477,7 +477,7 @@ function SessionRecapInner() {
           role="dialog"
           aria-modal="true"
         >
-          <div className="w-full max-w-sm rounded-2xl border border-[var(--border)] bg-[var(--card)] p-5 shadow-xl">
+          <div className="w-full max-w-sm rounded-md border border-[var(--border)] bg-[var(--card)] p-5 shadow-xl">
             <p className="text-lg font-bold">Delete session?</p>
             <p className="mt-2 text-sm text-[var(--muted)]">
               This removes {review.title}
@@ -493,7 +493,7 @@ function SessionRecapInner() {
             <div className="mt-5 space-y-2.5">
               <button
                 type="button"
-                className="w-full rounded-xl border border-red-500/50 bg-red-500/10 px-4 py-3 text-sm font-bold text-red-300"
+                className="w-full rounded-md border border-red-500/50 bg-red-500/10 px-4 py-3 text-sm font-bold text-red-300"
                 disabled={deleting}
                 onClick={() => void deleteSession()}
               >
@@ -517,7 +517,7 @@ function SessionRecapInner() {
 
 export default function SessionRecapPage() {
   return (
-    <Suspense fallback={<div className="h-40 animate-pulse rounded-2xl bg-[var(--card-2)]" />}>
+    <Suspense fallback={<div className="h-40 animate-pulse rounded-md bg-[var(--card-2)]" />}>
       <SessionRecapInner />
     </Suspense>
   );

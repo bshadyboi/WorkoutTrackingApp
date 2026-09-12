@@ -108,21 +108,21 @@ export function WaterStepsCards({
         <div className="grid grid-cols-3 gap-1">
           <button
             type="button"
-            className="rounded-lg bg-[var(--raised)] py-2 text-xs font-bold active:bg-[var(--blue)] active:text-[var(--on-blue)]"
+            className="rounded-[4px] bg-[var(--raised)] py-2 text-xs font-bold active:bg-[var(--blue)] active:text-[var(--on-blue)]"
             onClick={() => addWater(8)}
           >
             +8
           </button>
           <button
             type="button"
-            className="rounded-lg bg-[var(--raised)] py-2 text-xs font-bold active:bg-[var(--blue)] active:text-[var(--on-blue)]"
+            className="rounded-[4px] bg-[var(--raised)] py-2 text-xs font-bold active:bg-[var(--blue)] active:text-[var(--on-blue)]"
             onClick={() => addWater(16)}
           >
             +16
           </button>
           <button
             type="button"
-            className="rounded-lg bg-[var(--raised)] py-2 text-xs font-bold text-[var(--muted)] active:text-white"
+            className="rounded-[4px] bg-[var(--raised)] py-2 text-xs font-bold text-[var(--muted)] active:text-[var(--text)]"
             onClick={resetWater}
           >
             reset
@@ -138,7 +138,7 @@ export function WaterStepsCards({
           </p>
           <button
             type="button"
-            className="shrink-0 rounded-lg border border-[var(--border-solid)] px-2 py-1 text-[11px] font-bold text-[var(--blue)]"
+            className="shrink-0 rounded-[4px] border border-[var(--border-solid)] px-2 py-1 text-[11px] font-bold text-[var(--blue)]"
             onClick={logSteps}
           >
             + log

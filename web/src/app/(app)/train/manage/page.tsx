@@ -127,7 +127,7 @@ export default function ManageWorkoutsPage() {
         />
         <button
           type="button"
-          className="btn-green w-full"
+          className="btn-accent w-full"
           disabled={creating || !newName.trim()}
           onClick={() => void createDay()}
         >
@@ -139,7 +139,7 @@ export default function ManageWorkoutsPage() {
       <div className="space-y-2">
         <p className="text-lg font-bold">Your days</p>
         {loading ? (
-          <div className="h-20 animate-pulse rounded-2xl bg-[var(--card-2)]" />
+          <div className="h-20 animate-pulse rounded-md bg-[var(--card-2)]" />
         ) : days.length === 0 ? (
           <p className="text-sm text-[var(--muted)]">No days yet — create one above.</p>
         ) : (

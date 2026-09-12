@@ -113,7 +113,7 @@ export function MorningCheckinCard({
       {TAGS.map((tag) => (
         <div key={tag.key} className="space-y-1.5">
           <div className="flex items-center justify-between gap-2">
-            <p className="text-xs font-semibold text-white">
+            <p className="text-xs font-semibold text-[var(--text)]">
               {tag.emoji} {tag.label}
             </p>
             {values[tag.key] > 0 ? (
@@ -129,10 +129,10 @@ export function MorningCheckinCard({
                 type="button"
                 disabled={saving}
                 onClick={() => void pick(tag.key, n)}
-                className={`rounded-lg py-2 text-xs font-bold transition-colors ${
+                className={`rounded-[4px] py-2 text-xs font-bold transition-colors ${
                   values[tag.key] === n
-                    ? "bg-[var(--green)] text-[var(--on-green)]"
-                    : "bg-[var(--raised)] text-[var(--muted)] hover:text-white"
+                    ? "bg-[var(--blue)] text-[var(--on-blue)]"
+                    : "bg-[var(--raised)] text-[var(--muted)] hover:text-[var(--text)]"
                 }`}
               >
                 {n}

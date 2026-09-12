@@ -125,14 +125,14 @@ export function WeeklyCheckinCard() {
         </div>
         <div>
           <p className="text-[10px] font-semibold uppercase text-[var(--muted)]">Status</p>
-          <p className="text-sm font-semibold text-white">{scan.statusLine}</p>
+          <p className="text-sm font-semibold text-[var(--text)]">{scan.statusLine}</p>
         </div>
       </div>
 
       {scan.dayLines.length ? (
         <ul className="space-y-1.5 border-t border-[var(--border)] pt-3">
           {scan.dayLines.map((line) => (
-            <li key={line} className="text-sm leading-snug text-white">
+            <li key={line} className="text-sm leading-snug text-[var(--text)]">
               {line}
             </li>
           ))}

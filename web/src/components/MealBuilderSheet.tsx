@@ -82,7 +82,7 @@ export function MealBuilderSheet({
 
   return (
     <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/75 sm:items-center" role="dialog" aria-modal="true" aria-labelledby="builder-title">
-      <div className="flex max-h-[92dvh] w-full max-w-lg flex-col rounded-t-3xl border border-[var(--border)] bg-[var(--card)] sm:rounded-3xl">
+      <div className="flex max-h-[92dvh] w-full max-w-lg flex-col rounded-t-md border border-[var(--border)] bg-[var(--card)] sm:rounded-md">
         <div className="flex items-center justify-between border-b border-[var(--border)] px-5 py-3.5">
           <h2 id="builder-title" className="text-[17px] font-bold">
             Save a meal
@@ -106,7 +106,7 @@ export function MealBuilderSheet({
                   key={s}
                   type="button"
                   onClick={() => setSlot(s)}
-                  className={`h-10 rounded-xl text-[13px] font-semibold ${
+                  className={`h-10 rounded-md text-[13px] font-semibold ${
                     slot === s ? "bg-[var(--blue)] text-[var(--on-blue)]" : "bg-[var(--card-2)] text-[var(--muted)]"
                   }`}
                 >
@@ -119,7 +119,7 @@ export function MealBuilderSheet({
           <div>
             <p className="label">Foods</p>
             {drafts.length ? (
-              <div className="overflow-hidden rounded-2xl border border-[var(--border)] bg-[var(--surface)]">
+              <div className="overflow-hidden rounded-md border border-[var(--border)] bg-[var(--surface)]">
                 {drafts.map((d, i) => {
                   const it = items[i];
                   return (
@@ -131,10 +131,10 @@ export function MealBuilderSheet({
                         </p>
                       </div>
                       <div className="flex shrink-0 items-center gap-1">
-                        <button type="button" aria-label={`Fewer servings of ${it.name}`} onClick={() => setServings(d.key, -0.5)} className="h-9 w-9 rounded-lg bg-[var(--card-2)] text-[16px] font-bold text-[var(--muted)]">−</button>
+                        <button type="button" aria-label={`Fewer servings of ${it.name}`} onClick={() => setServings(d.key, -0.5)} className="h-9 w-9 rounded-[4px] bg-[var(--card-2)] text-[16px] font-bold text-[var(--muted)]">−</button>
                         <span className="w-9 text-center text-[13px] font-bold tabular-nums">{d.servings}×</span>
-                        <button type="button" aria-label={`More servings of ${it.name}`} onClick={() => setServings(d.key, 0.5)} className="h-9 w-9 rounded-lg bg-[var(--card-2)] text-[16px] font-bold text-[var(--muted)]">+</button>
-                        <button type="button" aria-label={`Remove ${it.name}`} onClick={() => setDrafts((ds) => ds.filter((x) => x.key !== d.key))} className="ml-1 flex h-9 w-9 items-center justify-center rounded-lg text-[var(--muted)]">
+                        <button type="button" aria-label={`More servings of ${it.name}`} onClick={() => setServings(d.key, 0.5)} className="h-9 w-9 rounded-[4px] bg-[var(--card-2)] text-[16px] font-bold text-[var(--muted)]">+</button>
+                        <button type="button" aria-label={`Remove ${it.name}`} onClick={() => setDrafts((ds) => ds.filter((x) => x.key !== d.key))} className="ml-1 flex h-9 w-9 items-center justify-center rounded-[4px] text-[var(--muted)]">
                           <IconX size={15} />
                         </button>
                       </div>
@@ -143,7 +143,7 @@ export function MealBuilderSheet({
                 })}
               </div>
             ) : (
-              <p className="rounded-2xl border border-dashed border-[var(--border-solid)] px-4 py-5 text-center text-[13px] text-[var(--muted)]">
+              <p className="rounded-md border border-dashed border-[var(--border-solid)] px-4 py-5 text-center text-[13px] text-[var(--muted)]">
                 No foods yet — add the pieces of this meal.
               </p>
             )}
@@ -154,7 +154,7 @@ export function MealBuilderSheet({
 
           {drafts.length ? (
             <p className="text-center text-[13px] tabular-nums text-[var(--muted)]">
-              Total <span className="font-bold text-white">{roundMacro(totals.calories)} cal</span> · {roundMacro(totals.protein)}p · {roundMacro(totals.carbs)}c · {roundMacro(totals.fat)}f
+              Total <span className="font-bold text-[var(--text)]">{roundMacro(totals.calories)} cal</span> · {roundMacro(totals.protein)}p · {roundMacro(totals.carbs)}c · {roundMacro(totals.fat)}f
             </p>
           ) : null}
           {error ? <p className="text-center text-[13px] text-[var(--yellow)]">{error}</p> : null}
@@ -163,7 +163,7 @@ export function MealBuilderSheet({
         <div className="border-t border-[var(--border)] px-5 py-3.5" style={{ paddingBottom: "max(14px, env(safe-area-inset-bottom, 0px))" }}>
           <button
             type="button"
-            className="btn-green w-full"
+            className="btn-accent w-full"
             disabled={saving || !name.trim() || !drafts.length}
             onClick={() => onSave({ name: name.trim(), meal: slot, items })}
           >

@@ -149,7 +149,7 @@ export function DailyWeightCard({
         />
         <button
           type="button"
-          className="btn-green px-5"
+          className="btn-accent px-5"
           onClick={() => void save()}
           disabled={saving}
         >

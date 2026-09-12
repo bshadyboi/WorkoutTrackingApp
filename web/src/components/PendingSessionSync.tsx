@@ -46,7 +46,7 @@ export function PendingSessionSync() {
 
   if (justSynced > 0) {
     return (
-      <div className="mb-3 rounded-xl border border-[var(--green)]/30 bg-[var(--green)]/10 px-3.5 py-2.5 text-[12.5px] font-semibold text-[var(--green)]">
+      <div className="mb-3 rounded-md border border-[var(--green)]/30 bg-[var(--green)]/10 px-3.5 py-2.5 text-[12.5px] font-semibold text-[var(--green)]">
         Synced {justSynced} workout{justSynced === 1 ? "" : "s"} saved offline.
       </div>
     );
@@ -55,7 +55,7 @@ export function PendingSessionSync() {
   if (pending <= 0) return null;
 
   return (
-    <div className="mb-3 flex items-center gap-2.5 rounded-xl border border-[var(--yellow)]/30 bg-[var(--yellow)]/10 px-3.5 py-2.5">
+    <div className="mb-3 flex items-center gap-2.5 rounded-md border border-[var(--yellow)]/30 bg-[var(--yellow)]/10 px-3.5 py-2.5">
       <p className="flex-1 text-[12.5px] font-semibold text-[var(--yellow)]">
         {pending} workout{pending === 1 ? "" : "s"} saved on this device
         {syncing ? " · uploading…" : " · will upload when you're online"}

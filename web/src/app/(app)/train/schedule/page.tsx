@@ -111,7 +111,7 @@ export default function TrainSchedulePage() {
       </div>
 
       {loading ? (
-        <div className="h-40 animate-pulse rounded-2xl bg-[var(--card-2)]" />
+        <div className="h-40 animate-pulse rounded-md bg-[var(--card-2)]" />
       ) : (
         <div className="space-y-4">
           <div className="card space-y-3">
@@ -135,7 +135,7 @@ export default function TrainSchedulePage() {
                       if (isActive) return;
                       setConfirmId(id);
                     }}
-                    className={`w-full rounded-xl border px-3 py-3 text-left ${
+                    className={`w-full rounded-md border px-3 py-3 text-left ${
                       isActive
                         ? "border-[var(--green)]/50 bg-[var(--green)]/10"
                         : "border-[var(--border)] bg-[var(--card)] active:bg-white/5"
@@ -143,7 +143,7 @@ export default function TrainSchedulePage() {
                   >
                     <div className="flex items-start justify-between gap-2">
                       <div className="min-w-0">
-                        <p className="text-sm font-bold text-white">{p.name}</p>
+                        <p className="text-sm font-bold text-[var(--text)]">{p.name}</p>
                         <p className="mt-0.5 text-[11px] leading-snug text-[var(--muted)]">
                           {p.description}
                         </p>
@@ -176,7 +176,7 @@ export default function TrainSchedulePage() {
                       className={
                         d.includes("Rest")
                           ? "text-[var(--yellow)]"
-                          : "text-white"
+                          : "text-[var(--text)]"
                       }
                     >
                       {d}
@@ -187,15 +187,15 @@ export default function TrainSchedulePage() {
             </div>
 
             {active.tip ? (
-              <div className="rounded-xl border border-[var(--border)] bg-[var(--card-2)] p-3 text-sm">
-                <p className="font-semibold text-white">Notes</p>
+              <div className="rounded-md border border-[var(--border)] bg-[var(--card-2)] p-3 text-sm">
+                <p className="font-semibold text-[var(--text)]">Notes</p>
                 <p className="mt-1 text-[var(--muted)]">{active.tip}</p>
               </div>
             ) : null}
 
             {activeId === "elevate-challenge" ? (
-              <div className="rounded-xl border border-[var(--border)] bg-[var(--card-2)] p-3 text-sm">
-                <p className="font-semibold text-white">Challenge week</p>
+              <div className="rounded-md border border-[var(--border)] bg-[var(--card-2)] p-3 text-sm">
+                <p className="font-semibold text-[var(--text)]">Challenge week</p>
                 <p className="mt-1 text-[11px] text-[var(--muted)]">
                   Calendar starts Friday as Day 1. Odd weeks (1/3/5) use A days.
                   Even weeks (2/4/6) use B days.
@@ -207,7 +207,7 @@ export default function TrainSchedulePage() {
                       type="button"
                       disabled={busy}
                       onClick={() => void toggleElevateWeek(w)}
-                      className={`rounded-lg py-2 text-xs font-bold ${
+                      className={`rounded-[4px] py-2 text-xs font-bold ${
                         elevateWeek === w
                           ? "bg-[var(--blue)] text-[var(--on-blue)]"
                           : "bg-[var(--raised)] text-[var(--muted)]"
@@ -221,14 +221,14 @@ export default function TrainSchedulePage() {
             ) : null}
 
             {activeId === "ppl-aesthetics" ? (
-              <div className="rounded-xl border border-[var(--border)] bg-[var(--card-2)] p-3 text-sm">
-                <p className="font-semibold text-white">Wednesday swaps</p>
+              <div className="rounded-md border border-[var(--border)] bg-[var(--card-2)] p-3 text-sm">
+                <p className="font-semibold text-[var(--text)]">Wednesday swaps</p>
                 <p className="mt-1 text-[var(--muted)]">
                   Default is{" "}
-                  <strong className="text-white">Legs & Back/Arm Pump</strong>.
+                  <strong className="text-[var(--text)]">Legs & Back/Arm Pump</strong>.
                   Use makeup for{" "}
-                  <strong className="text-white">Leg Day A</strong> or{" "}
-                  <strong className="text-white">Leg Day B</strong>.
+                  <strong className="text-[var(--text)]">Leg Day A</strong> or{" "}
+                  <strong className="text-[var(--text)]">Leg Day B</strong>.
                 </p>
               </div>
             ) : null}
@@ -250,8 +250,8 @@ export default function TrainSchedulePage() {
 
       {confirmId ? (
         <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/70 p-4 sm:items-center">
-          <div className="w-full max-w-md space-y-3 rounded-2xl border border-[var(--border)] bg-[var(--card)] p-4">
-            <p className="text-lg font-bold text-white">
+          <div className="w-full max-w-md space-y-3 rounded-md border border-[var(--border)] bg-[var(--card)] p-4">
+            <p className="text-lg font-bold text-[var(--text)]">
               Switch to {getProgram(confirmId).shortName}?
             </p>
             <p className="text-sm text-[var(--muted)]">
@@ -261,7 +261,7 @@ export default function TrainSchedulePage() {
             </p>
             <button
               type="button"
-              className="btn-green w-full"
+              className="btn-accent w-full"
               disabled={busy}
               onClick={() => void switchProgram(confirmId, true)}
             >

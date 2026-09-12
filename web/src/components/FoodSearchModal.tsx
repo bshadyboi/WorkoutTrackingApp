@@ -206,7 +206,7 @@ export function FoodSearchModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/75 sm:items-center">
-      <div className="flex max-h-[90dvh] w-full max-w-lg flex-col rounded-t-3xl border border-[var(--border)] bg-[var(--card)] sm:rounded-3xl">
+      <div className="flex max-h-[90dvh] w-full max-w-lg flex-col rounded-t-md border border-[var(--border)] bg-[var(--card)] sm:rounded-md">
         <div className="flex items-center justify-between border-b border-[var(--border)] px-4 py-3">
           <p className="font-bold">Log {meal}</p>
           <button type="button" className="text-[var(--muted)]" onClick={onClose}>
@@ -244,7 +244,7 @@ export function FoodSearchModal({
           </div>
           <button
             type="button"
-            className="w-full rounded-lg bg-[var(--raised)] py-2 text-xs font-semibold text-[var(--blue)]"
+            className="w-full rounded-[4px] bg-[var(--raised)] py-2 text-xs font-semibold text-[var(--blue)]"
             onClick={() => setManual((v) => !v)}
           >
             ✎ Manual entry
@@ -275,7 +275,7 @@ export function FoodSearchModal({
 
           {scanning ? (
             <div className="space-y-2">
-              <video ref={videoRef} className="w-full rounded-xl bg-black" muted playsInline />
+              <video ref={videoRef} className="w-full rounded-md bg-black" muted playsInline />
               <p className="text-center text-[11px] text-[var(--muted)]">
                 Point at a barcode. On iPhone, photo/barcode type-in works more reliably.
               </p>
@@ -301,7 +301,7 @@ export function FoodSearchModal({
           ) : null}
 
           {manual ? (
-            <div className="space-y-2 rounded-xl border border-[var(--border)] p-3">
+            <div className="space-y-2 rounded-md border border-[var(--border)] p-3">
               <input className="field !py-2" placeholder="Food name" value={mName} onChange={(e) => setMName(e.target.value)} />
               <div className="grid grid-cols-4 gap-2">
                 <input className="field !px-2 !py-2 text-center text-sm" placeholder="Cal" inputMode="numeric" value={mCal} onChange={(e) => setMCal(e.target.value)} />
@@ -309,7 +309,7 @@ export function FoodSearchModal({
                 <input className="field !px-2 !py-2 text-center text-sm" placeholder="C" inputMode="numeric" value={mCarb} onChange={(e) => setMCarb(e.target.value)} />
                 <input className="field !px-2 !py-2 text-center text-sm" placeholder="F" inputMode="numeric" value={mFat} onChange={(e) => setMFat(e.target.value)} />
               </div>
-              <button type="button" className="btn-green w-full !py-2" onClick={addManual}>
+              <button type="button" className="btn-accent w-full !py-2" onClick={addManual}>
                 Add custom
               </button>
             </div>
@@ -324,13 +324,13 @@ export function FoodSearchModal({
                 key={f.id + f.name}
                 type="button"
                 onClick={() => addHit(f)}
-                className="flex w-full items-start gap-3 rounded-xl border border-[var(--border)] bg-[var(--surface)] p-3 text-left active:opacity-80"
+                className="flex w-full items-start gap-3 rounded-md border border-[var(--border)] bg-[var(--surface)] p-3 text-left active:opacity-80"
               >
                 {f.imageUrl ? (
                   // eslint-disable-next-line @next/next/no-img-element
-                  <img src={f.imageUrl} alt="" className="h-12 w-12 rounded-lg object-cover" />
+                  <img src={f.imageUrl} alt="" className="h-12 w-12 rounded-[4px] object-cover" />
                 ) : (
-                  <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-[var(--raised)] text-lg">
+                  <div className="flex h-12 w-12 items-center justify-center rounded-[4px] bg-[var(--raised)] text-lg">
                     🍽️
                   </div>
                 )}

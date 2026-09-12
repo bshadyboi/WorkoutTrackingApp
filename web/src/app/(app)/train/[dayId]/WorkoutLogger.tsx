@@ -15,7 +15,7 @@ import {
 import { formatPrescription, setTargetLabel } from "@/lib/workouts";
 import { IconCheck, IconMore, IconPlayCircle, IconSwap, IconX } from "@/components/icons";
 import { splitWarmupBlock } from "@/lib/prehab";
-import { suggestOverload } from "@/lib/overload";
+import { parseRepRange, suggestOverload } from "@/lib/overload";
 import { renameExerciseEverywhere } from "@/lib/exerciseRename";
 import {
   isOfflineError,
@@ -926,7 +926,7 @@ export function WorkoutLogger({
   const swapEx = swapForId ? sorted.find((e) => e.id === swapForId) : null;
 
   return (
-    <div className="min-h-dvh bg-[var(--bg)] pb-28">
+    <div className="min-h-dvh pb-28">
       <div
         className="sticky top-0 z-20 border-b border-[var(--border)] bg-[var(--surface)] px-5 pb-3"
         style={{ paddingTop: "max(14px, env(safe-area-inset-top, 0px))" }}
@@ -952,7 +952,7 @@ export function WorkoutLogger({
             type="button"
             onClick={requestFinish}
             disabled={saving}
-            className="flex h-[42px] items-center rounded-full bg-[var(--green)] px-5 text-[14.5px] font-extrabold text-[var(--on-green)]"
+            className="flex h-[42px] items-center rounded-full bg-[var(--accent)] px-5 text-[14.5px] font-extrabold text-[var(--on-accent)]"
           >
             {saving ? "…" : "Finish"}
           </button>
@@ -974,7 +974,7 @@ export function WorkoutLogger({
 
       {prToast ? (
         <div
-          className="fixed left-1/2 z-40 w-[min(92vw,360px)] -translate-x-1/2 rounded-2xl border border-[var(--green)]/50 bg-[#14261a] px-4 py-3 shadow-lg"
+          className="fixed left-1/2 z-40 w-[min(92vw,360px)] -translate-x-1/2 rounded-md border border-[var(--green)]/50 bg-[#14261a] px-4 py-3 shadow-lg"
           style={{ top: "max(72px, calc(env(safe-area-inset-top, 0px) + 56px))" }}
           role="status"
         >
@@ -984,7 +984,7 @@ export function WorkoutLogger({
       ) : null}
 
       {draftBanner ? (
-        <div className="mx-4 mt-3 rounded-xl border border-[var(--blue)]/40 bg-[var(--blue)]/10 px-3 py-2 text-xs text-[var(--blue)]">
+        <div className="mx-4 mt-3 rounded-md border border-[var(--blue)]/40 bg-[var(--blue)]/10 px-3 py-2 text-xs text-[var(--blue)]">
           Resumed saved session.{" "}
           <button type="button" className="font-bold underline" onClick={() => setDraftBanner(false)}>
             OK
@@ -1007,7 +1007,7 @@ export function WorkoutLogger({
 
       <div className="mt-4 space-y-4 px-4">
         {warmups.length ? (
-          <section className="space-y-3 rounded-[18px] border border-[var(--yellow)]/20 bg-[var(--card)] p-4">
+          <section className="space-y-3 rounded-md border border-[var(--yellow)]/20 bg-[var(--card)] p-4">
             <div className="flex items-center justify-between gap-3">
               <div className="min-w-0">
                 <h2 className="text-[17px] font-bold">Warm-up</h2>
@@ -1017,7 +1017,7 @@ export function WorkoutLogger({
               </div>
               <button
                 type="button"
-                className="shrink-0 rounded-[10px] bg-[var(--card-2)] px-3 py-2 text-[12.5px] font-bold text-[var(--muted)] active:text-white"
+                className="shrink-0 rounded-[4px] bg-[var(--card-2)] px-3 py-2 text-[12.5px] font-bold text-[var(--muted)] active:text-[var(--text)]"
                 onClick={() => {
                   const allDone = warmupsDone === warmups.length;
                   for (const ex of warmups) setWarmupDone(ex.id, !allDone);
@@ -1037,11 +1037,11 @@ export function WorkoutLogger({
                     <button
                       type="button"
                       onClick={() => setWarmupDone(ex.id, !done)}
-                      className="flex min-w-0 flex-1 items-center gap-3 rounded-xl px-1.5 py-2.5 text-left active:bg-white/5"
+                      className="flex min-w-0 flex-1 items-center gap-3 rounded-md px-1.5 py-2.5 text-left active:bg-white/5"
                       aria-pressed={done}
                     >
                       <span
-                        className={`flex h-[26px] w-[26px] shrink-0 items-center justify-center rounded-lg border-2 ${
+                        className={`flex h-[26px] w-[26px] shrink-0 items-center justify-center rounded-[4px] border-2 ${
                           done
                             ? "border-[var(--green)] bg-[var(--green)] text-[var(--on-green)]"
                             : "border-[var(--dim)] bg-[var(--card-2)] text-transparent"
@@ -1052,7 +1052,7 @@ export function WorkoutLogger({
                       <span className="min-w-0 flex-1">
                         <span
                           className={`block truncate text-[14.5px] font-semibold ${
-                            done ? "text-[var(--muted)] line-through" : "text-white"
+                            done ? "text-[var(--muted)] line-through" : "text-[var(--text)]"
                           }`}
                         >
                           {name}
@@ -1067,14 +1067,14 @@ export function WorkoutLogger({
                       target="_blank"
                       rel="noreferrer"
                       aria-label={`Form video for ${name}`}
-                      className="flex h-[34px] w-[34px] shrink-0 items-center justify-center rounded-[10px] bg-[var(--card-2)] text-[var(--muted)] active:text-white"
+                      className="flex h-[34px] w-[34px] shrink-0 items-center justify-center rounded-[4px] bg-[var(--card-2)] text-[var(--muted)] active:text-[var(--text)]"
                     >
                       <IconPlayCircle size={17} />
                     </a>
                     <button
                       type="button"
                       aria-label={`Options for ${name}`}
-                      className="flex h-[34px] w-[34px] shrink-0 items-center justify-center rounded-[10px] bg-[var(--card-2)] text-[var(--muted)] active:text-white"
+                      className="flex h-[34px] w-[34px] shrink-0 items-center justify-center rounded-[4px] bg-[var(--card-2)] text-[var(--muted)] active:text-[var(--text)]"
                       onClick={() => openEdit(ex)}
                     >
                       <IconMore size={17} />
@@ -1092,41 +1092,51 @@ export function WorkoutLogger({
           const cat = catalogEntry(name) ?? catalogEntry(ex.name);
           const isCardio = ex.muscle === "Cardio";
           const showPlates = !isCardio && isBarbellLoadable(name);
+          // Sets × reps is drawn as a dimension line; the prescription text
+          // keeps only what the line can't say (effort cues, crown-set detail).
+          const range = !isCardio && !ex.has_crown_set ? parseRepRange(ex.working_rep_range) : null;
+          const dimension = range
+            ? `${ex.default_sets} × ${range.low === range.high ? `${range.low}+` : `${range.low}–${range.high}`}`
+            : null;
+          const prescriptionNotes = isCardio
+            ? []
+            : formatPrescription({
+                defaultSets: ex.default_sets,
+                hasCrownSet: ex.has_crown_set,
+                crownRepRange: ex.crown_rep_range,
+                workingRepRange: ex.working_rep_range,
+              })
+                .filter((line) => !dimension || !/^\d+ sets$/.test(line))
+                .map((line) => (dimension ? line.replace(/^[0-9]+[–-][0-9]+ reps(\s*·\s*)?/, "") : line))
+                .filter(Boolean);
 
           return (
             <section
               key={ex.id}
-              className="space-y-3 rounded-[18px] border border-white/10 bg-[var(--card)] p-4"
+              className="space-y-3 rounded-md border border-[var(--border-solid)] bg-[var(--card)] p-4"
             >
               <div className="flex items-start justify-between gap-2.5">
                 <div className="min-w-0">
                   <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
                     <h2 className="text-[17px] font-bold leading-snug">{name}</h2>
-                    <span className="rounded-[10px] bg-[var(--card-2)] px-2 py-0.5 text-[11px] font-bold text-[var(--muted)]">
+                    <span className="rounded-[4px] bg-[var(--card-2)] px-2 py-0.5 text-[11px] font-bold text-[var(--muted)]">
                       {ex.muscle}
                     </span>
                   </div>
-                  {!isCardio ? (
+                  {prescriptionNotes.length ? (
                     <div className="mt-1.5 space-y-0.5">
-                      {formatPrescription({
-                        defaultSets: ex.default_sets,
-                        hasCrownSet: ex.has_crown_set,
-                        crownRepRange: ex.crown_rep_range,
-                        workingRepRange: ex.working_rep_range,
-                      }).map((line) => (
-                        <p
-                          key={line}
-                          className="text-[13px] font-semibold leading-snug text-[var(--blue)]"
-                        >
+                      {prescriptionNotes.map((line) => (
+                        <p key={line} className="text-[12.5px] leading-snug text-[var(--muted)]">
                           {line}
                         </p>
                       ))}
                     </div>
-                  ) : (
+                  ) : null}
+                  {isCardio ? (
                     <p className="mt-1.5 text-[13px] font-semibold text-[var(--blue)]">
                       30 min incline walk
                     </p>
-                  )}
+                  ) : null}
                   {cat?.notes ? (
                     <p className="mt-1 text-[12px] text-[var(--yellow)]">{cat.notes}</p>
                   ) : null}
@@ -1137,14 +1147,14 @@ export function WorkoutLogger({
                     target="_blank"
                     rel="noreferrer"
                     aria-label="Form video"
-                    className="flex h-[34px] w-[34px] items-center justify-center rounded-[10px] bg-[var(--card-2)] text-[var(--muted)] active:text-white"
+                    className="flex h-[34px] w-[34px] items-center justify-center rounded-[4px] bg-[var(--card-2)] text-[var(--muted)] active:text-[var(--text)]"
                   >
                     <IconPlayCircle size={17} />
                   </a>
                   <button
                     type="button"
                     aria-label="Swap exercise"
-                    className="flex h-[34px] w-[34px] items-center justify-center rounded-[10px] bg-[var(--card-2)] text-[var(--muted)] active:text-white"
+                    className="flex h-[34px] w-[34px] items-center justify-center rounded-[4px] bg-[var(--card-2)] text-[var(--muted)] active:text-[var(--text)]"
                     onClick={() => setSwapForId(ex.id)}
                   >
                     <IconSwap size={17} />
@@ -1152,13 +1162,19 @@ export function WorkoutLogger({
                   <button
                     type="button"
                     aria-label="Edit exercise"
-                    className="flex h-[34px] w-[34px] items-center justify-center rounded-[10px] bg-[var(--card-2)] text-[var(--muted)] active:text-white"
+                    className="flex h-[34px] w-[34px] items-center justify-center rounded-[4px] bg-[var(--card-2)] text-[var(--muted)] active:text-[var(--text)]"
                     onClick={() => openEdit(ex)}
                   >
                     <IconMore size={17} />
                   </button>
                 </div>
               </div>
+
+              {dimension ? (
+                <p className="dim font-mono text-[12.5px] font-medium">
+                  <span className="whitespace-nowrap">{dimension}</span>
+                </p>
+              ) : null}
 
               {isCardio ? (
                 <div className="space-y-2">
@@ -1182,10 +1198,10 @@ export function WorkoutLogger({
                   <button
                     type="button"
                     onClick={() => toggleComplete(ex, 0)}
-                    className={`w-full rounded-xl py-3 text-sm font-bold ${
+                    className={`w-full rounded-md py-3 text-sm font-bold ${
                       sets[0]?.completed
                         ? "bg-[var(--green)] text-[var(--on-green)]"
-                        : "bg-[var(--raised)] text-white"
+                        : "bg-[var(--raised)] text-[var(--text)]"
                     }`}
                   >
                     {sets[0]?.completed ? "Cardio done ✓" : "Mark cardio done"}
@@ -1233,7 +1249,7 @@ export function WorkoutLogger({
                     return (
                       <div key={set.setNumber}>
                         <div
-                          className={`grid grid-cols-[36px_minmax(0,1fr)_64px_56px_44px] items-center gap-1.5 rounded-xl px-0.5 py-1.5 ${
+                          className={`grid grid-cols-[36px_minmax(0,1fr)_64px_56px_44px] items-center gap-1.5 rounded-md px-0.5 py-1.5 ${
                             set.completed
                               ? set.isWarmup
                                 ? "bg-[var(--yellow)]/[0.07]"
@@ -1254,7 +1270,7 @@ export function WorkoutLogger({
                             className={`mx-auto flex h-[30px] w-[30px] items-center justify-center rounded-full text-[13px] font-extrabold ${
                               set.isWarmup
                                 ? "bg-[var(--yellow)]/15 text-[var(--yellow)]"
-                                : "bg-[var(--card-2)] text-white"
+                                : "bg-[var(--card-2)] text-[var(--text)]"
                             }`}
                           >
                             {set.isWarmup
@@ -1306,7 +1322,7 @@ export function WorkoutLogger({
                             )}
                           </div>
                           <input
-                            className="h-11 w-full rounded-xl border border-[var(--border-solid)] bg-[var(--field)] px-1 text-center text-[15px] font-bold text-white outline-none focus:border-[var(--blue)]"
+                            className="h-11 w-full rounded-md border border-[var(--border-solid)] bg-[var(--field)] px-1 text-center text-[15px] font-bold text-[var(--text)] outline-none focus:border-[var(--blue)]"
                             inputMode="decimal"
                             value={set.weight}
                             onChange={(e) =>
@@ -1314,7 +1330,7 @@ export function WorkoutLogger({
                             }
                           />
                           <input
-                            className="h-11 w-full rounded-xl border border-[var(--border-solid)] bg-[var(--field)] px-1 text-center text-[15px] font-bold text-white outline-none focus:border-[var(--blue)]"
+                            className="h-11 w-full rounded-md border border-[var(--border-solid)] bg-[var(--field)] px-1 text-center text-[15px] font-bold text-[var(--text)] outline-none focus:border-[var(--blue)]"
                             inputMode="numeric"
                             value={set.reps}
                             onChange={(e) =>
@@ -1325,7 +1341,7 @@ export function WorkoutLogger({
                             type="button"
                             aria-label={set.completed ? "Set done" : "Mark set done"}
                             onClick={() => toggleComplete(ex, i)}
-                            className={`mx-auto flex h-10 w-10 items-center justify-center rounded-xl ${
+                            className={`mx-auto flex h-10 w-10 items-center justify-center rounded-md ${
                               set.completed
                                 ? "bg-[var(--green)] text-[var(--on-green)]"
                                 : "bg-[var(--card-2)] text-[var(--dim)]"
@@ -1352,7 +1368,7 @@ export function WorkoutLogger({
                                         onClick={() => chooseBar(ex.id, lb)}
                                         className={`rounded-md px-1.5 py-0.5 text-[10px] font-bold ${
                                           exerciseBar === lb
-                                            ? "bg-[var(--green)] text-[var(--on-green)]"
+                                            ? "bg-[var(--blue)] text-[var(--on-blue)]"
                                             : "bg-[var(--raised)] text-[var(--muted)]"
                                         }`}
                                       >
@@ -1377,7 +1393,7 @@ export function WorkoutLogger({
                             })()
                           : null}
                         {showRest ? (
-                          <div className="my-1.5 flex items-center gap-2.5 rounded-xl border border-[var(--blue)]/25 bg-[var(--blue)]/10 px-3.5 py-2.5">
+                          <div className="my-1.5 flex items-center gap-2.5 rounded-md border border-[var(--blue)]/25 bg-[var(--blue)]/10 px-3.5 py-2.5">
                             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--blue)" strokeWidth="2" strokeLinecap="round" aria-hidden><circle cx="12" cy="12" r="9" /><path d="M12 7v5l3 2" /></svg>
                             <span className="flex-1 font-mono text-[13.5px] font-bold tabular-nums text-[var(--blue)]">
                               Rest · {formatRest(activeRestLeft)}
@@ -1416,9 +1432,9 @@ export function WorkoutLogger({
                                     <button
                                       key={s}
                                       type="button"
-                                      className={`rounded-lg px-2.5 py-1.5 text-[11px] font-bold ${
+                                      className={`rounded-[4px] px-2.5 py-1.5 text-[11px] font-bold ${
                                         on
-                                          ? "bg-[var(--green)] text-[var(--on-green)]"
+                                          ? "bg-[var(--blue)] text-[var(--on-blue)]"
                                           : "bg-[var(--raised)] text-[var(--muted)]"
                                       }`}
                                       onClick={() => applyRestPreset(ex.id, s)}
@@ -1438,7 +1454,7 @@ export function WorkoutLogger({
                             ) : (
                               <button
                                 type="button"
-                                className="flex w-full items-center justify-center gap-3 py-1 text-[11px] text-[var(--muted)] active:text-white"
+                                className="flex w-full items-center justify-center gap-3 py-1 text-[11px] text-[var(--muted)] active:text-[var(--text)]"
                                 onClick={() => setRestEditExerciseId(ex.id)}
                               >
                                 <span className="h-px flex-1 bg-[var(--border-solid)]" />
@@ -1482,7 +1498,7 @@ export function WorkoutLogger({
           aria-modal="true"
           aria-labelledby="finish-title"
         >
-          <div className="w-full max-w-sm rounded-2xl border border-[var(--border)] bg-[var(--card)] p-5 shadow-xl">
+          <div className="w-full max-w-sm rounded-md border border-[var(--border)] bg-[var(--card)] p-5 shadow-xl">
             <p id="finish-title" className="text-lg font-bold">
               Finish workout?
             </p>
@@ -1494,7 +1510,7 @@ export function WorkoutLogger({
             <div className="mt-5 space-y-2.5">
               <button
                 type="button"
-                className="btn-green w-full"
+                className="btn-accent w-full"
                 onClick={finish}
                 disabled={saving || completedSetCount === 0}
               >
@@ -1519,7 +1535,7 @@ export function WorkoutLogger({
           aria-modal="true"
           aria-labelledby="leave-title"
         >
-          <div className="w-full max-w-sm rounded-2xl border border-[var(--border)] bg-[var(--card)] p-5 shadow-xl">
+          <div className="w-full max-w-sm rounded-md border border-[var(--border)] bg-[var(--card)] p-5 shadow-xl">
             <p id="leave-title" className="text-lg font-bold">
               Leave workout?
             </p>
@@ -1528,7 +1544,7 @@ export function WorkoutLogger({
               clears the in-progress session.
             </p>
             <div className="mt-5 space-y-2.5">
-              <button type="button" className="btn-green w-full" onClick={saveAndLeave}>
+              <button type="button" className="btn-accent w-full" onClick={saveAndLeave}>
                 Save & resume later
               </button>
               <button
@@ -1540,7 +1556,7 @@ export function WorkoutLogger({
               </button>
               <button
                 type="button"
-                className="w-full rounded-xl border border-[var(--border-solid)] px-4 py-3 text-sm font-bold text-[var(--red)]"
+                className="w-full rounded-md border border-[var(--border-solid)] px-4 py-3 text-sm font-bold text-[var(--red)]"
                 onClick={discardAndLeave}
               >
                 Discard & leave
@@ -1562,7 +1578,7 @@ export function WorkoutLogger({
 
       {editEx ? (
         <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/70 p-4 sm:items-center">
-          <div className="w-full max-w-sm rounded-2xl border border-[var(--border)] bg-[var(--card)] p-5">
+          <div className="w-full max-w-sm rounded-md border border-[var(--border)] bg-[var(--card)] p-5">
             <p className="text-lg font-bold">Edit exercise</p>
             <p className="mt-1 text-xs text-[var(--muted)]">
               Rename, pick a swap, or change rest for this movement.
@@ -1581,7 +1597,7 @@ export function WorkoutLogger({
             </p>
             <button
               type="button"
-              className="btn-green mt-2 w-full !py-2.5"
+              className="btn-accent mt-2 w-full !py-2.5"
               disabled={renameBusy}
               onClick={() => void applyCustomName()}
             >
@@ -1619,9 +1635,9 @@ export function WorkoutLogger({
                       <button
                         key={s}
                         type="button"
-                        className={`rounded-lg py-1.5 text-[11px] font-semibold ${
+                        className={`rounded-[4px] py-1.5 text-[11px] font-semibold ${
                           on
-                            ? "bg-[var(--green)] text-[var(--on-green)]"
+                            ? "bg-[var(--blue)] text-[var(--on-blue)]"
                             : "bg-[var(--raised)] text-[var(--muted)]"
                         }`}
                         onClick={() => setRestSeconds(editEx.id, s)}
@@ -1696,7 +1712,7 @@ export function WorkoutLogger({
               </button>
               <button
                 type="button"
-                className="rounded-full bg-[var(--green)] px-4 py-2 text-xs font-bold text-[var(--on-green)]"
+                className="rounded-full bg-[var(--accent)] px-4 py-2 text-xs font-bold text-[var(--on-accent)]"
                 onClick={clearActiveRest}
               >
                 Skip
@@ -1715,7 +1731,7 @@ export function WorkoutLogger({
                   <button
                     key={s}
                     type="button"
-                    className={`flex-1 rounded-lg py-2 text-[11px] font-bold ${
+                    className={`flex-1 rounded-[4px] py-2 text-[11px] font-bold ${
                       on
                         ? "bg-[var(--green)]/20 text-[var(--green)] ring-1 ring-[var(--green)]"
                         : "bg-[var(--raised)] text-[var(--muted)]"
@@ -1738,7 +1754,7 @@ export function WorkoutLogger({
           aria-modal="true"
           aria-labelledby="rating-title"
         >
-          <div className="w-full max-w-sm rounded-2xl border border-[var(--border)] bg-[var(--card)] p-5 shadow-xl">
+          <div className="w-full max-w-sm rounded-md border border-[var(--border)] bg-[var(--card)] p-5 shadow-xl">
             <p id="rating-title" className="text-lg font-bold">
               How was this workout?
             </p>
@@ -1753,7 +1769,7 @@ export function WorkoutLogger({
                   type="button"
                   disabled={ratingSaving}
                   onClick={() => void submitRating(n)}
-                  className="flex h-12 items-center justify-center rounded-xl bg-[var(--raised)] text-base font-bold text-white active:bg-[var(--green)] active:text-[var(--on-green)] disabled:opacity-50"
+                  className="flex h-12 items-center justify-center rounded-md bg-[var(--raised)] text-base font-bold text-[var(--text)] active:bg-[var(--accent)] active:text-[var(--on-accent)] disabled:opacity-50"
                 >
                   {n}
                 </button>
@@ -1761,7 +1777,7 @@ export function WorkoutLogger({
             </div>
             <button
               type="button"
-              className="mt-4 w-full rounded-xl border border-[var(--blue)]/50 bg-[var(--blue)]/10 px-4 py-3 text-sm font-bold text-[var(--blue)]"
+              className="mt-4 w-full rounded-md border border-[var(--blue)]/50 bg-[var(--blue)]/10 px-4 py-3 text-sm font-bold text-[var(--blue)]"
               disabled={ratingSaving}
               onClick={() => void undoFinishAndResume()}
             >

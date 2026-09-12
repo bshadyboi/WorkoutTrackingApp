@@ -179,7 +179,7 @@ export default function EditWorkoutDayPage() {
   }
 
   if (loading) {
-    return <div className="h-40 animate-pulse rounded-2xl bg-[var(--card-2)]" />;
+    return <div className="h-40 animate-pulse rounded-md bg-[var(--card-2)]" />;
   }
 
   return (
@@ -295,7 +295,7 @@ export default function EditWorkoutDayPage() {
         ))}
       </div>
 
-      <button type="button" className="btn-green w-full" disabled={saving} onClick={() => void save()}>
+      <button type="button" className="btn-accent w-full" disabled={saving} onClick={() => void save()}>
         {saving ? "Saving…" : "Save day"}
       </button>
       {msg ? (

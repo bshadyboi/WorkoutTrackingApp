@@ -135,8 +135,8 @@ export default function TrainPage() {
           <div className="h-9 animate-pulse rounded-full bg-[var(--card-2)]" />
           <div className="h-9 animate-pulse rounded-full bg-[var(--card-2)]" />
         </div>
-        <div className="h-24 animate-pulse rounded-2xl bg-[var(--card-2)]" />
-        <div className="h-16 animate-pulse rounded-2xl bg-[var(--card-2)]" />
+        <div className="h-24 animate-pulse rounded-md bg-[var(--card-2)]" />
+        <div className="h-16 animate-pulse rounded-md bg-[var(--card-2)]" />
       </div>
     );
   }

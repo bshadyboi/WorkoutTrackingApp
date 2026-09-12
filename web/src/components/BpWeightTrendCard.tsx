@@ -120,7 +120,7 @@ function DualTrendChart({ rows }: { rows: TrendRow[] }) {
       </div>
       <div className="grid grid-cols-2 gap-2 text-[11px]">
         {lastWeight ? (
-          <div className="rounded-lg bg-[var(--surface)] px-2.5 py-2">
+          <div className="rounded-[4px] bg-[var(--surface)] px-2.5 py-2">
             <p className="text-[10px] uppercase text-[var(--muted)]">Weight</p>
             <p className="font-bold text-[var(--blue)]">{lastWeight.toFixed(1)} lb</p>
             {wDelta !== null ? (
@@ -132,7 +132,7 @@ function DualTrendChart({ rows }: { rows: TrendRow[] }) {
           </div>
         ) : null}
         {lastBp ? (
-          <div className="rounded-lg bg-[var(--surface)] px-2.5 py-2">
+          <div className="rounded-[4px] bg-[var(--surface)] px-2.5 py-2">
             <p className="text-[10px] uppercase text-[var(--muted)]">BP avg</p>
             <p className="font-bold text-[var(--green)]">{lastBp} sys</p>
             {bDelta !== null ? (
@@ -212,7 +212,7 @@ export function BpWeightTrendCard() {
   }, [rows]);
 
   if (loading) {
-    return <div className="h-40 animate-pulse rounded-2xl bg-[var(--card-2)]" />;
+    return <div className="h-40 animate-pulse rounded-md bg-[var(--card-2)]" />;
   }
 
   if (!rows.length) {

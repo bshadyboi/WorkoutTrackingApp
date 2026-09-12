@@ -1,6 +1,21 @@
 import type { Metadata, Viewport } from "next";
+import { Barlow, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
 import { UnregisterServiceWorkers } from "@/components/UnregisterServiceWorkers";
+
+const body = Barlow({
+  subsets: ["latin"],
+  weight: ["400", "500", "600", "700", "800"],
+  variable: "--font-body",
+  display: "swap",
+});
+
+const mono = JetBrains_Mono({
+  subsets: ["latin"],
+  weight: ["400", "500", "700"],
+  variable: "--font-mono",
+  display: "swap",
+});
 
 export const metadata: Metadata = {
   title: "FitTrack",
@@ -22,7 +37,7 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: "#0b0e14",
+  themeColor: "#0b1424",
   width: "device-width",
   initialScale: 1,
   maximumScale: 1,
@@ -36,7 +51,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
+    <html lang="en" className={`${body.variable} ${mono.variable}`}>
       <head>
         <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png" />
         <link rel="icon" type="image/png" sizes="192x192" href="/icons/icon-192.png" />

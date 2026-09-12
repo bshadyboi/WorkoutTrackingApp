@@ -51,7 +51,7 @@ export function CompletionBanner({
       style={{ paddingTop: "max(12px, env(safe-area-inset-top, 0px))" }}
     >
       <div
-        className="w-full max-w-lg rounded-2xl border border-[var(--green)]/50 bg-[var(--surface)] px-4 py-3 shadow-lg"
+        className="w-full max-w-lg rounded-md border border-[var(--green)]/50 bg-[var(--surface)] px-4 py-3 shadow-lg"
         role="status"
       >
         <div className="flex items-start justify-between gap-3">
@@ -59,7 +59,7 @@ export function CompletionBanner({
             <p className="text-[10px] font-bold uppercase tracking-wide text-[var(--green)]">
               {top ? kindLabel(top.kind) : "Session done"}
             </p>
-            <p className="text-sm font-bold text-white">{headline}</p>
+            <p className="text-sm font-bold text-[var(--text)]">{headline}</p>
             <p className="mt-0.5 text-xs text-[var(--muted)]">{sub}</p>
           </div>
           <button
@@ -90,7 +90,7 @@ export function WinsCard({ wins }: { wins: Win[] }) {
         {list.map((w) => (
           <div
             key={w.id}
-            className="rounded-2xl border px-3 py-2.5"
+            className="rounded-md border px-3 py-2.5"
             style={{
               borderColor:
                 w.kind === "pr"
@@ -107,7 +107,7 @@ export function WinsCard({ wins }: { wins: Win[] }) {
             >
               {kindLabel(w.kind)}
             </p>
-            <p className="text-sm font-semibold text-white">{w.title}</p>
+            <p className="text-sm font-semibold text-[var(--text)]">{w.title}</p>
             {w.detail ? (
               <p className="mt-0.5 text-xs text-[var(--muted)]">{w.detail}</p>
             ) : null}

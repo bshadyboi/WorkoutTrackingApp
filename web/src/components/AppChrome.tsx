@@ -18,9 +18,17 @@ import {
 const links = [
   { href: "/dashboard", label: "Home", Icon: IconHome },
   { href: "/train", label: "Train", Icon: IconDumbbell },
-  { href: "/nutrition", label: "Nutrition", Icon: IconUtensils },
-  { href: "/protocol", label: "Protocol", Icon: IconClipboard },
+  { href: "/nutrition", label: "Fuel", Icon: IconUtensils },
+  { href: "/protocol", label: "Stack", Icon: IconClipboard },
 ];
+
+/** Title-block label for the sheet the current route is on. */
+function sheetFor(pathname: string) {
+  if (pathname.startsWith("/settings")) return { name: "SETTINGS", no: null as string | null };
+  const i = links.findIndex((l) => isActive(pathname, l.href));
+  if (i < 0) return { name: "FITTRACK", no: null };
+  return { name: links[i].label.toUpperCase(), no: String(i + 1).padStart(2, "0") };
+}
 
 function isActive(pathname: string, href: string) {
   return pathname === href || (href !== "/dashboard" && pathname.startsWith(href));
@@ -59,7 +67,7 @@ function Nav({ pathname }: { pathname: string }) {
       aria-label="Primary"
     >
       <div
-        className="pointer-events-auto mx-auto flex max-w-lg items-stretch gap-0.5 rounded-2xl border border-[var(--border)] bg-[var(--card)] px-1 py-1.5"
+        className="pointer-events-auto mx-auto flex max-w-lg items-stretch gap-0.5 rounded-md border border-[var(--border-solid)] bg-[var(--surface)] px-1 py-1"
         style={{ touchAction: "manipulation" }}
       >
         {links.map((l) => {
@@ -69,19 +77,19 @@ function Nav({ pathname }: { pathname: string }) {
               key={l.href}
               type="button"
               onClick={() => go(l.href)}
-              className={`relative flex min-h-[56px] flex-1 flex-col items-center justify-center gap-1 rounded-xl px-1 active:bg-white/5 ${
-                active ? "text-[var(--blue)]" : "text-[var(--muted)]"
+              className={`relative flex min-h-[56px] flex-1 flex-col items-center justify-center gap-1 rounded-md px-1 active:bg-white/5 ${
+                active ? "text-[var(--accent)]" : "text-[var(--dim)]"
               }`}
               style={{ WebkitTapHighlightColor: "transparent" }}
             >
               <span className="pointer-events-none" aria-hidden>
                 <l.Icon size={22} strokeWidth={active ? 2.2 : 2} />
               </span>
-              <span className="pointer-events-none text-[10.5px] font-semibold leading-none">
+              <span className="pointer-events-none font-mono text-[10px] font-medium uppercase leading-none tracking-[0.14em]">
                 {l.label}
               </span>
               {active ? (
-                <span className="absolute bottom-1 h-0.5 w-4 rounded-full bg-[var(--blue)]" />
+                <span className="absolute bottom-0.5 h-[2px] w-7 bg-[var(--accent)]" />
               ) : null}
             </button>
           );
@@ -101,30 +109,34 @@ export function AppChrome({
   const pathname = usePathname();
   const isSession = /\/train\/[^/]+\/session\/?$/.test(pathname);
   const isDayPreview = /^\/train\/[^/]+\/?$/.test(pathname);
+  const sheet = sheetFor(pathname);
 
   return (
-    <div className="mx-auto min-h-dvh max-w-lg bg-[var(--bg)]">
+    <div className="mx-auto min-h-dvh max-w-lg">
       {!isSession && !isDayPreview ? (
         <header
-          className="sticky top-0 z-20 border-b border-[var(--border)] bg-[var(--bg)] px-4 py-3"
+          className="sticky top-0 z-20 border-b border-[var(--border-solid)] bg-[var(--bg)]/95 px-4 py-2.5 backdrop-blur-sm"
           style={{ paddingTop: "max(12px, env(safe-area-inset-top, 0px))" }}
         >
-          <div className="flex items-center justify-between gap-3">
-            <Link href="/dashboard" prefetch={false} className="text-[15px] font-bold tracking-tight">
-              <span className="text-white">Fit</span>
-              <span className="text-[var(--blue)]">Track</span>
+          <div className="flex items-center justify-between gap-3 font-mono text-[11px] uppercase tracking-[0.14em] text-[var(--muted)]">
+            <Link href="/dashboard" prefetch={false} className="min-w-0 truncate">
+              <span className="font-bold text-[var(--text)]">FitTrack</span>
+              <span> · {sheet.name}</span>
             </Link>
-            <div className="flex min-w-0 items-center gap-1.5 text-[11px] text-[var(--muted)]">
-              <span className="truncate">{displayName.split(" ")[0]}</span>
-              <span>·</span>
-            <Link
-              href="/settings"
-              prefetch={false}
-              className="inline-flex items-center gap-1 font-semibold"
-              aria-label="Settings"
-            >
-              <IconGear size={16} />
-            </Link>
+            <div className="flex shrink-0 items-center gap-3">
+              {sheet.no ? (
+                <span>
+                  Sheet <span className="font-bold text-[var(--text)]">{sheet.no}</span>/{String(links.length).padStart(2, "0")}
+                </span>
+              ) : null}
+              <Link
+                href="/settings"
+                prefetch={false}
+                className="flex h-8 w-8 items-center justify-center rounded-[4px] border border-[var(--border-solid)] text-[var(--muted)]"
+                aria-label={`Settings for ${displayName.split(" ")[0]}`}
+              >
+                <IconGear size={15} />
+              </Link>
             </div>
           </div>
         </header>

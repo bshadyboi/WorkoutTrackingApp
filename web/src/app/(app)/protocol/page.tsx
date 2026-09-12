@@ -198,7 +198,7 @@ export default function ProtocolPage() {
             </div>
           </div>
 
-          <div className="card !p-0 overflow-hidden">
+          <div className="card reg !p-0">
             <div className="flex items-center justify-between border-b border-[var(--border)] px-4 py-3">
               <p className="font-semibold">Due today</p>
               <span className="btn-pill border border-[var(--yellow)] text-[var(--yellow)]">
@@ -276,10 +276,10 @@ export default function ProtocolPage() {
               </div>
             ))}
             <div className="grid grid-cols-2 gap-2 p-3">
-              <button type="button" className="btn-primary !py-2.5 text-xs" onClick={() => addItem("compound")}>
+              <button type="button" className="btn-accent !py-2.5 text-xs" onClick={() => addItem("compound")}>
                 + Add compound
               </button>
-              <button type="button" className="btn-primary !py-2.5 text-xs" onClick={() => addItem("supplement")}>
+              <button type="button" className="btn-accent !py-2.5 text-xs" onClick={() => addItem("supplement")}>
                 + Add supplement
               </button>
             </div>
@@ -359,7 +359,7 @@ function ProtocolCalendar({
               key={key}
               type="button"
               onClick={() => setSelected(c)}
-              className={`flex aspect-square flex-col items-center justify-center rounded-xl border text-[9px] ${
+              className={`flex aspect-square flex-col items-center justify-center rounded-md border text-[9px] ${
                 all
                   ? "border-[var(--green)] text-[var(--green)]"
                   : partial
@@ -367,11 +367,11 @@ function ProtocolCalendar({
                     : none
                       ? "border-transparent text-[var(--red)]"
                       : isToday || isSel
-                        ? "border-[var(--blue)] text-white"
+                        ? "border-[var(--blue)] text-[var(--text)]"
                         : "border-[var(--border-solid)] text-[var(--muted)]"
               }`}
             >
-              <span className="font-bold text-[11px] text-white">{c.getDate()}</span>
+              <span className="font-bold text-[11px] text-[var(--text)]">{c.getDate()}</span>
               {all ? (
                 <span>✓</span>
               ) : due.length ? (

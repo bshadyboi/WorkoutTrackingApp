@@ -82,7 +82,7 @@ export function AppUpdateBanner() {
     >
       <div className="mx-auto flex max-w-lg items-center justify-between gap-3">
         <div className="min-w-0">
-          <p className="text-sm font-semibold text-white">Update available</p>
+          <p className="text-sm font-semibold text-[var(--text)]">Update available</p>
           <p className="text-[11px] text-[var(--muted)]">Tap reload to get the latest build</p>
         </div>
         <div className="flex shrink-0 items-center gap-2">
@@ -99,7 +99,7 @@ export function AppUpdateBanner() {
           </button>
           <button
             type="button"
-            className="btn-green px-4 py-2 text-sm"
+            className="btn-accent px-4 py-2 text-sm"
             disabled={busy}
             onClick={() => {
               setBusy(true);

@@ -33,7 +33,7 @@ function LoginForm() {
     <main className="mx-auto flex min-h-dvh max-w-md flex-col justify-center px-5 py-10">
       <div className="mb-8 text-center">
         <h1 className="text-3xl font-bold tracking-tight">
-          <span className="text-white">Fit</span>
+          <span className="text-[var(--text)]">Fit</span>
           <span className="text-[var(--blue)]">Track</span>
         </h1>
         <p className="mt-2 text-sm text-[var(--muted)]">Sign in to train</p>
@@ -63,7 +63,7 @@ function LoginForm() {
           />
         </div>
         {error ? <p className="text-sm text-red-400">{error}</p> : null}
-        <button className="btn-primary w-full" disabled={loading}>
+        <button className="btn-accent w-full" disabled={loading}>
           {loading ? "Signing in…" : "Sign in"}
         </button>
       </form>

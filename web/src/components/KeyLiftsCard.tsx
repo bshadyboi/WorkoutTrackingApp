@@ -61,7 +61,7 @@ export function KeyLiftsCard() {
   }, []);
 
   if (loading) {
-    return <div className="h-36 animate-pulse rounded-2xl bg-[var(--card-2)]" />;
+    return <div className="h-36 animate-pulse rounded-md bg-[var(--card-2)]" />;
   }
 
   const hasAny = rows.some((r) => r.thisWeek || r.lastWeek);
@@ -99,7 +99,7 @@ export function KeyLiftsCard() {
           {rows.map((r) => (
             <div
               key={r.id}
-              className="flex items-center justify-between gap-3 rounded-xl bg-[var(--surface)] px-3 py-2.5"
+              className="flex items-center justify-between gap-3 rounded-md bg-[var(--surface)] px-3 py-2.5"
             >
               <div className="min-w-0">
                 <p className="truncate text-sm font-bold">{r.label}</p>

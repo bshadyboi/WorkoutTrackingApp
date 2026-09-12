@@ -66,7 +66,7 @@ export function MacroTargetsSheet({
 
   return (
     <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/75 sm:items-center" role="dialog" aria-modal="true" aria-labelledby="targets-title">
-      <div className="w-full max-w-lg rounded-t-3xl border border-[var(--border)] bg-[var(--card)] sm:rounded-3xl">
+      <div className="w-full max-w-lg rounded-t-md border border-[var(--border)] bg-[var(--card)] sm:rounded-md">
         <div className="flex items-center justify-between border-b border-[var(--border)] px-5 py-3.5">
           <h2 id="targets-title" className="text-[17px] font-bold">Daily targets</h2>
           <button type="button" onClick={onClose} aria-label="Close" className="flex h-9 w-9 items-center justify-center rounded-full bg-[var(--card-2)] text-[var(--muted)]">
@@ -90,7 +90,7 @@ export function MacroTargetsSheet({
           </div>
           {/* Protein, carbs and fat imply a calorie total; showing it catches a typo in any one field. */}
           <p className="text-[12.5px] tabular-nums text-[var(--muted)]">
-            Your macros add up to <span className="font-bold text-white">{fromMacros.toLocaleString()} cal</span>
+            Your macros add up to <span className="font-bold text-[var(--text)]">{fromMacros.toLocaleString()} cal</span>
             {parsed.target_calories && Math.abs(fromMacros - parsed.target_calories) > parsed.target_calories * 0.05
               ? ` — ${Math.abs(fromMacros - parsed.target_calories).toLocaleString()} off your calorie target`
               : ""}
@@ -98,7 +98,7 @@ export function MacroTargetsSheet({
           {error ? <p className="text-[13px] text-[var(--yellow)]">{error}</p> : null}
         </div>
         <div className="border-t border-[var(--border)] px-5 py-3.5" style={{ paddingBottom: "max(14px, env(safe-area-inset-bottom, 0px))" }}>
-          <button type="button" className="btn-green w-full" disabled={saving} onClick={() => void save()}>
+          <button type="button" className="btn-accent w-full" disabled={saving} onClick={() => void save()}>
             {saving ? "Saving…" : "Save targets"}
           </button>
         </div>

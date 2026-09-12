@@ -376,7 +376,7 @@ export function FastedBloodPressureCard({
 
       <button
         type="button"
-        className="btn-green w-full"
+        className="btn-accent w-full"
         onClick={() => void save()}
         disabled={saving}
       >
@@ -406,12 +406,12 @@ export function FastedBloodPressureCard({
 
       {summary && summary.category !== "incomplete" ? (
         <div
-          className={`mt-1 rounded-xl border px-3 py-2.5 ${TONE_CLASS[summary.tone]}`}
+          className={`mt-1 rounded-md border px-3 py-2.5 ${TONE_CLASS[summary.tone]}`}
           role="status"
         >
           <div className="flex items-start justify-between gap-2">
             <div>
-              <p className="text-sm font-bold text-white">
+              <p className="text-sm font-bold text-[var(--text)]">
                 {summary.title} · {summary.label}
               </p>
               <p className="mt-0.5 text-[11px] text-white/80">{summary.detail}</p>
@@ -436,13 +436,13 @@ export function FastedBloodPressureCard({
       ) : null}
 
       {weekSummary && weekSummary.daysLogged > 0 ? (
-        <div className="space-y-2 rounded-xl border border-[var(--border)] bg-[var(--card)] p-3">
+        <div className="space-y-2 rounded-md border border-[var(--border)] bg-[var(--card)] p-3">
           <div className="flex items-start justify-between gap-2">
             <div>
               <p className="text-[11px] font-bold uppercase tracking-wide text-[var(--muted)]">
                 This week
               </p>
-              <p className="text-[12px] font-semibold text-white">
+              <p className="text-[12px] font-semibold text-[var(--text)]">
                 {weekSummary.weekLabel}
               </p>
             </div>
@@ -470,7 +470,7 @@ export function FastedBloodPressureCard({
       </button>
 
       {showHistory ? (
-        <div className="space-y-1.5 rounded-xl border border-[var(--border)] bg-[var(--card)] p-2">
+        <div className="space-y-1.5 rounded-md border border-[var(--border)] bg-[var(--card)] p-2">
           {historyLoading ? (
             <p className="px-1 py-2 text-[11px] text-[var(--muted)]">Loading…</p>
           ) : history.length === 0 ? (
@@ -486,10 +486,10 @@ export function FastedBloodPressureCard({
               return (
                 <div
                   key={row.date}
-                  className="flex items-start justify-between gap-2 rounded-lg px-2 py-1.5"
+                  className="flex items-start justify-between gap-2 rounded-[4px] px-2 py-1.5"
                 >
                   <div className="min-w-0">
-                    <p className="text-[12px] font-semibold text-white">
+                    <p className="text-[12px] font-semibold text-[var(--text)]">
                       {formatHistoryDate(row.date)}
                     </p>
                     <p className="text-[11px] tabular-nums text-[var(--muted)]">

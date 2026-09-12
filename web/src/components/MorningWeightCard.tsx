@@ -50,7 +50,7 @@ export function MorningWeightCard({
           value={weight}
           onChange={(e) => setWeight(e.target.value)}
         />
-        <button type="button" className="btn-green px-5" onClick={save} disabled={saving}>
+        <button type="button" className="btn-accent px-5" onClick={save} disabled={saving}>
           Save
         </button>
       </div>

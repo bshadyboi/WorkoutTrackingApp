@@ -103,7 +103,7 @@ export function RestTimerHost() {
     <>
       {pushWarn ? (
         <div
-          className="fixed inset-x-3 top-14 z-[70] rounded-xl border px-4 py-3 shadow-lg"
+          className="fixed inset-x-3 top-14 z-[70] rounded-md border px-4 py-3 shadow-lg"
           style={{
             borderColor: "rgba(255, 179, 64, 0.5)",
             background: "rgba(255, 179, 64, 0.15)",
@@ -114,13 +114,13 @@ export function RestTimerHost() {
           <p className="text-[11px] font-bold uppercase tracking-wide text-[#ffb340]">
             Background alerts off
           </p>
-          <p className="text-sm font-semibold text-white">{pushWarn}</p>
+          <p className="text-sm font-semibold text-[var(--text)]">{pushWarn}</p>
         </div>
       ) : null}
 
       {doneFlash ? (
         <div
-          className="fixed inset-x-3 top-14 z-[70] rounded-xl border px-4 py-3 shadow-lg"
+          className="fixed inset-x-3 top-14 z-[70] rounded-md border px-4 py-3 shadow-lg"
           style={{
             borderColor: "rgba(48, 209, 89, 0.5)",
             background: "rgba(48, 209, 89, 0.15)",
@@ -131,7 +131,7 @@ export function RestTimerHost() {
           <p className="text-[11px] font-bold uppercase tracking-wide text-[var(--green)]">
             Rest done
           </p>
-          <p className="text-sm font-semibold text-white">
+          <p className="text-sm font-semibold text-[var(--text)]">
             Time for your next set · {doneFlash}
           </p>
         </div>
@@ -139,7 +139,7 @@ export function RestTimerHost() {
 
       {rest && left > 0 && !onSession ? (
         <div
-          className="fixed inset-x-3 z-[60] rounded-xl border border-[var(--border)] bg-[var(--card)]/95 px-3 py-2 backdrop-blur"
+          className="fixed inset-x-3 z-[60] rounded-md border border-[var(--border)] bg-[var(--card)]/95 px-3 py-2 backdrop-blur"
           style={{
             bottom: "calc(88px + env(safe-area-inset-bottom, 0px))",
           }}
@@ -147,7 +147,7 @@ export function RestTimerHost() {
           <div className="flex items-center justify-between gap-2">
             <div className="min-w-0">
               <p className="text-[10px] font-bold uppercase text-[var(--muted)]">Rest</p>
-              <p className="truncate text-xs text-white">{rest.label}</p>
+              <p className="truncate text-xs text-[var(--text)]">{rest.label}</p>
             </div>
             <p className="font-mono text-lg font-bold tabular-nums text-[var(--green)]">
               {formatClock(left)}

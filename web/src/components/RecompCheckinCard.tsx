@@ -244,19 +244,19 @@ export function RecompCheckinCard() {
       </div>
 
       {isWeek1 ? (
-        <p className="rounded-xl bg-[var(--yellow)]/10 px-3 py-2 text-[12px] text-[var(--yellow)]">
+        <p className="rounded-md bg-[var(--yellow)]/10 px-3 py-2 text-[12px] text-[var(--yellow)]">
           Week 1 glycogen flag: a 1–3 lb scale bump from carbs/water is expected — not fat gain.
         </p>
       ) : null}
 
       <div className="grid grid-cols-2 gap-2 text-sm">
-        <div className="rounded-xl bg-[var(--surface)] p-3">
+        <div className="rounded-md bg-[var(--surface)] p-3">
           <p className="text-[11px] text-[var(--muted)]">7-day avg weight</p>
           <p className="text-xl font-bold">
             {weightAvg != null ? `${weightAvg} lb` : "—"}
           </p>
         </div>
-        <div className="rounded-xl bg-[var(--surface)] p-3">
+        <div className="rounded-md bg-[var(--surface)] p-3">
           <p className="text-[11px] text-[var(--muted)]">Navel waist (cm)</p>
           <input
             className="field mt-1 !py-1.5"
@@ -293,7 +293,7 @@ export function RecompCheckinCard() {
                   type="button"
                   className={`rounded-full px-2 py-2 text-[12px] font-semibold ${
                     waistTrend === k
-                      ? "border border-[var(--blue)] bg-[#1a3050] text-white"
+                      ? "border border-[var(--blue)] bg-[var(--blue-dim)] text-[var(--text)]"
                       : "bg-[var(--card-2)] text-[var(--muted)]"
                   }`}
                   onClick={() => setWaistTrend(k)}
@@ -326,7 +326,7 @@ export function RecompCheckinCard() {
                   type="button"
                   className={`rounded-full px-2 py-2 text-[12px] font-semibold ${
                     strengthTrend === k
-                      ? "border border-[var(--blue)] bg-[#1a3050] text-white"
+                      ? "border border-[var(--blue)] bg-[var(--blue-dim)] text-[var(--text)]"
                       : "bg-[var(--card-2)] text-[var(--muted)]"
                   }`}
                   onClick={() => setStrengthTrend(k)}
@@ -339,7 +339,7 @@ export function RecompCheckinCard() {
 
           <button
             type="button"
-            className="btn-primary w-full"
+            className="btn-accent w-full"
             disabled={busy}
             onClick={() => void submit()}
           >

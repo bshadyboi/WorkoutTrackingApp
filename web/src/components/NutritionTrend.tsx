@@ -152,14 +152,14 @@ export function NutritionTrend({
 
   return (
     <section className="space-y-3">
-      <div className="flex gap-1 rounded-[22px] border border-white/5 bg-[var(--surface)] p-1">
+      <div className="flex gap-1 rounded-md border border-white/5 bg-[var(--surface)] p-1">
         {METRICS.map((m) => (
           <button
             key={m.key}
             type="button"
             onClick={() => setMetric(m.key)}
-            className={`h-9 flex-1 rounded-[18px] text-[13px] ${
-              metric === m.key ? "bg-[#253449] font-bold text-white" : "font-semibold text-[var(--muted)]"
+            className={`h-9 flex-1 rounded-md text-[13px] ${
+              metric === m.key ? "bg-[var(--raised)] font-bold text-[var(--text)]" : "font-semibold text-[var(--muted)]"
             }`}
           >
             {m.label}
@@ -168,25 +168,25 @@ export function NutritionTrend({
       </div>
 
       <div className="grid grid-cols-3 gap-2">
-        <div className="rounded-xl border border-white/5 bg-[var(--surface)] px-3 py-2.5">
+        <div className="rounded-md border border-white/5 bg-[var(--surface)] px-3 py-2.5">
           <p className="text-[17px] font-extrabold tabular-nums">{summary.logged ? fmt(summary.avg) : "—"}</p>
           <p className="text-[10.5px] font-semibold text-[var(--muted)]">
             Avg {spec.unit} · target {fmt(target)}
           </p>
         </div>
-        <div className="rounded-xl border border-white/5 bg-[var(--surface)] px-3 py-2.5">
+        <div className="rounded-md border border-white/5 bg-[var(--surface)] px-3 py-2.5">
           <p className="text-[17px] font-extrabold tabular-nums">
             {summary.hits}/{summary.logged || 0}
           </p>
           <p className="text-[10.5px] font-semibold text-[var(--muted)]">Days on target</p>
         </div>
-        <div className="rounded-xl border border-white/5 bg-[var(--surface)] px-3 py-2.5">
+        <div className="rounded-md border border-white/5 bg-[var(--surface)] px-3 py-2.5">
           <p className="text-[17px] font-extrabold tabular-nums">{summary.logged}/7</p>
           <p className="text-[10.5px] font-semibold text-[var(--muted)]">Days logged</p>
         </div>
       </div>
 
-      <div className="rounded-[18px] border border-[var(--border)] bg-[var(--card)] p-4">
+      <div className="rounded-md border border-[var(--border)] bg-[var(--card)] p-4">
         <div className="flex items-baseline justify-between gap-2">
           <h3 className="text-[15px] font-bold">{spec.label}, last 7 days</h3>
           <p className="text-[11.5px] font-semibold text-[var(--muted)]">On target = {ON_TARGET_RULE[metric]}</p>
@@ -195,7 +195,7 @@ export function NutritionTrend({
         <p className="mt-2 min-h-[18px] text-[12.5px] tabular-nums text-[var(--muted)]">
           {pickedDay ? (
             <>
-              <span className="font-bold text-white">
+              <span className="font-bold text-[var(--text)]">
                 {pickedDay.date.toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric" })}
               </span>
               {" · "}
@@ -261,7 +261,7 @@ export function NutritionTrend({
             <span
               key={d.key}
               className={`flex-1 text-center text-[10.5px] font-semibold ${
-                picked === i ? "text-white" : "text-[var(--dim)]"
+                picked === i ? "text-[var(--text)]" : "text-[var(--dim)]"
               }`}
             >
               {d.date.toLocaleDateString(undefined, { weekday: "narrow" })}
@@ -270,7 +270,7 @@ export function NutritionTrend({
         </div>
       </div>
 
-      <div className="overflow-hidden rounded-[18px] border border-white/5 bg-[var(--surface)]">
+      <div className="overflow-hidden rounded-md border border-white/5 bg-[var(--surface)]">
         {(days ?? []).slice().reverse().map((d) => (
           <div
             key={d.key}

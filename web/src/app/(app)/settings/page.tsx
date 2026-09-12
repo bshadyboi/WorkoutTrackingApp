@@ -82,8 +82,8 @@ export default function SettingsPage() {
   if (loading) {
     return (
       <div className="space-y-3">
-        <div className="h-8 w-1/3 animate-pulse rounded-lg bg-[var(--card-2)]" />
-        <div className="h-40 animate-pulse rounded-2xl bg-[var(--card-2)]" />
+        <div className="h-8 w-1/3 animate-pulse rounded-[4px] bg-[var(--card-2)]" />
+        <div className="h-40 animate-pulse rounded-md bg-[var(--card-2)]" />
       </div>
     );
   }
@@ -141,7 +141,7 @@ export default function SettingsPage() {
           </p>
         </div>
 
-        <button className="btn-green w-full" disabled={saving}>
+        <button className="btn-accent w-full" disabled={saving}>
           {saving ? "Saving…" : "Save settings"}
         </button>
         {msg ? (
@@ -160,7 +160,7 @@ export default function SettingsPage() {
       <form action="/auth/signout" method="post">
         <button
           type="submit"
-          className="w-full rounded-xl border border-[var(--border-solid)] px-4 py-3 text-sm font-bold text-[var(--red)]"
+          className="w-full rounded-md border border-[var(--border-solid)] px-4 py-3 text-sm font-bold text-[var(--red)]"
         >
           Sign out
         </button>

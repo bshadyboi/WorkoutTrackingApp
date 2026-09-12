@@ -93,7 +93,7 @@ export function ScheduleEditor({
   }
 
   if (loading) {
-    return <div className="h-40 animate-pulse rounded-2xl bg-[var(--card-2)]" />;
+    return <div className="h-40 animate-pulse rounded-md bg-[var(--card-2)]" />;
   }
 
   return (
@@ -145,7 +145,7 @@ export function ScheduleEditor({
 
       <button
         type="button"
-        className="btn-green w-full"
+        className="btn-accent w-full"
         disabled={saving}
         onClick={() => void save()}
       >

@@ -149,7 +149,7 @@ export function PushEnableButton() {
         {status === "on" ? (
           <span className="btn-pill bg-[var(--green)] text-[var(--on-green)]">On</span>
         ) : (
-          <button type="button" className="btn-primary !px-3 !py-2 text-xs" onClick={() => void enable()}>
+          <button type="button" className="btn-accent !px-3 !py-2 text-xs" onClick={() => void enable()}>
             Enable
           </button>
         )}

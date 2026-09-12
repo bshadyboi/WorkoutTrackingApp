@@ -43,7 +43,7 @@ function SwapRow({
   const thumb = youtubeThumb(item.youtubeUrl);
   return (
     <div
-      className={`flex items-center gap-3 rounded-xl px-2 py-2 ${
+      className={`flex items-center gap-3 rounded-md px-2 py-2 ${
         selected ? "bg-white/8" : ""
       }`}
     >
@@ -52,7 +52,7 @@ function SwapRow({
         className="flex min-w-0 flex-1 items-center gap-3 text-left"
         onClick={onSelect}
       >
-        <div className="relative h-14 w-[72px] shrink-0 overflow-hidden rounded-lg bg-[var(--raised)]">
+        <div className="relative h-14 w-[72px] shrink-0 overflow-hidden rounded-[4px] bg-[var(--raised)]">
           {thumb ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img src={thumb} alt="" className="h-full w-full object-cover" />
@@ -66,7 +66,7 @@ function SwapRow({
           </span>
         </div>
         <div className="min-w-0 flex-1">
-          <p className="truncate text-sm font-bold text-white">{item.name}</p>
+          <p className="truncate text-sm font-bold text-[var(--text)]">{item.name}</p>
           <MusclePills muscle={item.muscle} />
         </div>
       </button>
@@ -220,7 +220,7 @@ export function SwapExerciseSheet({
         <button
           type="button"
           disabled={!chosen}
-          className="rounded-xl bg-[var(--raised)] py-3 text-sm font-bold text-white disabled:opacity-40"
+          className="rounded-md bg-[var(--raised)] py-3 text-sm font-bold text-[var(--text)] disabled:opacity-40"
           onClick={() => chosen && onSwapHere(chosen)}
         >
           Swap here
@@ -228,7 +228,7 @@ export function SwapExerciseSheet({
         <button
           type="button"
           disabled={!chosen || busy}
-          className="rounded-xl bg-[var(--blue)] py-3 text-sm font-bold text-[var(--on-blue)] disabled:opacity-40"
+          className="rounded-md bg-[var(--blue)] py-3 text-sm font-bold text-[var(--on-blue)] disabled:opacity-40"
           onClick={() => {
             if (!chosen) return;
             setBusy(true);

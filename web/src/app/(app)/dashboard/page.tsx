@@ -248,9 +248,9 @@ export default function DashboardPage() {
   if (!data) {
     return (
       <div className="space-y-3 py-2">
-        <div className="h-8 w-2/3 animate-pulse rounded-lg bg-[var(--card-2)]" />
-        <div className="h-28 animate-pulse rounded-2xl bg-[var(--card-2)]" />
-        <div className="h-24 animate-pulse rounded-2xl bg-[var(--card-2)]" />
+        <div className="h-8 w-2/3 animate-pulse rounded-[4px] bg-[var(--card-2)]" />
+        <div className="h-28 animate-pulse rounded-md bg-[var(--card-2)]" />
+        <div className="h-24 animate-pulse rounded-md bg-[var(--card-2)]" />
       </div>
     );
   }
@@ -276,8 +276,7 @@ export default function DashboardPage() {
               : "/train"
           }
           prefetch={false}
-          className="card flex items-center justify-between gap-3 !py-3.5 active:bg-white/5"
-          style={{ borderColor: "rgba(91, 168, 255, 0.35)" }}
+          className="card reg flex items-center justify-between gap-3 !py-3.5 active:bg-white/5"
         >
           <div className="min-w-0">
             <p className="text-[11px] font-bold uppercase tracking-wide text-[var(--blue)]">
@@ -374,7 +373,7 @@ function FeatureTile({
 }) {
   return (
     <Link href={href} prefetch className="card flex flex-col gap-2.5 !p-3.5">
-      <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-[var(--card-2)] text-[var(--blue)]">
+      <span className="flex h-9 w-9 items-center justify-center rounded-md bg-[var(--card-2)] text-[var(--blue)]">
         <Icon size={19} />
       </span>
       <div>

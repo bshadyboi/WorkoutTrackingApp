@@ -154,7 +154,7 @@ export function TrainTabs({
 
       {guidance ? (
         <div
-          className={`rounded-2xl border px-4 py-3 ${
+          className={`rounded-md border px-4 py-3 ${
             guidance.deload
               ? "border-[var(--yellow)]/35 bg-[var(--yellow)]/10"
               : "border-[var(--border)] bg-[var(--surface)]"
@@ -173,7 +173,7 @@ export function TrainTabs({
         </div>
       ) : null}
 
-      <div className="flex gap-1 rounded-[22px] border border-white/5 bg-[var(--surface)] p-1">
+      <div className="flex gap-1 rounded-md border border-white/5 bg-[var(--surface)] p-1">
         {(
           [
             ["workouts", "Workouts"],
@@ -184,9 +184,9 @@ export function TrainTabs({
           <button
             key={key}
             type="button"
-            className={`h-9 flex-1 rounded-[18px] text-[14px] ${
+            className={`h-9 flex-1 rounded-md text-[14px] ${
               tab === key
-                ? "bg-[#253449] font-bold text-white"
+                ? "bg-[var(--raised)] font-bold text-[var(--text)]"
                 : "font-semibold text-[var(--muted)]"
             }`}
             onClick={() => setTab(key)}
@@ -251,7 +251,7 @@ function WeekStrip({
   todayKey: string;
 }) {
   return (
-    <div className="flex justify-between rounded-2xl border border-[var(--border)] bg-[var(--card)] px-3.5 py-3">
+    <div className="flex justify-between rounded-md border border-[var(--border)] bg-[var(--card)] px-3.5 py-3">
       {weekInfo.map((d) => {
         const isToday = d.key === todayKey;
         const done = d.resolved.doneToday && !d.resolved.isRest;
@@ -383,13 +383,13 @@ function WorkoutsTab({
     <div className="space-y-5">
       <section className="space-y-2">
         {todayIsRest ? (
-          <div className="card space-y-3 !rounded-[20px] !p-5 text-sm">
+          <div className="card space-y-3 !rounded-md !p-5 text-sm">
             <div className="flex items-center justify-between">
               <p className="text-[11px] font-bold tracking-[0.12em] text-[var(--muted)]">
                 TODAY · {eyebrowDate}
               </p>
               {todayDone ? (
-                <span className="rounded-xl bg-[var(--green)]/15 px-2.5 py-1 text-[11px] font-bold text-[var(--green)]">
+                <span className="rounded-md bg-[var(--green)]/15 px-2.5 py-1 text-[11px] font-bold text-[var(--green)]">
                   Done
                 </span>
               ) : null}
@@ -418,21 +418,21 @@ function WorkoutsTab({
             </Link>
           </div>
         ) : todayDay ? (
-          <div className="space-y-4 rounded-[20px] border border-white/10 bg-[var(--card)] p-5">
+          <div className="reg space-y-4 rounded-md border border-[var(--border-solid)] bg-[var(--card)] p-5">
             <div className="flex items-center justify-between">
               <p className="text-[11px] font-bold tracking-[0.12em] text-[var(--muted)]">
                 TODAY · {eyebrowDate}
               </p>
               {todayDone ? (
-                <span className="rounded-xl bg-[var(--green)]/15 px-2.5 py-1 text-[11px] font-bold text-[var(--green)]">
+                <span className="rounded-md bg-[var(--green)]/15 px-2.5 py-1 text-[11px] font-bold text-[var(--green)]">
                   Done
                 </span>
               ) : hasOverride ? (
-                <span className="rounded-xl bg-[var(--blue)]/15 px-2.5 py-1 text-[11px] font-bold text-[var(--blue)]">
+                <span className="rounded-md bg-[var(--blue)]/15 px-2.5 py-1 text-[11px] font-bold text-[var(--blue)]">
                   Makeup
                 </span>
               ) : (
-                <span className="rounded-xl bg-[var(--blue)]/15 px-2.5 py-1 text-[11px] font-bold text-[var(--blue)]">
+                <span className="rounded-md bg-[var(--blue)]/15 px-2.5 py-1 text-[11px] font-bold text-[var(--blue)]">
                   Weekly plan
                 </span>
               )}
@@ -464,7 +464,7 @@ function WorkoutsTab({
               <Link
                 href={`/train/${todayDay.id}/session`}
                 prefetch={false}
-                className="flex h-[52px] flex-1 items-center justify-center gap-2 rounded-[15px] bg-[var(--green)] text-[16px] font-extrabold text-[var(--on-green)] active:scale-[0.98]"
+                className="flex h-[52px] flex-1 items-center justify-center gap-2 rounded-md bg-[var(--accent)] text-[16px] font-extrabold text-[var(--on-accent)] active:scale-[0.98]"
               >
                 <IconPlay size={15} />
                 {todayDone ? "Train again" : "Start workout"}
@@ -473,7 +473,7 @@ function WorkoutsTab({
                 href={`/train/${todayDay.id}`}
                 prefetch={false}
                 aria-label="Preview workout"
-                className="flex h-[52px] w-[52px] items-center justify-center rounded-[15px] border border-[var(--border)] bg-[var(--card-2)] text-[var(--muted)] active:bg-white/5"
+                className="flex h-[52px] w-[52px] items-center justify-center rounded-md border border-[var(--border)] bg-[var(--card-2)] text-[var(--muted)] active:bg-white/5"
               >
                 <IconEye size={20} />
               </Link>
@@ -481,7 +481,7 @@ function WorkoutsTab({
           </div>
         ) : todayName ? (
           <div className="card text-sm text-[var(--muted)]">
-            <p className="font-semibold text-white">{todayName}</p>
+            <p className="font-semibold text-[var(--text)]">{todayName}</p>
             <p className="mt-1">
               Scheduled but not in your library yet.{" "}
               <Link href="/train/manage" className="font-semibold text-[var(--blue)]">
@@ -501,13 +501,13 @@ function WorkoutsTab({
       </section>
 
       <div className="grid grid-cols-3 gap-2">
-        <div className="rounded-xl border border-white/5 bg-[var(--surface)] px-3 py-2.5">
+        <div className="rounded-md border border-white/5 bg-[var(--surface)] px-3 py-2.5">
           <p className="text-[17px] font-extrabold tabular-nums">
             {stats.weekSessions}/{stats.scheduled || "—"}
           </p>
           <p className="text-[10.5px] font-semibold text-[var(--muted)]">Sessions</p>
         </div>
-        <div className="rounded-xl border border-white/5 bg-[var(--surface)] px-3 py-2.5">
+        <div className="rounded-md border border-white/5 bg-[var(--surface)] px-3 py-2.5">
           <p className="text-[17px] font-extrabold tabular-nums">
             {stats.weekVolume >= 1000
               ? `${(stats.weekVolume / 1000).toFixed(1)}k`
@@ -515,7 +515,7 @@ function WorkoutsTab({
           </p>
           <p className="text-[10.5px] font-semibold text-[var(--muted)]">Week lb</p>
         </div>
-        <div className="rounded-xl border border-white/5 bg-[var(--surface)] px-3 py-2.5">
+        <div className="rounded-md border border-white/5 bg-[var(--surface)] px-3 py-2.5">
           <p className="text-[17px] font-extrabold tabular-nums">{stats.streak} wk</p>
           <p className="text-[10.5px] font-semibold text-[var(--muted)]">Streak</p>
         </div>
@@ -528,7 +528,7 @@ function WorkoutsTab({
             Edit
           </Link>
         </div>
-        <div className="overflow-hidden rounded-[18px] border border-[var(--border)] bg-[var(--card)]">
+        <div className="overflow-hidden rounded-md border border-[var(--border)] bg-[var(--card)]">
           {days.map((d, i) => {
             const head = d.name.split("·")[0]?.trim() ?? d.name;
             const tail = d.name.split("·").slice(1).join("·").trim();
@@ -556,7 +556,7 @@ function WorkoutsTab({
                   </p>
                 </div>
                 {isToday ? (
-                  <span className="shrink-0 rounded-lg bg-[var(--blue)]/15 px-2 py-0.5 text-[10.5px] font-bold text-[var(--blue)]">
+                  <span className="shrink-0 rounded-[4px] bg-[var(--blue)]/15 px-2 py-0.5 text-[10.5px] font-bold text-[var(--blue)]">
                     Today
                   </span>
                 ) : null}
@@ -577,7 +577,7 @@ function WorkoutsTab({
 
       <section className="space-y-2.5">
         <h2 className="text-[17px] font-bold">History</h2>
-        <div className="overflow-hidden rounded-[18px] border border-white/5 bg-[var(--surface)]">
+        <div className="overflow-hidden rounded-md border border-white/5 bg-[var(--surface)]">
           {history.length === 0 ? (
             <p className="p-4 text-sm text-[var(--muted)]">No sessions logged yet.</p>
           ) : (
@@ -834,7 +834,7 @@ function CalendarTab({
               key={key}
               type="button"
               onClick={() => setPickDate(c)}
-              className={`flex aspect-square flex-col items-center justify-center gap-1 rounded-xl border ${
+              className={`flex aspect-square flex-col items-center justify-center gap-1 rounded-md border ${
                 done
                   ? "border-[var(--green)]/45 bg-[var(--green)]/10"
                   : isToday
@@ -846,7 +846,7 @@ function CalendarTab({
             >
               <span
                 className={`text-[13px] font-bold tabular-nums ${
-                  isToday ? "text-[var(--blue)]" : "text-white"
+                  isToday ? "text-[var(--blue)]" : "text-[var(--text)]"
                 }`}
               >
                 {c.getDate()}
@@ -878,7 +878,7 @@ function CalendarTab({
           role="dialog"
           aria-modal="true"
         >
-          <div className="flex max-h-[85dvh] w-full max-w-sm flex-col rounded-2xl border border-[var(--border)] bg-[var(--card)] shadow-xl">
+          <div className="flex max-h-[85dvh] w-full max-w-sm flex-col rounded-md border border-[var(--border)] bg-[var(--card)] shadow-xl">
             <div className="shrink-0 border-b border-[var(--border)] p-4 pb-3">
               <p className="text-lg font-bold">
                 {pickDate.toLocaleDateString(undefined, {
@@ -906,8 +906,8 @@ function CalendarTab({
                 <div className="space-y-3">
                   {sessionDetail.loading ? (
                     <div className="space-y-2">
-                      <div className="h-14 animate-pulse rounded-xl bg-[var(--card-2)]" />
-                      <div className="h-14 animate-pulse rounded-xl bg-[var(--card-2)]" />
+                      <div className="h-14 animate-pulse rounded-md bg-[var(--card-2)]" />
+                      <div className="h-14 animate-pulse rounded-md bg-[var(--card-2)]" />
                     </div>
                   ) : sessionDetail.exercises.length === 0 ? (
                     <p className="text-sm text-[var(--muted)]">No sets logged for this session.</p>
@@ -915,7 +915,7 @@ function CalendarTab({
                     sessionDetail.exercises.map((ex) => (
                       <div
                         key={ex.name}
-                        className="rounded-xl border border-[var(--border)] bg-[var(--card)] px-3 py-2.5"
+                        className="rounded-md border border-[var(--border)] bg-[var(--card)] px-3 py-2.5"
                       >
                         <p className="text-sm font-semibold text-[var(--blue)]">{ex.name}</p>
                         <p className="mt-0.5 text-xs leading-relaxed text-[var(--muted)]">
@@ -927,7 +927,7 @@ function CalendarTab({
                   <Link
                     href={`/train/history/${sessionDetail.sessionId}`}
                     prefetch={false}
-                    className="btn-green flex w-full items-center justify-center"
+                    className="btn-accent flex w-full items-center justify-center"
                   >
                     View full recap
                   </Link>
@@ -986,7 +986,7 @@ function CalendarTab({
                           ? `/train/${pickResolved.scheduled.id}/session`
                           : `/train/${pickResolved.scheduled.id}/session?date=${pickKey}`
                       }
-                      className="btn-green flex w-full items-center justify-center"
+                      className="btn-accent flex w-full items-center justify-center"
                       prefetch={false}
                     >
                       {pickKey === todayKey ? "Start workout" : "Log / backfill"}
@@ -1065,7 +1065,7 @@ function TrendStat({
   const delta = value - prev;
   const show = format ?? ((n: number) => String(Math.round(n)));
   return (
-    <div className="rounded-xl border border-white/5 bg-[var(--surface)] px-3 py-2.5">
+    <div className="rounded-md border border-white/5 bg-[var(--surface)] px-3 py-2.5">
       <p className="text-[17px] font-extrabold tabular-nums">{show(value)}</p>
       <p className="text-[10.5px] font-semibold text-[var(--muted)]">{label}</p>
       {prev > 0 || value > 0 ? (
@@ -1183,20 +1183,20 @@ function ProgressionTab({ history }: { history: Hist[] }) {
 
         {series === null ? (
           <div className="space-y-2">
-            <div className="h-[62px] animate-pulse rounded-[18px] bg-[var(--card-2)]" />
-            <div className="h-[62px] animate-pulse rounded-[18px] bg-[var(--card-2)]" />
-            <div className="h-[62px] animate-pulse rounded-[18px] bg-[var(--card-2)]" />
+            <div className="h-[62px] animate-pulse rounded-md bg-[var(--card-2)]" />
+            <div className="h-[62px] animate-pulse rounded-md bg-[var(--card-2)]" />
+            <div className="h-[62px] animate-pulse rounded-md bg-[var(--card-2)]" />
           </div>
         ) : loadError ? (
           <p className="text-[13px] text-[var(--yellow)]">{loadError}</p>
         ) : series.length === 0 ? (
-          <div className="rounded-[18px] border border-[var(--border)] bg-[var(--card)] p-4">
+          <div className="rounded-md border border-[var(--border)] bg-[var(--card)] p-4">
             <p className="text-[13.5px] text-[var(--muted)]">
               Log a lift on two separate days and its trend shows up here.
             </p>
           </div>
         ) : (
-          <div className="overflow-hidden rounded-[18px] border border-[var(--border)] bg-[var(--card)]">
+          <div className="overflow-hidden rounded-md border border-[var(--border)] bg-[var(--card)]">
             {series.map((s, i) => (
               <div
                 key={s.name}

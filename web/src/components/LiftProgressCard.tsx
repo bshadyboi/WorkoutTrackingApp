@@ -93,7 +93,7 @@ export function LiftProgressCard() {
   }, []);
 
   if (loading) {
-    return <div className="h-36 animate-pulse rounded-2xl bg-[var(--card-2)]" />;
+    return <div className="h-36 animate-pulse rounded-md bg-[var(--card-2)]" />;
   }
 
   if (series.length === 0) {
@@ -142,9 +142,9 @@ export function LiftProgressCard() {
               key={s.name}
               type="button"
               onClick={() => setSelected(s.name)}
-              className={`shrink-0 rounded-lg px-2.5 py-1.5 text-[11px] font-semibold ${
+              className={`shrink-0 rounded-[4px] px-2.5 py-1.5 text-[11px] font-semibold ${
                 on
-                  ? "bg-[var(--green)] text-[var(--on-green)]"
+                  ? "bg-[var(--blue)] text-[var(--on-blue)]"
                   : "bg-[var(--raised)] text-[var(--muted)]"
               }`}
             >
