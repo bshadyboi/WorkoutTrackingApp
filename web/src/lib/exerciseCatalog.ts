@@ -1819,6 +1819,16 @@ const ALIASES: Record<string, string> = {
   "hip thrust / glute bridge": "Hip Thrust",
   "leg extension": "Leg Extension",
   "seated cable row": "Seated Cable Row",
+  // —— Shoulder-Safe Aesthetics names ——
+  "30° incline db press (neutral)": "Incline DB Bench",
+  "landmine press": "Incline DB Bench",
+  "chest-supported t-bar row": "Chest Supported T-Bar Row",
+  "ez-bar curl": "EZ-Bar Curl Medium Semi-Supinated Grip",
+  "incline machine / cable chest press": "Incline Chest Press",
+  "cable fly (short of stretch)": "Cable Chest Fly — Mid",
+  "one-arm cable lateral raise": "Single Arm Cable Lateral Raise",
+  "single-arm pulldown": "Single-Arm Lat Pulldown",
+  "straight-arm pulldown": "Straight-Arm Pulldown",
 };
 
 const byName = new Map(EXERCISE_CATALOG.map((e) => [e.name.toLowerCase(), e]));

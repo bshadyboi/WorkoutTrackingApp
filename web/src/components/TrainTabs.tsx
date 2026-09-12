@@ -91,7 +91,7 @@ export function TrainTabs({
     isDerrick && todayKey >= DERRICK_RECOMP_START && todayKey <= DERRICK_RECOMP_END;
   const guidance = inRecomp ? derrickRecompGuidance(recompWeek) : null;
   const programLine = inRecomp
-    ? `Derrick Recomp · Week ${recompWeek} of ${DERRICK_RECOMP_WEEKS}`
+    ? `${programLabel || "Program"} · Week ${recompWeek} of ${DERRICK_RECOMP_WEEKS}`
     : programLabel;
 
   /** Sun→Sat of the current week, each resolved against the live schedule */

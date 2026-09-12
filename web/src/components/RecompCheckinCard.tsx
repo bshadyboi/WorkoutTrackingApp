@@ -9,6 +9,7 @@ import {
   DERRICK_CHECKPOINT_WEEK,
   DERRICK_RECOMP_END,
   DERRICK_RECOMP_START,
+  DERRICK_RECOMP_WEEKS,
   derrickRecompWeek,
   evaluateRecompCheckin,
 } from "@/lib/derrickRecomp";
@@ -231,7 +232,7 @@ export function RecompCheckinCard() {
       <div className="flex items-start justify-between gap-2">
         <div>
           <p className="text-[11px] font-bold uppercase tracking-wide text-[var(--blue)]">
-            Derrick Recomp · Week {week || "—"}/10
+            Week {week || "—"} of {DERRICK_RECOMP_WEEKS}
           </p>
           <p className="text-lg font-bold">Weekly check-in</p>
         </div>

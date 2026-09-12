@@ -177,12 +177,12 @@ export function seedDerrickRecompSlots(
   };
   return [
     null,
+    idFor("Push A · Chest, Delts & Triceps"),
+    idFor("Pull A · Back Width & Biceps"),
+    idFor("Legs + Pump · One Hard Leg Day"),
     null,
-    idFor("Upper A · Horizontal Strength"),
-    idFor("Lower A · Squat Emphasis"),
-    null,
-    idFor("Upper B · Vertical Pull + Shoulders"),
-    idFor("Lower B · Hinge + Single-Leg"),
+    idFor("Push B · Delts & Triceps Volume"),
+    idFor("Pull B · Back Thickness & Arms"),
   ];
 }
 

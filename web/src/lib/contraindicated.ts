@@ -15,12 +15,12 @@
 export type Restriction = { pattern: RegExp; reason: string };
 
 export const SHOULDER_SMART_RESTRICTIONS: Restriction[] = [
-  { pattern: /\bbarbell bench\b|\bbench press\b(?!.*\bfloor\b)/i, reason: "barbell bench is off the plan" },
+  { pattern: /\bbarbell bench\b|\bbench press(es)?\b(?!.*\bfloor\b)/i, reason: "barbell bench is off the plan" },
   { pattern: /wide[\s-]?grip/i, reason: "wide grip is off the plan" },
   { pattern: /behind[\s-]the[\s-]neck/i, reason: "behind-the-neck work is off the plan" },
   { pattern: /\bdips?\b|dip machine/i, reason: "dips are off the plan" },
-  { pattern: /upright row/i, reason: "upright rows are off the plan" },
-  { pattern: /\bback squat\b/i, reason: "bar on the traps can reproduce the pain" },
+  { pattern: /upright rows?/i, reason: "upright rows are off the plan" },
+  { pattern: /\bback squats?\b/i, reason: "bar on the traps can reproduce the pain" },
 ];
 
 /** The reason this movement is excluded, or null when it is fine to suggest. */

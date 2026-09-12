@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/client";
+import { hasOwnTargets } from "@/lib/targets";
 import {
   OBSOLETE_WORKOUT_NAMES,
   type WorkoutTemplate,
@@ -10,11 +11,12 @@ import {
   type ProgramId,
 } from "@/lib/programs";
 import { LEGACY_ELEVATE_DAY_NAMES } from "@/lib/elevateChallenge";
-import { LEGACY_DERRICK_DAY_NAMES } from "@/lib/derrickRecomp";
-import { parseSlots, type ScheduleSlots } from "@/lib/schedule";
+import { DERRICK_RECOMP_START, LEGACY_DERRICK_DAY_NAMES } from "@/lib/derrickRecomp";
+import { parseOverrides, parseSlots, type ScheduleSlots } from "@/lib/schedule";
 
 /** One-time: switch to Derrick Recomp 4-day Tue start + dedupe days. */
-const SWITCH_DERRICK_FLAG = "fittrack-switch-derrick-recomp-20260908b";
+/** Bumped for the Shoulder-Safe Aesthetics layout (Push/Pull/Legs, starts Sep 14). */
+const SWITCH_DERRICK_FLAG = "fittrack-switch-shoulder-safe-aesthetics-20260914";
 const FLAG = "fittrack-lib-synced-v18b-derrick-dedupe";
 
 async function upsertTemplateDay(
@@ -274,6 +276,7 @@ export async function syncWorkoutLibraryOnce() {
         /* ignore */
       }
       await applyDerrickBaselineMacros();
+      await restUntilProgramStart();
     }
     return;
   }
@@ -303,6 +306,52 @@ export async function forceSyncWorkoutLibrary() {
 }
 
 /** Seed Derrick baseline macros on profile (once per switch). */
+/**
+ * The new weekly layout applies the moment it syncs, so a switch made before the
+ * start date would put a workout on days the lifter is not training yet. Mark
+ * those days as rest; a date the lifter already overrode is left alone.
+ */
+async function restUntilProgramStart() {
+  const supabase = createClient();
+  const {
+    data: { session },
+  } = await supabase.auth.getSession();
+  const user = session?.user;
+  if (!user) return;
+
+  const pad = (n: number) => String(n).padStart(2, "0");
+  const keyOf = (d: Date) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+  const day = new Date();
+  day.setHours(12, 0, 0, 0);
+  const pending: string[] = [];
+  while (keyOf(day) < DERRICK_RECOMP_START) {
+    pending.push(keyOf(day));
+    day.setDate(day.getDate() + 1);
+  }
+  if (!pending.length) return;
+
+  const { data: sched } = await supabase
+    .from("training_schedules")
+    .select("day_ids, date_overrides")
+    .eq("user_id", user.id)
+    .maybeSingle();
+  if (!sched) return;
+
+  const overrides = parseOverrides(sched.date_overrides);
+  let changed = false;
+  for (const key of pending) {
+    if (!Object.prototype.hasOwnProperty.call(overrides, key)) {
+      overrides[key] = null;
+      changed = true;
+    }
+  }
+  if (!changed) return;
+  await supabase
+    .from("training_schedules")
+    .update({ date_overrides: overrides })
+    .eq("user_id", user.id);
+}
+
 async function applyDerrickBaselineMacros() {
   const { DERRICK_RECOMP_BASELINE } = await import("@/lib/derrickRecomp");
   const supabase = createClient();
@@ -311,6 +360,17 @@ async function applyDerrickBaselineMacros() {
   } = await supabase.auth.getSession();
   const user = session?.user;
   if (!user) return;
+
+  // Program setup is keyed to a localStorage flag, so it re-runs on any new
+  // browser or after iOS evicts PWA storage. Seed the baseline only for a
+  // profile with no targets — never overwrite ones the lifter has set.
+  const { data: current } = await supabase
+    .from("profiles")
+    .select("target_calories, target_protein, target_carbs, target_fats")
+    .eq("id", user.id)
+    .maybeSingle();
+  if (hasOwnTargets(current)) return;
+
   await supabase
     .from("profiles")
     .update({

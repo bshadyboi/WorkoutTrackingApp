@@ -28,14 +28,14 @@ const UPPER_PREHAB: WorkoutTemplate["exercises"] = [
 ];
 
 /**
- * Derrick Recomp Split — 8 weeks (Sep 8 → Nov 2).
+ * Program block — 8 weeks (Sep 14 → Nov 8).
  * 5 training days · Wed/Sun off · 2:1 pull-to-press bias · prehab on upper days.
  * Baseline: 2500 kcal · 185P / 280C / 70F · 10–12k steps.
  */
 export const DERRICK_RECOMP_WEEKS = 8;
-export const DERRICK_RECOMP_START = "2026-09-08";
-export const DERRICK_RECOMP_END = "2026-11-02";
-export const DERRICK_CHECKPOINT_WEEK = 3; // ~Sep 29 from Tue start
+export const DERRICK_RECOMP_START = "2026-09-14";
+export const DERRICK_RECOMP_END = "2026-11-08";
+export const DERRICK_CHECKPOINT_WEEK = 3; // Sep 28
 
 export const DERRICK_RECOMP_BASELINE = {
   target_calories: 2500,
@@ -46,95 +46,113 @@ export const DERRICK_RECOMP_BASELINE = {
   steps_high: 12000,
 } as const;
 
+/**
+ * Shoulder-Safe Aesthetics — Adam Yu's Aesthetics Blueprint push/pull/legs
+ * structure and delt priority, run under Derrick's shoulder rules: no barbell
+ * bench, wide-grip pulls, overhead barbell pressing or back squats; neutral
+ * grips; more pulling than pressing; prehab before every upper day.
+ *
+ * Names match the previous Upper/Lower days wherever the movement is the same,
+ * because set history is keyed by exercise name — renaming a lift would start
+ * its "last time" numbers over. Isolation work carries "to failure" in the rep
+ * text so the logger shows it; compounds follow the phase RIR on the Train tab.
+ */
 export const DERRICK_RECOMP_WORKOUTS: WorkoutTemplate[] = [
   {
-    name: "Upper A · Horizontal Strength",
-    subtitle: "Derrick Recomp · horizontal press/pull + arms",
+    name: "Push A · Chest, Delts & Triceps",
+    subtitle: "Shoulder-Safe Aesthetics · incline chest + side delts",
     exercises: [
       ...UPPER_PREHAB,
-      work("DB Floor Press (Neutral)", "Chest", 4, "6–10", "1–3 RIR · add reps before load"),
-      work("Chest-Supported DB Row", "Back", 4, "8–12", "1–3 RIR"),
-      work("Machine / Cable Chest Press", "Chest", 3, "8–12"),
-      work("1-Arm Cable / DB Row", "Back", 3, "10–12", "Per arm"),
-      work("Lateral Raise", "Side Delts", 3, "12–15"),
-      work("Face Pull", "Rear Delts", 3, "15–20"),
-      work("Triceps Pushdown", "Triceps", 3, "10–15"),
+      work("30° Incline DB Press (Neutral)", "Upper Chest", 4, "6–10"),
+      work("DB Floor Press (Neutral)", "Chest", 3, "8–12"),
+      work("Landmine Press", "Shoulders", 3, "8–10"),
+      work("Lateral Raise", "Side Delts", 4, "10–15 · to failure"),
+      work("Face Pull", "Rear Delts", 3, "15–20 · to failure"),
+      work("Triceps Pushdown", "Triceps", 4, "12–15 · to failure"),
     ],
   },
   {
-    name: "Lower A · Squat Emphasis",
-    subtitle: "Derrick Recomp · squat pattern + posterior",
-    exercises: [
-      work("Goblet / Safety-Bar / Hack Squat", "Quads", 4, "6–10", "1–3 RIR · add reps before load"),
-      work("RDL", "Hamstrings", 3, "8–12", "1–3 RIR"),
-      work("Walking Lunge / Split Squat", "Quads", 3, "8–10", "Per leg"),
-      work("Leg Curl", "Hamstrings", 3, "10–15"),
-      work("Calf Raise", "Calves", 3, "10–15"),
-      work("Dead Bug / Pallof Press", "Core", 3, "8–12"),
-    ],
-  },
-  {
-    name: "Upper B · Vertical Pull + Shoulders",
-    subtitle: "Derrick Recomp · vertical pull + shoulders",
+    name: "Pull A · Back Width & Biceps",
+    subtitle: "Shoulder-Safe Aesthetics · lats + biceps",
     exercises: [
       ...UPPER_PREHAB,
-      work("Neutral Pulldown / Assisted Chin", "Lats", 4, "6–10", "1–3 RIR · add reps before load"),
-      work("Seated Cable Row", "Back", 4, "8–12", "1–3 RIR"),
-      work("Landmine Press / 30° Incline DB Press", "Shoulders", 3, "8–12"),
-      work("Rear-Delt Fly", "Rear Delts", 3, "12–15"),
-      work("Lateral Raise", "Side Delts", 3, "12–15"),
-      work("Hammer Curl", "Biceps", 3, "8–12"),
-      work("Farmer / Suitcase Carry", "Core", 3, "30–40m", "Per set distance"),
+      work("Neutral Pulldown / Assisted Chin", "Lats", 4, "8–10"),
+      work("Chest-Supported T-Bar Row", "Back", 4, "8–10"),
+      work("Seated Cable Row", "Back", 3, "10–12"),
+      work("Straight-Arm Pulldown", "Lats", 3, "12–15 · to failure"),
+      work("EZ-Bar Curl", "Biceps", 4, "8–10 · to failure"),
+      work("Incline DB Curl", "Biceps", 3, "10–12 · to failure"),
     ],
   },
   {
-    name: "Lower B · Hinge + Single-Leg",
-    subtitle: "Derrick Recomp · hinge + unilateral",
+    name: "Legs + Pump · One Hard Leg Day",
+    subtitle: "Shoulder-Safe Aesthetics · legs, back & arms",
     exercises: [
-      work("Trap-Bar Deadlift / DB RDL", "Hamstrings", 4, "5–8", "1–3 RIR · add reps before load"),
-      work("Leg Press", "Quads", 3, "8–12"),
-      work("Bulgarian Split Squat", "Quads", 3, "8–10", "Per leg"),
-      work("Hip Thrust / Glute Bridge", "Glutes", 3, "8–12"),
-      work("Leg Extension", "Quads", 3, "10–15"),
-      work("Hanging Knee Raise / Cable Crunch", "Core", 3, "8–15"),
+      work("Hack Squat", "Quads", 3, "6–10"),
+      work("RDL", "Hamstrings", 3, "8–10"),
+      work("Leg Extension", "Quads", 3, "10–12 · to failure"),
+      work("Calf Raise", "Calves", 3, "10–15 · to failure"),
+      work("Chest-Supported DB Row", "Back", 3, "10–12"),
+      work("Hammer Curl", "Biceps", 3, "10–12 · to failure"),
+      work("Overhead Rope Extension", "Triceps", 3, "12–15 · to failure"),
     ],
   },
   {
-    name: "Optional Day 5 · Arms & Delts",
-    subtitle: "Derrick Recomp · optional accessory day (skip anytime)",
+    name: "Push B · Delts & Triceps Volume",
+    subtitle: "Shoulder-Safe Aesthetics · incline press + delt volume",
     exercises: [
-      work("Overhead Rope / DB Extension", "Triceps", 3, "10–15"),
-      work("Cable Pushdown", "Triceps", 3, "10–15"),
-      work("Rear Delt Fly / Face Pull", "Rear Delts", 3, "12–20"),
-      work("Lateral Raise", "Side Delts", 3, "12–15"),
-      work("Hammer Curl", "Biceps", 2, "10–12"),
-      work("Incline DB Curl", "Biceps", 2, "10–12"),
+      ...UPPER_PREHAB,
+      work("Incline Machine / Cable Chest Press", "Upper Chest", 3, "8–12"),
+      work("Cable Fly (Short of Stretch)", "Chest", 2, "12–15 · to failure"),
+      work("One-Arm Cable Lateral Raise", "Side Delts", 4, "12–15 · to failure"),
+      work("Rear-Delt Fly", "Rear Delts", 3, "12–15 · to failure"),
+      work("Overhead Rope Extension", "Triceps", 4, "12–15 · to failure"),
+    ],
+  },
+  {
+    name: "Pull B · Back Thickness & Arms",
+    subtitle: "Shoulder-Safe Aesthetics · rows + rear delts + arms",
+    exercises: [
+      ...UPPER_PREHAB,
+      work("Chest-Supported DB Row", "Back", 4, "10–12"),
+      work("Single-Arm Pulldown", "Lats", 3, "10–12"),
+      work("Face Pull", "Rear Delts", 4, "15–20 · to failure"),
+      work("Hammer Curl", "Biceps", 3, "10–12 · to failure"),
+      work("Preacher Curl", "Biceps", 3, "15–20 · to failure"),
     ],
   },
 ];
 
-/** Calendar labels Sun→Sat. Core 4-day: Tue Upper A · Wed Lower A · Fri Upper B · Sat Lower B */
+/** Calendar labels Sun→Sat. */
 export const DERRICK_RECOMP_WEEKLY_LABELS = [
   "Sun · Rest",
-  "Mon · Rest (Optional Day 5 available)",
-  "Tue · Upper A · Horizontal",
-  "Wed · Lower A · Squat",
+  "Mon · Push A",
+  "Tue · Pull A",
+  "Wed · Legs + Pump",
   "Thu · Rest",
-  "Fri · Upper B · Vertical + Shoulders",
-  "Sat · Lower B · Hinge + SL",
+  "Fri · Push B",
+  "Sat · Pull B",
 ] as const;
 
 export const DERRICK_RECOMP_TIP =
-  "4-day Upper/Lower (Tue start): Upper A → Lower A → Rest → Upper B → Lower B → Rest ×2. " +
-  "Optional Day 5 (Arms & Delts) is available anytime via Makeup — not required. " +
-  "8 weeks from Sep 8. Baseline 2500 · 185P/280C/70F · 10–12k steps. " +
-  "Add reps before weight · 1–3 RIR. Week 1 glycogen bump is normal. " +
-  "From Week 3: weekly waist + strength check adjusts calories.";
+  "5 days: Push A → Pull A → Legs + Pump → Rest → Push B → Pull B → Rest. " +
+  "Shoulder prehab before every upper day. To failure on isolation work; follow the week's RIR on presses, rows and squats.";
 
-/** Old template name cleaned up on re-apply */
-export const LEGACY_DERRICK_DAY_NAMES = ["Arms & Delts · Accessory"];
+/**
+ * Days from earlier layouts of this program. Removing them only clears the
+ * workout library — logged sessions store the day's name, not a link to the
+ * day, so history is untouched.
+ */
+export const LEGACY_DERRICK_DAY_NAMES = [
+  "Arms & Delts · Accessory",
+  "Upper A · Horizontal Strength",
+  "Lower A · Squat Emphasis",
+  "Upper B · Vertical Pull + Shoulders",
+  "Lower B · Hinge + Single-Leg",
+  "Optional Day 5 · Arms & Delts",
+];
 
-/** Week number 1–10 from program start (local date key YYYY-MM-DD). */
+/** Week number 1–8 from program start (local date key YYYY-MM-DD). */
 export function derrickRecompWeek(asOfKey: string): number {
   const start = new Date(`${DERRICK_RECOMP_START}T12:00:00`);
   const asOf = new Date(`${asOfKey}T12:00:00`);

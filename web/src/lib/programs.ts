@@ -37,10 +37,10 @@ export type ProgramDef = {
 export const PROGRAMS: Record<ProgramId, ProgramDef> = {
   "derrick-recomp": {
     id: "derrick-recomp",
-    name: "Derrick Recomp Split",
-    shortName: "Derrick Recomp",
+    name: "Shoulder-Safe Aesthetics",
+    shortName: "Shoulder-Safe Aesthetics",
     description:
-      "4-day Upper/Lower recomp (Tue start) through Nov 14. Optional Day 5 Arms & Delts. Weekly calorie rules from Week 3.",
+      "5-day push/pull/legs from Adam Yu's Aesthetics Blueprint under Derrick's shoulder rules. Mon Sep 14 → Nov 8. Weekly calorie rules from Week 3.",
     weeklyLabels: DERRICK_RECOMP_WEEKLY_LABELS,
     tip: DERRICK_RECOMP_TIP,
     workouts: DERRICK_RECOMP_WORKOUTS,
