@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useParams, useSearchParams, useRouter } from "next/navigation";
 import { useCallback, useEffect, useState, Suspense } from "react";
 import { createClient } from "@/lib/supabase/client";
+import { sideGapLine } from "@/lib/unilateral";
 import {
   buildSessionReview,
   tagLabel,
@@ -26,6 +27,7 @@ type SetLog = {
   reps: number;
   set_number: number;
   is_warmup?: boolean;
+  side?: "L" | "R" | null;
 };
 
 function SessionRecapInner() {
@@ -80,14 +82,24 @@ function SessionRecapInner() {
       let error: { message: string } | null = null;
 
       {
-        const res = await supabase
+        let res = await supabase
           .from("workout_sessions")
           .select(
-            "id, day_name, started_at, duration_seconds, notes, rating, set_logs(exercise_name, weight, reps, set_number, is_warmup)"
+            "id, day_name, started_at, duration_seconds, notes, rating, set_logs(exercise_name, weight, reps, set_number, is_warmup, side)"
           )
           .eq("id", sessionId)
           .eq("user_id", auth.user.id)
           .maybeSingle();
+        if (res.error && /\bside\b/i.test(res.error.message)) {
+          res = await supabase
+            .from("workout_sessions")
+            .select(
+              "id, day_name, started_at, duration_seconds, notes, rating, set_logs(exercise_name, weight, reps, set_number, is_warmup)"
+            )
+            .eq("id", sessionId)
+            .eq("user_id", auth.user.id)
+            .maybeSingle();
+        }
         data = res.data as SessionRow | null;
         error = res.error;
         if (error?.message?.toLowerCase().includes("rating")) {
@@ -242,17 +254,39 @@ function SessionRecapInner() {
         arr.push(s);
         byName.set(s.exercise_name, arr);
       }
+      const fmt = (r: SetLog) => {
+        const w = Number.isInteger(r.weight) ? String(r.weight) : r.weight.toFixed(1);
+        return `${w} × ${r.reps}`;
+      };
       setAllSets(
-        [...byName.entries()].map(([name, rows]) => ({
-          name,
-          isPr: prSet.has(name),
-          line: rows
-            .map((r) => {
-              const w = Number.isInteger(r.weight) ? String(r.weight) : r.weight.toFixed(1);
-              return `${w} × ${r.reps}${r.is_warmup ? " W" : ""}`;
-            })
-            .join("  ·  "),
-        }))
+        [...byName.entries()].map(([name, rows]) => {
+          const sided = rows.some((r) => r.side === "L" || r.side === "R");
+          if (!sided) {
+            return {
+              name,
+              isPr: prSet.has(name),
+              line: rows.map((r) => `${fmt(r)}${r.is_warmup ? " W" : ""}`).join("  ·  "),
+            };
+          }
+          // One-sided: pair each set's left and right, then say how far apart they are.
+          const bySet = new Map<number, { L?: SetLog; R?: SetLog }>();
+          for (const r of rows) {
+            const cur = bySet.get(r.set_number) ?? {};
+            if (r.side === "R") cur.R = r;
+            else cur.L = r;
+            bySet.set(r.set_number, cur);
+          }
+          const pairs = [...bySet.entries()].sort((a, b) => a[0] - b[0]).map(([, p]) => p);
+          const avg = (xs: number[]) => (xs.length ? xs.reduce((a, b) => a + b, 0) / xs.length : 0);
+          const gap = sideGapLine(
+            avg(pairs.filter((p) => p.L).map((p) => p.L!.weight)),
+            avg(pairs.filter((p) => p.R).map((p) => p.R!.weight))
+          );
+          const line = pairs
+            .map((p) => `L ${p.L ? fmt(p.L) : "—"} / R ${p.R ? fmt(p.R) : "—"}`)
+            .join("  ·  ");
+          return { name, isPr: prSet.has(name), line: gap ? `${line}\n${gap}` : line };
+        })
       );
 
       if (fresh && "Notification" in window && Notification.permission === "granted") {
@@ -465,7 +499,7 @@ function SessionRecapInner() {
                   </span>
                 ) : null}
               </p>
-              <p className="text-xs text-[var(--muted)]">{row.line}</p>
+              <p className="whitespace-pre-line text-xs text-[var(--muted)]">{row.line}</p>
             </div>
           ))
         )}

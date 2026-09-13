@@ -8,6 +8,10 @@ export type DraftSet = {
   isWarmup?: boolean;
   /** Reps in reserve the lifter tapped after the set; 3 stands for "3+". */
   rir?: number;
+  /** One-sided exercises: weight / reps are the left side, these the right. */
+  weightR?: string;
+  repsR?: string;
+  previousR?: string;
 };
 
 /** Named warm-up exercises (e.g. "Hamstring Curl (Warm-up)") */

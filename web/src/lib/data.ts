@@ -1,3 +1,4 @@
+import { rightSideKey } from "@/lib/unilateral";
 import { createClient } from "@/lib/supabase/server";
 import { DEFAULT_PROTOCOL } from "@/lib/protocol";
 import { BUILT_IN_WORKOUTS } from "@/lib/workouts";
@@ -115,11 +116,13 @@ export async function getPreviousSetsByExercise(userId: string) {
       is_completed: boolean;
       is_warmup?: boolean;
       rir?: number | null;
+      side?: "L" | "R" | null;
     }[];
     const byExercise: Record<string, typeof logs> = {};
     for (const log of logs.filter((l) => l.is_completed)) {
-      byExercise[log.exercise_name] ??= [];
-      byExercise[log.exercise_name].push(log);
+      const key = log.side === "R" ? rightSideKey(log.exercise_name) : log.exercise_name;
+      byExercise[key] ??= [];
+      byExercise[key].push(log);
     }
     for (const [name, sets] of Object.entries(byExercise)) {
       if (map[name]) continue;

@@ -5,6 +5,8 @@ import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { SwapExerciseSheet } from "@/components/SwapExerciseSheet";
+import { catalogEntry } from "@/lib/exerciseCatalog";
+import { nameLooksUnilateral } from "@/lib/unilateral";
 
 type ExRow = {
   key: string;
@@ -14,6 +16,8 @@ type ExRow = {
   has_crown_set: boolean;
   crown_rep_range: string;
   working_rep_range: string;
+  /** null = not answered; the name decides (see lib/unilateral). */
+  unilateral: boolean | null;
 };
 
 const MUSCLES = [
@@ -45,6 +49,7 @@ function blankEx(): ExRow {
     has_crown_set: false,
     crown_rep_range: "",
     working_rep_range: "8–12",
+    unilateral: null,
   };
 }
 
@@ -92,6 +97,7 @@ export default function EditWorkoutDayPage() {
         crown_rep_range: string;
         working_rep_range: string;
         sort_order: number;
+        unilateral?: boolean | null;
       }[] | null) ?? []].sort((a, b) => a.sort_order - b.sort_order);
 
       setExercises(
@@ -104,6 +110,7 @@ export default function EditWorkoutDayPage() {
               has_crown_set: !!e.has_crown_set,
               crown_rep_range: e.crown_rep_range || "",
               working_rep_range: e.working_rep_range || "8–12",
+              unilateral: typeof e.unilateral === "boolean" ? e.unilateral : null,
             }))
           : [blankEx()]
       );
@@ -155,18 +162,29 @@ export default function EditWorkoutDayPage() {
     }
 
     await supabase.from("workout_exercises").delete().eq("workout_day_id", dayId);
-    const { error: exErr } = await supabase.from("workout_exercises").insert(
-      cleaned.map((ex, i) => ({
-        workout_day_id: dayId,
-        name: ex.name,
-        muscle: ex.muscle,
-        default_sets: Math.max(1, Number(ex.default_sets) || 3),
-        has_crown_set: ex.has_crown_set,
-        crown_rep_range: ex.has_crown_set ? ex.crown_rep_range || "4–8" : "",
-        working_rep_range: ex.working_rep_range || "8–12",
-        sort_order: i,
-      }))
-    );
+    const rows = cleaned.map((ex, i) => ({
+      workout_day_id: dayId,
+      name: ex.name,
+      muscle: ex.muscle,
+      default_sets: Math.max(1, Number(ex.default_sets) || 3),
+      has_crown_set: ex.has_crown_set,
+      crown_rep_range: ex.has_crown_set ? ex.crown_rep_range || "4–8" : "",
+      working_rep_range: ex.working_rep_range || "8–12",
+      sort_order: i,
+      unilateral: ex.unilateral,
+    }));
+    let { error: exErr } = await supabase.from("workout_exercises").insert(rows);
+    if (exErr && /unilateral/i.test(exErr.message)) {
+      // schema_unilateral.sql not run yet: save without the answer; names still decide.
+      exErr = (
+        await supabase.from("workout_exercises").insert(
+          rows.map(({ unilateral, ...rest }) => {
+            void unilateral;
+            return rest;
+          })
+        )
+      ).error;
+    }
 
     setSaving(false);
     if (exErr) {
@@ -246,6 +264,40 @@ export default function EditWorkoutDayPage() {
               value={ex.name}
               onChange={(e) => updateEx(ex.key, { name: e.target.value })}
             />
+            {ex.name.trim() && !catalogEntry(ex.name.trim()) ? (
+              <div className="space-y-2 rounded-md border border-[var(--border-solid)] bg-[var(--surface)] p-3">
+                <p className="text-[13px] font-semibold">
+                  Not in the exercise list — is it one arm or one leg at a time?
+                </p>
+                <div className="grid grid-cols-2 gap-2">
+                  {(
+                    [
+                      [false, "Both together"],
+                      [true, "One side at a time"],
+                    ] as const
+                  ).map(([val, label]) => {
+                    const current = ex.unilateral ?? nameLooksUnilateral(ex.name);
+                    const on = ex.unilateral !== null ? ex.unilateral === val : current === val;
+                    return (
+                      <button
+                        key={label}
+                        type="button"
+                        aria-pressed={on}
+                        onClick={() => updateEx(ex.key, { unilateral: val })}
+                        className={`min-h-[44px] rounded-md text-[13px] font-bold ${
+                          on ? "bg-[var(--blue)] text-[var(--on-blue)]" : "bg-[var(--raised)] text-[var(--muted)]"
+                        }`}
+                      >
+                        {label}
+                      </button>
+                    );
+                  })}
+                </div>
+                <p className="text-[11px] text-[var(--muted)]">
+                  One side at a time logs a left and right weight for every set.
+                </p>
+              </div>
+            ) : null}
             <div className="grid grid-cols-2 gap-2">
               <select
                 className="field !py-2.5"
@@ -318,11 +370,11 @@ export default function EditWorkoutDayPage() {
                 muscle={ex.muscle}
                 onClose={() => setSwapKey(null)}
                 onSwapHere={(name) => {
-                  updateEx(ex.key, { name });
+                  updateEx(ex.key, { name, unilateral: null });
                   setSwapKey(null);
                 }}
                 onSwapAll={(name) => {
-                  updateEx(ex.key, { name });
+                  updateEx(ex.key, { name, unilateral: null });
                   setSwapKey(null);
                 }}
               />

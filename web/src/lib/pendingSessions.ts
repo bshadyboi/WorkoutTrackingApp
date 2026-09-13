@@ -17,6 +17,7 @@ export type PendingSessionRow = {
   is_completed: boolean;
   is_warmup: boolean;
   rir?: number | null;
+  side?: "L" | "R" | null;
 };
 
 export type PendingSession = {
@@ -130,6 +131,18 @@ export async function flushPendingSessions(): Promise<{
             void is_warmup;
             return rest;
           });
+          setsErr = (await supabase.from("set_logs").insert(fallback)).error;
+        }
+        if (setsErr && /\b(side|rir)\b/i.test(setsErr.message ?? "")) {
+          // Older schema: keep each set once (the left side stands in for a
+          // one-sided set) rather than lose the workout.
+          const fallback = rows
+            .filter((r) => r.side !== "R")
+            .map(({ side, rir, ...rest }) => {
+              void side;
+              void rir;
+              return rest;
+            });
           setsErr = (await supabase.from("set_logs").insert(fallback)).error;
         }
         if (setsErr) {

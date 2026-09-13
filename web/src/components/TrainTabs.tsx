@@ -236,14 +236,16 @@ type WeekDayInfo = {
   resolved: ReturnType<typeof resolveWeekdayWorkout>;
 };
 
-/** "Upper A · Horizontal Strength" → "UA"; "Optional Day 5" → "OD" */
-function dayInitials(name: string) {
+/**
+ * Short word for a day in the week strip: "Push A · Chest…" → "Push".
+ * Initials collided — Push A and Pull A both read "PA" — and the weekday
+ * above each cell already says which A/B session it is.
+ */
+function dayLabel(name: string) {
   const head = name.split("·")[0]?.trim() ?? name;
-  const words = head.split(/\s+/).filter(Boolean);
-  const letters = words
-    .map((w) => (/^\d+$/.test(w) ? w : w[0]?.toUpperCase() ?? ""))
-    .join("");
-  return letters.slice(0, 2) || "•";
+  const first = head.split(/\s+/).filter(Boolean)[0] ?? "";
+  if (!first) return "•";
+  return first.length <= 4 ? first : first.slice(0, 3);
 }
 
 const WEEKDAY_SHORT = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
@@ -289,8 +291,8 @@ function WeekStrip({
                 <IconDumbbell size={14} strokeWidth={2.4} />
               </span>
             ) : (
-              <span className="flex h-[30px] w-[30px] items-center justify-center rounded-full bg-[var(--card-2)] text-[11px] font-extrabold text-[var(--muted)]">
-                {dayInitials(d.resolved.label)}
+              <span className="flex h-[30px] min-w-[34px] items-center justify-center rounded-full bg-[var(--card-2)] px-1 text-[10px] font-bold text-[var(--muted)]">
+                {dayLabel(d.resolved.label)}
               </span>
             )}
           </div>

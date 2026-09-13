@@ -18,6 +18,7 @@ import { splitWarmupBlock } from "@/lib/prehab";
 import { derrickRecompGuidance, derrickRecompWeek } from "@/lib/derrickRecomp";
 import { dateKey } from "@/lib/protocol";
 import { Explain } from "@/components/Explain";
+import { isUnilateral, rightSideKey } from "@/lib/unilateral";
 import { parseRepRange, suggestOverload } from "@/lib/overload";
 import { renameExerciseEverywhere } from "@/lib/exerciseRename";
 import {
@@ -76,6 +77,8 @@ type Exercise = {
   crown_rep_range: string;
   working_rep_range: string;
   sort_order: number;
+  /** The lifter's answer for a custom exercise; null = infer from the name. */
+  unilateral?: boolean | null;
 };
 
 function defaultRestSeconds(ex: Exercise, setIndex: number) {
@@ -93,20 +96,32 @@ function formatRest(seconds: number) {
  * are seeded so a session that repeats last week's numbers is a row of taps;
  * the "previous" label stays visible so an edited value is still comparable.
  */
+function fmtPrev(p: { weight: number; reps: number } | undefined) {
+  return p ? `${Number.isInteger(p.weight) ? p.weight : p.weight.toFixed(1)} × ${p.reps}` : "—";
+}
+
 function buildSet(
   index: number,
   prev: { weight: number; reps: number } | undefined,
-  isWarmup: boolean
+  isWarmup: boolean,
+  /** Set for one-sided exercises: last time's right side (falls back to prev). */
+  prevR?: { weight: number; reps: number } | null
 ): DraftSet {
-  return {
+  const base: DraftSet = {
     setNumber: index + 1,
     weight: prev ? String(prev.weight) : "",
     reps: prev ? String(prev.reps) : "",
     completed: false,
     isWarmup,
-    previous: prev
-      ? `${Number.isInteger(prev.weight) ? prev.weight : prev.weight.toFixed(1)} × ${prev.reps}`
-      : "—",
+    previous: fmtPrev(prev),
+  };
+  if (prevR === undefined) return base;
+  const r = prevR ?? prev;
+  return {
+    ...base,
+    weightR: r ? String(r.weight) : "",
+    repsR: r ? String(r.reps) : "",
+    previousR: fmtPrev(r ?? undefined),
   };
 }
 
@@ -143,6 +158,9 @@ export function WorkoutLogger({
   const [notes, setNotes] = useState<Record<string, string>>({});
   const [nameOverrides, setNameOverrides] = useState<Record<string, string>>({});
   const [renameBusy, setRenameBusy] = useState(false);
+  /** One-sided answers given this session (custom names), keyed by exercise id. */
+  const [unilateralOverride, setUnilateralOverride] = useState<Record<string, boolean>>({});
+  const [editOneSided, setEditOneSided] = useState<boolean | null>(null);
   const [restByExercise, setRestByExercise] = useState<Record<string, number>>(() => {
     const init: Record<string, number> = {};
     for (const ex of sorted) {
@@ -208,8 +226,15 @@ export function WorkoutLogger({
     for (const ex of sorted) {
       const prev = previousByExercise[ex.name] ?? [];
       const warmEx = isWarmupExerciseName(ex.name);
+      const uni = isUnilateral(ex);
+      const prevRList = uni ? previousByExercise[rightSideKey(ex.name)] ?? [] : [];
       init[ex.id] = Array.from({ length: ex.default_sets }, (_, i) =>
-        buildSet(i, prev[i] ?? prev[prev.length - 1], warmEx)
+        buildSet(
+          i,
+          prev[i] ?? prev[prev.length - 1],
+          warmEx,
+          uni ? (prevRList[i] ?? prevRList[prevRList.length - 1] ?? null) : undefined
+        )
       );
     }
     return init;
@@ -477,6 +502,10 @@ export function WorkoutLogger({
     if (activeRest?.exerciseId === exerciseId) clearActiveRest();
   }
 
+  function oneSided(ex: Exercise) {
+    return unilateralOverride[ex.id] ?? isUnilateral({ name: displayName(ex), unilateral: ex.unilateral });
+  }
+
   function fillFromPrevious(ex: Exercise, setIndex: number) {
     const name = displayName(ex);
     const prev =
@@ -519,8 +548,11 @@ export function WorkoutLogger({
     updateSet(ex.id, setIndex, { completed: next });
 
     if (next && !set.isWarmup) {
-      const weight = Number(set.weight) || 0;
-      const reps = Number(set.reps) || 0;
+      const left = { w: Number(set.weight) || 0, r: Number(set.reps) || 0 };
+      const right = { w: Number(set.weightR) || 0, r: Number(set.repsR) || 0 };
+      const useRight = oneSided(ex) && setScore(right.w, right.r) > setScore(left.w, left.r);
+      const weight = useRight ? right.w : left.w;
+      const reps = useRight ? right.r : left.r;
       if (weight > 0 && reps > 0) {
         const name = displayName(ex);
         const prev =
@@ -549,6 +581,7 @@ export function WorkoutLogger({
   }
 
   function openEdit(ex: Exercise) {
+    setEditOneSided(unilateralOverride[ex.id] ?? ex.unilateral ?? null);
     setEditForId(ex.id);
     setEditNameDraft(displayName(ex));
   }
@@ -559,20 +592,20 @@ export function WorkoutLogger({
    * the ones belonging to the exercise it replaced. Sets already ticked off are
    * left alone — that work happened.
    */
-  function reseedFromHistory(exerciseId: string, name: string) {
+  function reseedFromHistory(exerciseId: string, name: string, sided?: boolean) {
     const prev = previousByExercise[name] ?? [];
+    const ex = sorted.find((e) => e.id === exerciseId);
+    const uni = sided ?? (ex ? isUnilateral({ name, unilateral: unilateralOverride[exerciseId] ?? ex.unilateral }) : false);
+    const prevR = uni ? previousByExercise[rightSideKey(name)] ?? [] : [];
     setSetsByExercise((cur) => {
       const list = (cur[exerciseId] ?? []).map((s, i) => {
         const p = prev[i] ?? prev[prev.length - 1];
-        const label = p
-          ? `${Number.isInteger(p.weight) ? p.weight : p.weight.toFixed(1)} × ${p.reps}`
-          : "—";
-        if (s.completed) return { ...s, previous: label };
-        return {
-          ...buildSet(i, p, Boolean(s.isWarmup)),
-          setNumber: s.setNumber,
-          previous: label,
-        };
+        const pr = uni ? (prevR[i] ?? prevR[prevR.length - 1] ?? null) : undefined;
+        const fresh = buildSet(i, p, Boolean(s.isWarmup), pr);
+        if (s.completed) {
+          return { ...s, previous: fresh.previous, previousR: fresh.previousR };
+        }
+        return { ...fresh, setNumber: s.setNumber };
       });
       return { ...cur, [exerciseId]: list };
     });
@@ -586,9 +619,17 @@ export function WorkoutLogger({
     const ex = sorted.find((e) => e.id === editForId);
     const from = ex ? displayName(ex) : "";
     const target = editForId;
+    const custom = !catalogEntry(trimmed);
+    const sided = custom && editOneSided !== null ? editOneSided : undefined;
 
     setNameOverrides((o) => ({ ...o, [target]: trimmed }));
-    reseedFromHistory(target, trimmed);
+    if (sided !== undefined) {
+      setUnilateralOverride((o) => ({ ...o, [target]: sided }));
+      // Stored on the exercise so the next session splits it too. The column
+      // arrives with schema_unilateral.sql; without it the answer lasts this session.
+      void supabaseRef.current.from("workout_exercises").update({ unilateral: sided }).eq("id", target);
+    }
+    reseedFromHistory(target, trimmed, sided);
 
     // Persist so the plan and past logs travel together — otherwise next
     // session looks this movement up under the old name and finds nothing.
@@ -677,8 +718,25 @@ export function WorkoutLogger({
   function buildSetRows() {
     const rows: PendingSessionRow[] = [];
     for (const ex of sorted) {
+      const sided = oneSided(ex);
       for (const set of setsByExercise[ex.id] ?? []) {
         if (!set.completed) continue;
+        if (sided && !set.isWarmup) {
+          for (const side of ["L", "R"] as const) {
+            rows.push({
+              exercise_name: displayName(ex),
+              muscle: ex.muscle,
+              set_number: set.setNumber,
+              weight: Number(side === "L" ? set.weight : set.weightR) || 0,
+              reps: Number(side === "L" ? set.reps : set.repsR) || 0,
+              is_completed: true,
+              is_warmup: false,
+              rir: typeof set.rir === "number" ? set.rir : null,
+              side,
+            });
+          }
+          continue;
+        }
         rows.push({
           exercise_name: displayName(ex),
           muscle: ex.muscle,
@@ -814,13 +872,28 @@ export function WorkoutLogger({
           const retry = await supabase.from("set_logs").insert(fallbackRows);
           setsErr = retry.error;
         }
-        if (setsErr?.message?.toLowerCase().includes("rir")) {
-          const fallbackRows = rows.map(({ rir, ...rest }) => {
-            void rir;
-            return rest;
-          });
+        if (setsErr && /\b(side|rir)\b/i.test(setsErr.message ?? "")) {
+          // Older schema: store each set once, with the left side standing in
+          // for a one-sided set, and keep the right side's numbers in the notes.
+          const rightLines = rows
+            .filter((r) => r.side === "R")
+            .map((r) => `${r.exercise_name} set ${r.set_number} right: ${r.weight} × ${r.reps}`);
+          const fallbackRows = rows
+            .filter((r) => r.side !== "R")
+            .map(({ rir, side, ...rest }) => {
+              void rir;
+              void side;
+              return rest;
+            });
           const retry = await supabase.from("set_logs").insert(fallbackRows);
           setsErr = retry.error;
+          if (!setsErr && rightLines.length) {
+            const { data: row } = await supabase.from("workout_sessions").select("notes").eq("id", session.id).maybeSingle();
+            await supabase
+              .from("workout_sessions")
+              .update({ notes: [row?.notes, ...rightLines].filter(Boolean).join("\n") })
+              .eq("id", session.id);
+          }
         }
         if (setsErr) {
           await supabase.from("workout_sessions").delete().eq("id", session.id);
@@ -1264,6 +1337,11 @@ export function WorkoutLogger({
                     const prevList =
                       previousByExercise[name] ?? previousByExercise[ex.name] ?? [];
                     const prevRaw = prevList[i] ?? prevList[prevList.length - 1];
+                    const sided = oneSided(ex) && !set.isWarmup && !isCardio;
+                    const prevRList = sided
+                      ? previousByExercise[rightSideKey(name)] ?? previousByExercise[rightSideKey(ex.name)] ?? []
+                      : [];
+                    const prevRawR = sided ? (prevRList[i] ?? prevRList[prevRList.length - 1] ?? prevRaw) : undefined;
                     // Crown sets carry their own range; everything else uses the
                     // working range for the movement.
                     const suggestion =
@@ -1276,9 +1354,20 @@ export function WorkoutLogger({
                                 ? ex.crown_rep_range
                                 : ex.working_rep_range,
                           });
+                    const suggestionR = sided
+                      ? suggestOverload({
+                          previous: prevRawR,
+                          repRange:
+                            ex.has_crown_set && i === 0 ? ex.crown_rep_range : ex.working_rep_range,
+                        })
+                      : null;
+                    const shortTarget = (x: typeof suggestion) =>
+                      x ? x.label.replace(/^(Try|Hold|Repeat|Aim)\s+/i, "") : "";
                     const targetLabel = set.isWarmup
                       ? "Warm-up"
-                      : (suggestion?.label ?? setTargetLabel(ex, i));
+                      : sided && suggestion && suggestionR && suggestion.kind !== "open"
+                        ? `L ${shortTarget(suggestion)} · R ${shortTarget(suggestionR)}`
+                        : (suggestion?.label ?? setTargetLabel(ex, i));
                     const canApply =
                       !set.completed &&
                       suggestion != null &&
@@ -1319,7 +1408,11 @@ export function WorkoutLogger({
                                 : set.setNumber}
                           </button>
                           <div className="min-w-0">
-                            {set.previous && set.previous !== "—" ? (
+                            {sided ? (
+                              <p className="truncate text-[12px] font-semibold tabular-nums text-[var(--muted)]">
+                                L {set.previous ?? "—"} · R {set.previousR ?? "—"}
+                              </p>
+                            ) : set.previous && set.previous !== "—" ? (
                               <button
                                 type="button"
                                 className="block w-full truncate text-left text-[13px] font-semibold text-[var(--muted)] active:text-[var(--green)]"
@@ -1342,6 +1435,15 @@ export function WorkoutLogger({
                                         ? String(suggestion.weight)
                                         : set.weight,
                                     reps: String(suggestion?.reps ?? ""),
+                                    ...(sided && suggestionR
+                                      ? {
+                                          weightR:
+                                            suggestionR.weight != null
+                                              ? String(suggestionR.weight)
+                                              : (set.weightR ?? ""),
+                                          repsR: String(suggestionR.reps ?? ""),
+                                        }
+                                      : {}),
                                   })
                                 }
                                 className="block w-full truncate text-left text-[11px] font-bold text-[var(--blue)] underline decoration-dotted underline-offset-2 active:text-[var(--green)]"
@@ -1360,22 +1462,61 @@ export function WorkoutLogger({
                               </p>
                             )}
                           </div>
+                          {sided ? (
+                            <>
+                              <div className="flex flex-col gap-1">
+                                {(["L", "R"] as const).map((side) => (
+                                  <label key={side} className="relative block">
+                                    <span className="pointer-events-none absolute left-1.5 top-1/2 -translate-y-1/2 text-[10px] font-bold text-[var(--dim)]">
+                                      {side}
+                                    </span>
+                                    <input
+                                      aria-label={`${side === "L" ? "Left" : "Right"} weight`}
+                                      className="h-9 w-full rounded-md border border-[var(--border-solid)] bg-[var(--field)] pl-4 pr-1 text-center text-[14px] font-bold text-[var(--text)] outline-none focus:border-[var(--blue)]"
+                                      inputMode="decimal"
+                                      value={side === "L" ? set.weight : (set.weightR ?? "")}
+                                      onChange={(e) =>
+                                        updateSet(ex.id, i, side === "L" ? { weight: e.target.value } : { weightR: e.target.value })
+                                      }
+                                    />
+                                  </label>
+                                ))}
+                              </div>
+                              <div className="flex flex-col gap-1">
+                                {(["L", "R"] as const).map((side) => (
+                                  <input
+                                    key={side}
+                                    aria-label={`${side === "L" ? "Left" : "Right"} reps`}
+                                    className="h-9 w-full rounded-md border border-[var(--border-solid)] bg-[var(--field)] px-1 text-center text-[14px] font-bold text-[var(--text)] outline-none focus:border-[var(--blue)]"
+                                    inputMode="numeric"
+                                    value={side === "L" ? set.reps : (set.repsR ?? "")}
+                                    onChange={(e) =>
+                                      updateSet(ex.id, i, side === "L" ? { reps: e.target.value } : { repsR: e.target.value })
+                                    }
+                                  />
+                                ))}
+                              </div>
+                            </>
+                          ) : (
+                            <>
                           <input
-                            className="h-11 w-full rounded-md border border-[var(--border-solid)] bg-[var(--field)] px-1 text-center text-[15px] font-bold text-[var(--text)] outline-none focus:border-[var(--blue)]"
-                            inputMode="decimal"
-                            value={set.weight}
-                            onChange={(e) =>
-                              updateSet(ex.id, i, { weight: e.target.value })
-                            }
-                          />
-                          <input
-                            className="h-11 w-full rounded-md border border-[var(--border-solid)] bg-[var(--field)] px-1 text-center text-[15px] font-bold text-[var(--text)] outline-none focus:border-[var(--blue)]"
-                            inputMode="numeric"
-                            value={set.reps}
-                            onChange={(e) =>
-                              updateSet(ex.id, i, { reps: e.target.value })
-                            }
-                          />
+                              className="h-11 w-full rounded-md border border-[var(--border-solid)] bg-[var(--field)] px-1 text-center text-[15px] font-bold text-[var(--text)] outline-none focus:border-[var(--blue)]"
+                              inputMode="decimal"
+                              value={set.weight}
+                              onChange={(e) =>
+                                updateSet(ex.id, i, { weight: e.target.value })
+                              }
+                            />
+                            <input
+                              className="h-11 w-full rounded-md border border-[var(--border-solid)] bg-[var(--field)] px-1 text-center text-[15px] font-bold text-[var(--text)] outline-none focus:border-[var(--blue)]"
+                              inputMode="numeric"
+                              value={set.reps}
+                              onChange={(e) =>
+                                updateSet(ex.id, i, { reps: e.target.value })
+                              }
+                            />
+                            </>
+                          )}
                           <button
                             type="button"
                             aria-label={set.completed ? "Set done" : "Mark set done"}
@@ -1681,6 +1822,34 @@ export function WorkoutLogger({
               Saved to your plan and past logs, so next session opens with these
               numbers already filled in.
             </p>
+            {editNameDraft.trim() && !catalogEntry(editNameDraft.trim()) ? (
+              <div className="mt-3 space-y-2 rounded-md border border-[var(--border-solid)] bg-[var(--surface)] p-3">
+                <p className="text-[13px] font-semibold">Not in the exercise list — is it one arm or one leg at a time?</p>
+                <div className="grid grid-cols-2 gap-2">
+                  {(
+                    [
+                      [false, "Both together"],
+                      [true, "One side at a time"],
+                    ] as const
+                  ).map(([val, label]) => (
+                    <button
+                      key={label}
+                      type="button"
+                      aria-pressed={editOneSided === val}
+                      onClick={() => setEditOneSided(val)}
+                      className={`min-h-[44px] rounded-md text-[13px] font-bold ${
+                        editOneSided === val
+                          ? "bg-[var(--blue)] text-[var(--on-blue)]"
+                          : "bg-[var(--raised)] text-[var(--muted)]"
+                      }`}
+                    >
+                      {label}
+                    </button>
+                  ))}
+                </div>
+                <p className="text-[11px] text-[var(--muted)]">One side at a time logs a left and right weight for every set.</p>
+              </div>
+            ) : null}
             <button
               type="button"
               className="btn-accent mt-2 w-full !py-2.5"
