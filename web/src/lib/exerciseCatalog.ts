@@ -56,7 +56,7 @@ export const EXERCISE_CATALOG: ExerciseCatalogEntry[] = [
     muscle: "Triceps",
     notes: "Elbows pinned. Full lockout squeeze. No swinging.",
     youtubeUrl: "https://www.youtube.com/watch?v=2-LAMcpzODU",
-    alternatives: [
+    alternatives: ["Unilateral Tricep Pushdown", 
       "Rope Pushdown",
       "Single Arm Pushdown",
       "V-Bar Pushdown",
@@ -110,7 +110,7 @@ export const EXERCISE_CATALOG: ExerciseCatalogEntry[] = [
     muscle: "Side Delts",
     notes: "Lead with elbow. Controlled to failure.",
     youtubeUrl: "https://www.youtube.com/watch?v=3VcKaXpzqRo",
-    alternatives: [
+    alternatives: ["Machine Lateral Raise (Lengthened Partials)", "Cable Y Raise (Short Position)", 
       "Lateral Raise (Cable)",
       "DB Lateral Raise",
       "Machine Lateral Raise",
@@ -125,6 +125,8 @@ export const EXERCISE_CATALOG: ExerciseCatalogEntry[] = [
     notes: "Full stretch at bottom. Control the negative.",
     youtubeUrl: "https://www.youtube.com/watch?v=fIWP-FRFNU0",
     alternatives: [
+      "60° Preacher Curl",
+      "Mid-Position Cable Curl",
       "Single Arm Preacher Curl",
       "Machine Preacher Curl",
       "Concentration Curl",
@@ -305,7 +307,7 @@ export const EXERCISE_CATALOG: ExerciseCatalogEntry[] = [
     muscle: "Biceps",
     notes: "Neutral grip. No swinging.",
     youtubeUrl: "https://www.youtube.com/watch?v=zC3nLlEvin4",
-    alternatives: [
+    alternatives: ["Mid-Position Cable Curl", 
       "Rope Hammer Curl",
       "Cross-Body Hammer Curl",
       "DB Curl",
@@ -525,7 +527,7 @@ export const EXERCISE_CATALOG: ExerciseCatalogEntry[] = [
     notes:
       "Lead with elbows, slight lean if needed. Raise to ~shoulder height — no shrugging. Failure + partials.",
     youtubeUrl: "https://www.youtube.com/watch?v=Kl3LEzQ5Zqs",
-    alternatives: ["Cable Lateral Raise", "Machine Lateral Raise", "Lateral Raise (Cable)"],
+    alternatives: ["Machine Lateral Raise (Lengthened Partials)", "Cable Y Raise (Short Position)", "Cable Lateral Raise", "Machine Lateral Raise", "Lateral Raise (Cable)"],
   },
   {
     name: "Cable Lateral Raise",
@@ -586,7 +588,7 @@ export const EXERCISE_CATALOG: ExerciseCatalogEntry[] = [
     notes:
       "Arm flat on pad. Full stretch at bottom, don’t bounce. Failure + partials.",
     youtubeUrl: "https://www.youtube.com/watch?v=S4dDLfp3e8w",
-    alternatives: ["Preacher Curl", "Single Arm Preacher Curl", "Concentration Curl"],
+    alternatives: ["60° Preacher Curl", "Preacher Curl", "Single Arm Preacher Curl", "Concentration Curl"],
   },
   {
     name: "Incline Dumbbell Curl",
@@ -760,7 +762,7 @@ export const EXERCISE_CATALOG: ExerciseCatalogEntry[] = [
     muscle: "Triceps",
     notes: "Face away from stack. Elbows fixed, full stretch overhead. To failure.",
     youtubeUrl: "https://www.youtube.com/watch?v=b5le--KkyH0",
-    alternatives: ["Overhead Tricep Extension", "Cable Overhead Extension"],
+    alternatives: ["Unilateral Cable Overhead Extension", "Overhead Tricep Extension", "Cable Overhead Extension"],
   },
   {
     name: "Flat Barbell Bench Press",
@@ -1193,7 +1195,7 @@ export const EXERCISE_CATALOG: ExerciseCatalogEntry[] = [
     muscle: "Biceps",
     notes: "Superset with skull crushers. Tempo 4/0/X/0.",
     youtubeUrl: "https://www.youtube.com/watch?v=zG2v77qzzW8",
-    alternatives: [
+    alternatives: ["Mid-Position Cable Curl", "60° Preacher Curl", 
       "Mid Semi-Supinated Cable Curl",
       "Barbell Curl Medium Grip",
       "Incline Supinated DB Curls",
@@ -1640,6 +1642,47 @@ export const EXERCISE_CATALOG: ExerciseCatalogEntry[] = [
     notes: "Hold a DB at the chest. Don’t hyperextend the neck.",
     youtubeUrl: "https://www.youtube.com/watch?v=phlwqR4pGj8",
     alternatives: ["Back Extension", "Horizontal Back Extension"],
+  },
+  // —— Low-volume "science-based" variations, offered as swaps ——
+  // Picked from an upper/lower template for the lifter's delt and arm goals.
+  // Its top-half shoulder press and heavy flared upper-back rows are left out
+  // on purpose: overhead pressing and upper-trap loading are what the
+  // shoulder plan holds back until the shoulder is quiet.
+  {
+    name: "Machine Lateral Raise (Lengthened Partials)",
+    muscle: "Side Delts",
+    notes: "Work the bottom half — from the stretch up to about mid-range. Dumbbells barely load this part.",
+    alternatives: ["Single Arm Cable Lateral Raise", "Dumbbell Lateral Raise", "Cable Y Raise (Short Position)"],
+  },
+  {
+    name: "Cable Y Raise (Short Position)",
+    muscle: "Side Delts",
+    notes: "Light, arms in a Y, stay in the top half where the delt is shortened. Doubles as scapular control.",
+    alternatives: ["Machine Lateral Raise (Lengthened Partials)", "Single Arm Cable Lateral Raise", "Face Pull"],
+  },
+  {
+    name: "Mid-Position Cable Curl",
+    muscle: "Biceps",
+    notes: "Cable at mid height, elbows slightly forward — tension stays even through the rep.",
+    alternatives: ["Hammer Curl", "60° Preacher Curl", "Incline Dumbbell Curl"],
+  },
+  {
+    name: "60° Preacher Curl",
+    muscle: "Biceps",
+    notes: "Pad at about 60°. Control the bottom; don't let the elbow lock out hard.",
+    alternatives: ["Machine Preacher Curl", "Mid-Position Cable Curl", "Single Arm Preacher Curl"],
+  },
+  {
+    name: "Unilateral Tricep Pushdown",
+    muscle: "Triceps",
+    notes: "One arm at a time, elbow pinned to the ribs.",
+    alternatives: ["Triceps Pushdown", "Unilateral Cable Overhead Extension", "Single Arm Pushdown"],
+  },
+  {
+    name: "Unilateral Cable Overhead Extension",
+    muscle: "Triceps",
+    notes: "One arm, cable behind you. Skip it on any day the shoulder complains in the overhead position.",
+    alternatives: ["Overhead Cable Tricep Extensions (Rope)", "Unilateral Tricep Pushdown", "Triceps Pushdown"],
   },
 ];
 
