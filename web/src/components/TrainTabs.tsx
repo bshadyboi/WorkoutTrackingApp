@@ -8,6 +8,7 @@ import { clearTabCache } from "@/lib/tabCache";
 import { shortDayLabel, type DateOverrides, type ScheduleSlots } from "@/lib/schedule";
 import { saveDateOverride } from "@/lib/scheduleClient";
 import { MakeupDayButton } from "@/components/MakeupDayButton";
+import { Explain } from "@/components/Explain";
 import { resolveWeekdayWorkout } from "@/lib/weekdaySchedule";
 import { markRestDayComplete, getActiveProgramId } from "@/lib/workoutsClient";
 import { getProgram } from "@/lib/programs";
@@ -49,6 +50,8 @@ type Hist = {
   durationSeconds: number;
   volume: number;
   setCount: number;
+  shoulder?: "fine" | "pinchy" | "painful" | null;
+  shoulderLift?: string | null;
 };
 
 function sessionBriefsFromHistory(history: Hist[]) {
@@ -166,9 +169,11 @@ export function TrainTabs({
             }`}
           >
             Week {recompWeek} · {guidance.phase}
+            <Explain term={guidance.deload ? "deload" : "phase"} className="ml-2 align-middle" />
           </p>
           <p className="mt-1 text-[13px] leading-snug text-[var(--muted)]">
             {guidance.note}
+            {/reserve/i.test(guidance.note) ? <Explain term="rir" className="ml-1.5 align-middle" /> : null}
           </p>
         </div>
       ) : null}
@@ -1153,8 +1158,57 @@ function ProgressionTab({ history }: { history: Hist[] }) {
   const kLb = (n: number) =>
     Math.abs(n) >= 1000 ? `${(n / 1000).toFixed(1)}k` : String(Math.round(n));
 
+  const shoulderLog = useMemo(() => {
+    const answered = history.filter((h) => h.shoulder);
+    const recent = answered.slice(0, 8).reverse();
+    // Two consecutive non-fine answers on the same lift is the signal the plan
+    // says to act on: keep that lift where it is and get it looked at.
+    const last = answered[0];
+    const prev = answered[1];
+    const flag =
+      last && prev && last.shoulder !== "fine" && prev.shoulder !== "fine" && last.shoulderLift && last.shoulderLift === prev.shoulderLift
+        ? last.shoulderLift
+        : null;
+    return { recent, flag, total: answered.length };
+  }, [history]);
+
   return (
     <div className="space-y-5">
+      {shoulderLog.total ? (
+        <section className="space-y-2.5">
+          <div className="flex items-baseline justify-between gap-2">
+            <h2 className="text-[17px] font-bold">Shoulder</h2>
+            <p className="text-[11.5px] font-semibold text-[var(--muted)]">Last {shoulderLog.recent.length} sessions</p>
+          </div>
+          <div className="rounded-md border border-[var(--border-solid)] bg-[var(--card)] p-4">
+            <div className="flex items-end gap-1.5">
+              {shoulderLog.recent.map((h) => (
+                <span
+                  key={h.id}
+                  title={`${h.dayName}: ${h.shoulder}${h.shoulderLift ? ` (${h.shoulderLift})` : ""}`}
+                  className={`h-3 flex-1 rounded-[2px] ${
+                    h.shoulder === "fine"
+                      ? "bg-[var(--green)]"
+                      : h.shoulder === "pinchy"
+                        ? "bg-[var(--yellow)]"
+                        : "bg-[var(--red)]"
+                  }`}
+                />
+              ))}
+            </div>
+            {shoulderLog.flag ? (
+              <p className="mt-3 text-[13px] leading-snug text-[var(--yellow)]">
+                <span className="font-bold">{shoulderLog.flag}</span> has bothered the shoulder two sessions running. Hold its weight where it is, and if it keeps up, get it looked at — that&apos;s the plan&apos;s rule, not a suggestion.
+              </p>
+            ) : (
+              <p className="mt-3 text-[12.5px] text-[var(--muted)]">
+                Green fine · amber pinchy · red painful. Answered after each session.
+              </p>
+            )}
+          </div>
+        </section>
+      ) : null}
+
       <section className="space-y-2.5">
         <h2 className="text-[17px] font-bold">This week</h2>
         <div className="grid grid-cols-3 gap-2">

@@ -16,6 +16,7 @@ export type PendingSessionRow = {
   reps: number;
   is_completed: boolean;
   is_warmup: boolean;
+  rir?: number | null;
 };
 
 export type PendingSession = {

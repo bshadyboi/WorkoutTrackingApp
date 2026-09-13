@@ -15,6 +15,9 @@ import {
 import { formatPrescription, setTargetLabel } from "@/lib/workouts";
 import { IconCheck, IconMore, IconPlayCircle, IconSwap, IconX } from "@/components/icons";
 import { splitWarmupBlock } from "@/lib/prehab";
+import { derrickRecompGuidance, derrickRecompWeek } from "@/lib/derrickRecomp";
+import { dateKey } from "@/lib/protocol";
+import { Explain } from "@/components/Explain";
 import { parseRepRange, suggestOverload } from "@/lib/overload";
 import { renameExerciseEverywhere } from "@/lib/exerciseRename";
 import {
@@ -118,7 +121,7 @@ export function WorkoutLogger({
   dayId: string;
   dayName: string;
   exercises: Exercise[];
-  previousByExercise: Record<string, { weight: number; reps: number }[]>;
+  previousByExercise: Record<string, { weight: number; reps: number; rir?: number | null }[]>;
   /** All-time best working set per exercise name */
   bestByExercise?: Record<string, BestSet>;
   /** YYYY-MM-DD when backfilling a past workout */
@@ -176,6 +179,21 @@ export function WorkoutLogger({
       restByExercise: Record<string, number>;
     };
   } | null>(null);
+  /** This week's reps-in-reserve target from the plan, used to flag a set taken too close to failure. */
+  const rirTarget = useMemo(
+    () => derrickRecompGuidance(derrickRecompWeek(logDate ?? dateKey(new Date())))?.rirTarget ?? null,
+    [logDate]
+  );
+  const [rirExplained, setRirExplained] = useState(true);
+  useEffect(() => {
+    try {
+      setRirExplained(localStorage.getItem("ft-rir-explained") === "1");
+    } catch {
+      /* treat as explained */
+    }
+  }, []);
+  const [shoulder, setShoulder] = useState<"fine" | "pinchy" | "painful" | null>(null);
+  const [shoulderLift, setShoulderLift] = useState<string>("");
   const [prToast, setPrToast] = useState<{
     title: string;
     detail: string;
@@ -669,6 +687,7 @@ export function WorkoutLogger({
           reps: Number(set.reps) || 0,
           is_completed: true,
           is_warmup: Boolean(set.isWarmup),
+          rir: typeof set.rir === "number" ? set.rir : null,
         });
       }
     }
@@ -795,6 +814,14 @@ export function WorkoutLogger({
           const retry = await supabase.from("set_logs").insert(fallbackRows);
           setsErr = retry.error;
         }
+        if (setsErr?.message?.toLowerCase().includes("rir")) {
+          const fallbackRows = rows.map(({ rir, ...rest }) => {
+            void rir;
+            return rest;
+          });
+          const retry = await supabase.from("set_logs").insert(fallbackRows);
+          setsErr = retry.error;
+        }
         if (setsErr) {
           await supabase.from("workout_sessions").delete().eq("id", session.id);
           if (isOfflineError(setsErr)) return finishOffline();
@@ -826,17 +853,28 @@ export function WorkoutLogger({
     });
   }
 
-  async function submitRating(score: number) {
+  /**
+   * The plan's rule is "stop any lift that pinches" and to track a pain score
+   * over time. This records the answer per session. Until schema_shoulder.sql
+   * is run the columns don't exist, so the answer falls back into notes.
+   */
+  async function submitShoulder(status: "fine" | "pinchy" | "painful", lift: string) {
     if (!ratingSessionId) return;
     setRatingSaving(true);
     const supabase = supabaseRef.current;
-    const { error: rateErr } = await supabase
+    const { error: shErr } = await supabase
       .from("workout_sessions")
-      .update({ rating: score })
+      .update({ shoulder_status: status, shoulder_lift: lift || null })
       .eq("id", ratingSessionId);
-    if (rateErr) {
-      // Column may not exist yet — still continue to recap
-      console.warn(rateErr.message);
+    if (shErr) {
+      const line = `Shoulder: ${status}${lift ? ` (${lift})` : ""}`;
+      const { data: row } = await supabase
+        .from("workout_sessions")
+        .select("notes")
+        .eq("id", ratingSessionId)
+        .maybeSingle();
+      const notes = [row?.notes, line].filter(Boolean).join("\n");
+      await supabase.from("workout_sessions").update({ notes }).eq("id", ratingSessionId);
     }
     const id = ratingSessionId;
     pendingFinishRef.current = null;
@@ -1010,7 +1048,7 @@ export function WorkoutLogger({
           <section className="space-y-3 rounded-md border border-[var(--yellow)]/20 bg-[var(--card)] p-4">
             <div className="flex items-center justify-between gap-3">
               <div className="min-w-0">
-                <h2 className="text-[17px] font-bold">Warm-up</h2>
+                <h2 className="flex items-center gap-2 text-[17px] font-bold">Warm-up <Explain term="prehab" /></h2>
                 <p className="mt-0.5 text-[12.5px] text-[var(--muted)]">
                   Shoulder prehab · {warmupsDone} of {warmups.length} done
                 </p>
@@ -1126,8 +1164,9 @@ export function WorkoutLogger({
                   {prescriptionNotes.length ? (
                     <div className="mt-1.5 space-y-0.5">
                       {prescriptionNotes.map((line) => (
-                        <p key={line} className="text-[12.5px] leading-snug text-[var(--muted)]">
+                        <p key={line} className="flex items-center gap-1.5 text-[12.5px] leading-snug text-[var(--muted)]">
                           {line}
+                          {/fail/i.test(line) ? <Explain term="failure" /> : null}
                         </p>
                       ))}
                     </div>
@@ -1350,6 +1389,53 @@ export function WorkoutLogger({
                             <IconCheck size={18} />
                           </button>
                         </div>
+                        {set.completed && !set.isWarmup && !isCardio ? (
+                          <div className="flex flex-wrap items-center gap-2 px-1 pb-1 pt-1.5">
+                            <span className="inline-flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-[0.1em] text-[var(--muted)]">
+                              Left in tank
+                              <Explain term="rir" />
+                            </span>
+                            <div className="flex gap-1">
+                              {[0, 1, 2, 3].map((n) => {
+                                const on = set.rir === n;
+                                return (
+                                  <button
+                                    key={n}
+                                    type="button"
+                                    aria-pressed={on}
+                                    onClick={() => {
+                                      updateSet(ex.id, i, { rir: on ? undefined : n });
+                                      if (!rirExplained) {
+                                        setRirExplained(true);
+                                        try {
+                                          localStorage.setItem("ft-rir-explained", "1");
+                                        } catch {
+                                          /* ignore */
+                                        }
+                                      }
+                                    }}
+                                    className={`h-9 min-w-[40px] rounded-[4px] px-2 text-[13px] font-bold tabular-nums ${
+                                      on
+                                        ? "bg-[var(--blue)] text-[var(--on-blue)]"
+                                        : "bg-[var(--raised)] text-[var(--muted)]"
+                                    }`}
+                                  >
+                                    {n === 3 ? "3+" : n}
+                                  </button>
+                                );
+                              })}
+                            </div>
+                            {typeof set.rir === "number" && rirTarget != null && set.rir < rirTarget - 1 ? (
+                              <span className="basis-full text-[11.5px] text-[var(--yellow)]">
+                                Plan wants about {rirTarget} left this week — that set was close to failure.
+                              </span>
+                            ) : !rirExplained ? (
+                              <span className="basis-full text-[11.5px] text-[var(--muted)]">
+                                How many more reps could you have done? Your plan wants {rirTarget ?? "1–3"} left this week.
+                              </span>
+                            ) : null}
+                          </div>
+                        ) : null}
                         {showPlates
                           ? (() => {
                               const exerciseBar = barForExercise(name, ex.id);
@@ -1756,25 +1842,68 @@ export function WorkoutLogger({
         >
           <div className="w-full max-w-sm rounded-md border border-[var(--border)] bg-[var(--card)] p-5 shadow-xl">
             <p id="rating-title" className="text-lg font-bold">
-              How was this workout?
+              How did the shoulder feel?
             </p>
             <p className="mt-1 text-sm text-[var(--muted)]">
-              Rate {sessionDayName} from 1–10, or keep training if you finished
-              early by mistake.
+              Your plan&apos;s rule: stop any lift that pinches. This keeps the trend.
             </p>
-            <div className="mt-4 grid grid-cols-5 gap-2">
-              {Array.from({ length: 10 }, (_, i) => i + 1).map((n) => (
+            <div className="mt-4 grid grid-cols-3 gap-2">
+              {(
+                [
+                  ["fine", "Fine", "text-[var(--green)] border-[var(--green)]"],
+                  ["pinchy", "Pinchy", "text-[var(--yellow)] border-[var(--yellow)]"],
+                  ["painful", "Painful", "text-[var(--red)] border-[var(--red)]"],
+                ] as const
+              ).map(([key, label, tone]) => (
                 <button
-                  key={n}
+                  key={key}
                   type="button"
                   disabled={ratingSaving}
-                  onClick={() => void submitRating(n)}
-                  className="flex h-12 items-center justify-center rounded-md bg-[var(--raised)] text-base font-bold text-[var(--text)] active:bg-[var(--accent)] active:text-[var(--on-accent)] disabled:opacity-50"
+                  aria-pressed={shoulder === key}
+                  onClick={() => {
+                    setShoulder(key);
+                    if (key === "fine") void submitShoulder("fine", "");
+                  }}
+                  className={`flex h-12 items-center justify-center rounded-md border text-[15px] font-bold ${
+                    shoulder === key ? `${tone} bg-[var(--raised)]` : "border-[var(--border-solid)] text-[var(--text)]"
+                  } disabled:opacity-50`}
                 >
-                  {n}
+                  {label}
                 </button>
               ))}
             </div>
+            {shoulder && shoulder !== "fine" ? (
+              <div className="mt-3 space-y-2">
+                <p className="text-[12px] font-semibold uppercase tracking-[0.1em] text-[var(--muted)]">On which lift?</p>
+                <div className="flex flex-wrap gap-1.5">
+                  {main.map((ex) => {
+                    const n = displayName(ex);
+                    const on = shoulderLift === n;
+                    return (
+                      <button
+                        key={ex.id}
+                        type="button"
+                        aria-pressed={on}
+                        onClick={() => setShoulderLift(on ? "" : n)}
+                        className={`rounded-[4px] px-2.5 py-1.5 text-[12px] font-semibold ${
+                          on ? "bg-[var(--blue)] text-[var(--on-blue)]" : "bg-[var(--raised)] text-[var(--muted)]"
+                        }`}
+                      >
+                        {n}
+                      </button>
+                    );
+                  })}
+                </div>
+                <button
+                  type="button"
+                  className="btn-accent w-full"
+                  disabled={ratingSaving}
+                  onClick={() => void submitShoulder(shoulder, shoulderLift)}
+                >
+                  {ratingSaving ? "Saving…" : "Save"}
+                </button>
+              </div>
+            ) : null}
             <button
               type="button"
               className="mt-4 w-full rounded-md border border-[var(--blue)]/50 bg-[var(--blue)]/10 px-4 py-3 text-sm font-bold text-[var(--blue)]"
@@ -1789,7 +1918,7 @@ export function WorkoutLogger({
               disabled={ratingSaving}
               onClick={skipRating}
             >
-              Skip rating
+              Skip
             </button>
           </div>
         </div>

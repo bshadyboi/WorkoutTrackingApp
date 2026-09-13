@@ -18,8 +18,12 @@ type TrainCache = {
     durationSeconds: number;
     volume: number;
     setCount: number;
+    shoulder?: "fine" | "pinchy" | "painful" | null;
+    shoulderLift?: string | null;
   }[];
 };
+
+const SESSION_FIELDS = "id, day_name, started_at, duration_seconds, set_logs(weight, reps, is_warmup)";
 
 export default function TrainPage() {
   const cached = useRef(readTabCache<TrainCache>("train")).current;
@@ -46,13 +50,24 @@ export default function TrainPage() {
           .select("id, name, subtitle, sort_order, workout_exercises(id, default_sets)")
           .eq("user_id", user.id)
           .order("sort_order"),
-        supabase
-          .from("workout_sessions")
-          .select("id, day_name, started_at, duration_seconds, set_logs(weight, reps, is_warmup)")
-          .eq("user_id", user.id)
-          .not("ended_at", "is", null)
-          .order("started_at", { ascending: false })
-          .limit(90),
+        (async () => {
+          // shoulder_* arrive with schema_shoulder.sql; until it's run, ask without them.
+          const withShoulder = await supabase
+            .from("workout_sessions")
+            .select(`${SESSION_FIELDS}, shoulder_status, shoulder_lift`)
+            .eq("user_id", user.id)
+            .not("ended_at", "is", null)
+            .order("started_at", { ascending: false })
+            .limit(90);
+          if (!withShoulder.error || !/shoulder/i.test(withShoulder.error.message)) return withShoulder;
+          return supabase
+            .from("workout_sessions")
+            .select(SESSION_FIELDS)
+            .eq("user_id", user.id)
+            .not("ended_at", "is", null)
+            .order("started_at", { ascending: false })
+            .limit(90);
+        })(),
         supabase
           .from("training_schedules")
           .select("day_ids, date_overrides")
@@ -113,6 +128,9 @@ export default function TrainPage() {
               0
             ),
             setCount: pool.length,
+            shoulder: ((s as { shoulder_status?: string | null }).shoulder_status ?? null) as
+              | "fine" | "pinchy" | "painful" | null,
+            shoulderLift: (s as { shoulder_lift?: string | null }).shoulder_lift ?? null,
           };
         }),
       };

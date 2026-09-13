@@ -168,6 +168,8 @@ export type WeekGuidance = {
   note: string;
   /** True during the planned deload, which the UI calls out rather than hides. */
   deload: boolean;
+  /** Reps to leave in reserve on compounds this week. */
+  rirTarget: number;
 };
 
 /**
@@ -185,6 +187,7 @@ export function derrickRecompGuidance(week: number): WeekGuidance | null {
       phase: "Learn the positions",
       note: "Stay 3 reps in reserve — stop well short of failure while the positions are new. Film a set of floor press and rows.",
       deload: false,
+      rirTarget: 3,
     };
   }
   if (week <= 5) {
@@ -192,6 +195,7 @@ export function derrickRecompGuidance(week: number): WeekGuidance | null {
       phase: "Build",
       note: "Add 1–2 reps per set until the top of the range, then add the smallest plate and drop reps back. Keep 1–3 in reserve on compounds.",
       deload: false,
+      rirTarget: 2,
     };
   }
   if (week === 6) {
@@ -199,12 +203,14 @@ export function derrickRecompGuidance(week: number): WeekGuidance | null {
       phase: "Deload week",
       note: "Optional lighter week: cut your sets by about 40% and keep the loads moderate. Same exercises, less work — it lets fatigue clear so weeks 7–8 land harder.",
       deload: true,
+      rirTarget: 3,
     };
   }
   return {
     phase: "Push",
     note: "Push closer to 1–2 reps in reserve — but only on lifts that are completely pain-free. Anything that pinches stays where it is.",
     deload: false,
+    rirTarget: 1,
   };
 }
 

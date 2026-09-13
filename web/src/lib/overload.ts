@@ -67,7 +67,8 @@ function fmtWeight(w: number): string {
 }
 
 export function suggestOverload(input: {
-  previous?: { weight: number; reps: number } | null;
+  /** rir = reps left in the tank last time, when the lifter tapped it. */
+  previous?: { weight: number; reps: number; rir?: number | null } | null;
   repRange: string;
   /** Bodyweight or unloaded movements progress on reps only. */
   loadable?: boolean;
@@ -87,6 +88,30 @@ export function suggestOverload(input: {
   }
 
   const loadable = input.loadable !== false && prev.weight > 0;
+  const rir = typeof prev.rir === "number" ? prev.rir : null;
+
+  // Reached the top with nothing left: the jump would fail. Repeat it first.
+  if (rir === 0 && prev.reps >= range.high) {
+    return {
+      kind: "hold",
+      weight: prev.weight || null,
+      reps: prev.reps,
+      label: `Repeat ${fmtWeight(prev.weight)} × ${prev.reps}`,
+      detail: `Hit ${prev.reps} last time with 0 in reserve — own it once more before adding load.`,
+    };
+  }
+
+  // Plenty left inside the range: skip the one-rep step and add load now.
+  if (rir !== null && rir >= 3 && loadable && prev.reps >= range.low) {
+    const next = prev.weight + loadStep(prev.weight);
+    return {
+      kind: "add-load",
+      weight: next,
+      reps: range.low,
+      label: `Try ${fmtWeight(next)} × ${range.low}`,
+      detail: `${prev.reps} reps with ${rir}+ in reserve — too easy, add load.`,
+    };
+  }
 
   // Hit the top of the range: add the smallest load and reset to the bottom.
   if (prev.reps >= range.high) {

@@ -6,6 +6,8 @@ export type DraftSet = {
   previous?: string;
   /** Warm-up / feeder — ignored for prev working loads & progress */
   isWarmup?: boolean;
+  /** Reps in reserve the lifter tapped after the set; 3 stands for "3+". */
+  rir?: number;
 };
 
 /** Named warm-up exercises (e.g. "Hamstring Curl (Warm-up)") */

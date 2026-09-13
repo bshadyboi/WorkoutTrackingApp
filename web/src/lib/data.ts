@@ -105,7 +105,7 @@ export async function getPreviousSetsByExercise(userId: string) {
     .order("started_at", { ascending: false })
     .limit(40);
 
-  const map: Record<string, { weight: number; reps: number }[]> = {};
+  const map: Record<string, { weight: number; reps: number; rir: number | null }[]> = {};
   for (const session of sessions ?? []) {
     const logs = (session.set_logs ?? []) as {
       exercise_name: string;
@@ -114,6 +114,7 @@ export async function getPreviousSetsByExercise(userId: string) {
       reps: number;
       is_completed: boolean;
       is_warmup?: boolean;
+      rir?: number | null;
     }[];
     const byExercise: Record<string, typeof logs> = {};
     for (const log of logs.filter((l) => l.is_completed)) {
@@ -127,7 +128,7 @@ export async function getPreviousSetsByExercise(userId: string) {
       const use = warmName ? sets : working.length ? working : sets;
       map[name] = use
         .sort((a, b) => a.set_number - b.set_number)
-        .map((s) => ({ weight: s.weight, reps: s.reps }));
+        .map((s) => ({ weight: s.weight, reps: s.reps, rir: typeof s.rir === "number" ? s.rir : null }));
     }
   }
   return map;
