@@ -2,6 +2,9 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
+import { WaterStepsCards } from "@/components/WaterStepsCards";
+import { FastedBloodPressureCard } from "@/components/FastedBloodPressureCard";
+import { MorningCheckinCard } from "@/components/MorningCheckinCard";
 import { FoodSearchModal, type MealItem } from "@/components/FoodSearchModal";
 import { MealBuilderSheet } from "@/components/MealBuilderSheet";
 import { MacroTargetsSheet } from "@/components/MacroTargetsSheet";
@@ -113,7 +116,6 @@ export default function NutritionPage() {
   const [error, setError] = useState("");
   const [toast, setToast] = useState<{ text: string; undoIds?: string[] } | null>(null);
   const [quickSlot, setQuickSlot] = useState<MealSlot>(slotForNow);
-  const [openSlot, setOpenSlot] = useState<MealSlot | null>(null);
   const [searchSlot, setSearchSlot] = useState<MealSlot | null>(null);
   const [saved, setSaved] = useState<SavedMeal[]>([]);
   const [deviceOnly, setDeviceOnly] = useState(false);
@@ -536,126 +538,147 @@ export default function NutritionPage() {
             ) : null}
           </section>
 
-          <section className="space-y-2">
+          <section className="space-y-2.5">
             <div className="flex items-baseline justify-between gap-2">
-              <h2 className="text-[11px] font-bold uppercase tracking-[0.12em] text-[var(--muted)]">Staples</h2>
-              <button
-                type="button"
-                onClick={() => setQuickSlot(MEAL_SLOTS[(MEAL_SLOTS.indexOf(quickSlot) + 1) % MEAL_SLOTS.length])}
-                className="text-[12.5px] font-semibold text-[var(--muted)]"
-                aria-label={`Staples add to ${quickSlot}. Tap to change.`}
-              >
-                Adds to <span className="font-bold text-[var(--blue)]">{quickSlot}</span>
-              </button>
+              <h2 className="text-[17px] font-bold">Staples</h2>
+              <p className="text-[12px] font-semibold text-[var(--muted)]">Tap to add to</p>
             </div>
-            <div className="-mx-4 flex gap-2 overflow-x-auto px-4 pb-1 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+            <div className="grid grid-cols-4 gap-1.5">
+              {MEAL_SLOTS.map((s) => (
+                <button
+                  key={s}
+                  type="button"
+                  onClick={() => setQuickSlot(s)}
+                  className={`h-9 rounded-md text-[12.5px] font-semibold ${quickSlot === s ? "bg-[var(--blue)] text-[var(--on-blue)]" : "bg-[var(--card-2)] text-[var(--muted)]"}`}
+                >
+                  {s}
+                </button>
+              ))}
+            </div>
+            <div className="grid grid-cols-2 gap-2">
               {STAPLE_FOODS.map((f) => (
                 <button
                   key={f.id}
                   type="button"
                   onClick={() => logStaple(f)}
-                  className="flex min-h-[52px] shrink-0 flex-col items-start justify-center rounded-md border border-[var(--border-solid)] bg-[var(--card)] px-3 py-2 text-left active:bg-white/5"
+                  className="flex min-h-[64px] flex-col items-start justify-center rounded-md border border-[var(--border)] bg-[var(--card)] px-3 py-2.5 text-left active:bg-white/5"
                 >
-                  <span className="whitespace-nowrap text-[13.5px] font-semibold">{f.name}</span>
-                  <span className="whitespace-nowrap text-[11px] tabular-nums text-[var(--muted)]">
-                    {f.calories} cal · {f.protein}p
+                  <span className="w-full truncate text-[13.5px] font-bold">{f.name}</span>
+                  <span className="w-full truncate text-[11.5px] tabular-nums text-[var(--muted)]">
+                    {f.servingLabel} · {f.calories} cal · {f.protein}p
                   </span>
                 </button>
               ))}
             </div>
           </section>
 
-          <section className="overflow-hidden rounded-md border border-[var(--border-solid)] bg-[var(--card)]">
-            {MEAL_SLOTS.map((slot, idx) => {
-              const items = log.meals.filter((m) => m.meal === slot);
-              const t = mealTotals(items);
-              const open = openSlot === slot;
-              return (
-                <div key={slot} className={idx > 0 ? "border-t border-[var(--border)]" : ""}>
-                  <div className="flex items-center gap-2 pl-4 pr-2">
-                    <button
-                      type="button"
-                      onClick={() => setOpenSlot(open ? null : slot)}
-                      aria-expanded={open}
-                      className="flex min-h-[56px] min-w-0 flex-1 flex-col items-start justify-center py-2.5 text-left"
-                    >
-                      <span className="text-[15px] font-semibold">{slot}</span>
-                      <span className="w-full truncate text-[12px] text-[var(--muted)]">
-                        {items.length ? items.map((i) => i.name).join(" · ") : "Nothing logged"}
-                      </span>
-                    </button>
+          <section className="space-y-2.5">
+            <h2 className="text-[17px] font-bold">Meals</h2>
+            <div className="overflow-hidden rounded-md border border-[var(--border)] bg-[var(--card)]">
+              {MEAL_SLOTS.map((slot, idx) => {
+                const items = log.meals.filter((m) => m.meal === slot);
+                const t = mealTotals(items);
+                return (
+                  <div key={slot} className={`px-4 py-3.5 ${idx > 0 ? "border-t border-white/5" : ""}`}>
+                    <div className="flex items-center justify-between gap-2">
+                      <p className="text-[15px] font-bold">{slot}</p>
+                      {items.length ? (
+                        <p className="text-[12.5px] tabular-nums text-[var(--muted)]">
+                          {roundMacro(t.calories)} cal · {roundMacro(t.protein)}p
+                        </p>
+                      ) : null}
+                    </div>
                     {items.length ? (
-                      <span className="shrink-0 text-[12.5px] tabular-nums">{roundMacro(t.calories)} cal</span>
-                    ) : null}
-                    <button
-                      type="button"
-                      aria-label={`Add food to ${slot}`}
-                      onClick={() => setSearchSlot(slot)}
-                      className="flex h-11 w-11 shrink-0 items-center justify-center rounded-[4px] text-[var(--accent)] active:bg-white/5"
-                    >
-                      <IconPlus size={16} />
-                    </button>
-                  </div>
-
-                  {open ? (
-                    <div className="space-y-2 px-3 pb-3">
-                      {items.map((it) => (
-                        <div key={it.id} className="flex items-center gap-2 rounded-[4px] bg-[var(--surface)] py-2 pl-3 pr-1">
-                          <div className="min-w-0 flex-1">
-                            <p className="truncate text-[13.5px] font-semibold">{it.name}</p>
-                            <p className="truncate text-[11.5px] tabular-nums text-[var(--muted)]">
-                              {it.servingLabel ? `${it.servingLabel} · ` : ""}
-                              {roundMacro(it.calories)} cal · {roundMacro(it.protein)}p · {roundMacro(it.carbs)}c · {roundMacro(it.fat)}f
-                            </p>
+                      <div className="mt-2 space-y-1.5">
+                        {items.map((it) => (
+                          <div key={it.id} className="flex items-center gap-2 rounded-md bg-[var(--surface)] py-2 pl-3 pr-1">
+                            <div className="min-w-0 flex-1">
+                              <p className="truncate text-[13.5px] font-semibold">{it.name}</p>
+                              <p className="truncate text-[11.5px] tabular-nums text-[var(--muted)]">
+                                {it.servingLabel ? `${it.servingLabel} · ` : ""}
+                                {roundMacro(it.calories)} cal · {roundMacro(it.protein)}p · {roundMacro(it.carbs)}c · {roundMacro(it.fat)}f
+                              </p>
+                            </div>
+                            <button
+                              type="button"
+                              aria-label={`Remove ${it.name}`}
+                              onClick={() => removeItems([it.id])}
+                              className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[4px] text-[var(--muted)] active:text-[var(--text)]"
+                            >
+                              <IconX size={15} />
+                            </button>
                           </div>
-                          <button
-                            type="button"
-                            aria-label={`Remove ${it.name}`}
-                            onClick={() => removeItems([it.id])}
-                            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[4px] text-[var(--muted)] active:text-[var(--text)]"
-                          >
-                            <IconX size={15} />
-                          </button>
-                        </div>
-                      ))}
-                      <div className="flex gap-1.5">
+                        ))}
+                      </div>
+                    ) : null}
+                    <div className="mt-2.5 flex gap-1.5">
+                      <button
+                        type="button"
+                        onClick={() => setSearchSlot(slot)}
+                        className="flex h-10 flex-1 items-center justify-center gap-1.5 rounded-md bg-[var(--raised)] text-[12.5px] font-bold text-[var(--blue)]"
+                      >
+                        <IconPlus size={14} /> Add food
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => void copyYesterday(slot)}
+                        className="flex h-10 flex-1 items-center justify-center gap-1.5 rounded-md bg-[var(--raised)] text-[12.5px] font-bold text-[var(--muted)]"
+                      >
+                        <IconHistory size={14} /> Yesterday
+                      </button>
+                      {items.length ? (
                         <button
                           type="button"
-                          onClick={() => void copyYesterday(slot)}
-                          className="flex h-10 flex-1 items-center justify-center gap-1.5 rounded-[4px] bg-[var(--raised)] text-[12.5px] font-bold text-[var(--muted)]"
+                          aria-label={`Save ${slot} as a meal`}
+                          onClick={() => {
+                            setBuilderError("");
+                            setBuilder({
+                              name: "",
+                              slot,
+                              items: items.map((m) => ({
+                                name: m.name,
+                                brand: m.brand,
+                                calories: m.calories,
+                                protein: m.protein,
+                                carbs: m.carbs,
+                                fat: m.fat,
+                                servingLabel: m.servingLabel,
+                              })),
+                            });
+                          }}
+                          className="flex h-10 flex-1 items-center justify-center gap-1.5 rounded-md bg-[var(--raised)] text-[12.5px] font-bold text-[var(--muted)]"
                         >
-                          <IconHistory size={14} /> Same as yesterday
+                          <IconStar size={14} /> Save
                         </button>
-                        {items.length ? (
-                          <button
-                            type="button"
-                            onClick={() => {
-                              setBuilderError("");
-                              setBuilder({
-                                name: "",
-                                slot,
-                                items: items.map((m) => ({
-                                  name: m.name,
-                                  brand: m.brand,
-                                  calories: m.calories,
-                                  protein: m.protein,
-                                  carbs: m.carbs,
-                                  fat: m.fat,
-                                  servingLabel: m.servingLabel,
-                                })),
-                              });
-                            }}
-                            className="flex h-10 flex-1 items-center justify-center gap-1.5 rounded-[4px] bg-[var(--raised)] text-[12.5px] font-bold text-[var(--muted)]"
-                          >
-                            <IconStar size={14} /> Save as meal
-                          </button>
-                        ) : null}
-                      </div>
+                      ) : null}
                     </div>
-                  ) : null}
-                </div>
-              );
-            })}
+                  </div>
+                );
+              })}
+            </div>
+          </section>
+
+          <section className="space-y-3">
+            <h2 className="text-[17px] font-bold">Daily check-ins</h2>
+            <WaterStepsCards date={selected} waterOz={log.water_oz} steps={log.steps_count} waterGoal={128} targets={targets} />
+            <MorningCheckinCard
+              key={`checkin-${selected}-${log.checkin_sleep}-${log.checkin_energy}-${log.checkin_pump}`}
+              date={selected}
+              initial={{ checkin_sleep: log.checkin_sleep, checkin_energy: log.checkin_energy, checkin_pump: log.checkin_pump }}
+              targets={targets}
+            />
+            <FastedBloodPressureCard
+              key={`bp-${selected}-${log.bp1_systolic}-${log.bp2_systolic}`}
+              date={selected}
+              initial={{
+                bp1_systolic: log.bp1_systolic,
+                bp1_diastolic: log.bp1_diastolic,
+                bp2_systolic: log.bp2_systolic,
+                bp2_diastolic: log.bp2_diastolic,
+                bp_logged_at: log.bp_logged_at,
+              }}
+              targets={targets}
+            />
           </section>
         </>
       )}

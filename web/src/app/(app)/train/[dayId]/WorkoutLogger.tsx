@@ -182,10 +182,6 @@ export function WorkoutLogger({
   } | null>(null);
   const [barLb, setBarLbState] = useState<BarLb>(45);
   const [barByExercise, setBarByExercise] = useState<Record<string, BarLb>>({});
-  /** Explicit open/closed choices; anything unset follows the auto rule below. */
-  const [expandedOverride, setExpandedOverride] = useState<Record<string, boolean>>({});
-  const [noteOpen, setNoteOpen] = useState<Record<string, boolean>>({});
-  const [prehabOpen, setPrehabOpen] = useState(false);
   const sessionBestRef = useRef<Record<string, BestSet>>({ ...bestByExercise });
   const prToastTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -261,16 +257,6 @@ export function WorkoutLogger({
       done += sets.filter((s) => s.completed).length;
     }
     return { done, total };
-  }, [main, setsByExercise]);
-
-  /**
-   * Only the exercise being worked is open by default: the first one with an
-   * unticked set. Everything before it is done and everything after it hasn't
-   * started, so both fold to a single line and the screen stays one lift tall.
-   */
-  const currentExerciseId = useMemo(() => {
-    const next = main.find((ex) => (setsByExercise[ex.id] ?? []).some((s) => !s.completed));
-    return next?.id ?? null;
   }, [main, setsByExercise]);
 
   const warmupsDone = useMemo(() => {
@@ -1020,21 +1006,7 @@ export function WorkoutLogger({
       </div>
 
       <div className="mt-4 space-y-4 px-4">
-        {warmups.length && warmupsDone === warmups.length && !prehabOpen ? (
-          <button
-            type="button"
-            onClick={() => setPrehabOpen(true)}
-            className="flex min-h-[52px] w-full items-center gap-3 rounded-md border border-[var(--border-solid)] bg-[var(--card)] px-4 text-left active:bg-white/5"
-          >
-            <span className="flex h-[22px] w-[22px] items-center justify-center rounded-[4px] bg-[var(--green)] text-[var(--on-green)]">
-              <IconCheck size={13} />
-            </span>
-            <span className="flex-1 text-[15px] font-semibold">Shoulder prehab</span>
-            <span className="text-[12px] tabular-nums text-[var(--green)]">
-              {warmups.length}/{warmups.length}
-            </span>
-          </button>
-        ) : warmups.length ? (
+        {warmups.length ? (
           <section className="space-y-3 rounded-md border border-[var(--yellow)]/20 bg-[var(--card)] p-4">
             <div className="flex items-center justify-between gap-3">
               <div className="min-w-0">
@@ -1138,35 +1110,6 @@ export function WorkoutLogger({
                 .map((line) => (dimension ? line.replace(/^[0-9]+[–-][0-9]+ reps(\s*·\s*)?/, "") : line))
                 .filter(Boolean);
 
-          const doneSets = sets.filter((x) => x.completed).length;
-          const autoOpen = ex.id === currentExerciseId || activeRest?.exerciseId === ex.id;
-          const isOpen = expandedOverride[ex.id] ?? autoOpen;
-          const toggle = () => setExpandedOverride((o) => ({ ...o, [ex.id]: !isOpen }));
-
-          if (!isOpen) {
-            const finished = sets.length > 0 && doneSets === sets.length;
-            return (
-              <button
-                key={ex.id}
-                type="button"
-                onClick={toggle}
-                aria-expanded={false}
-                className="flex min-h-[52px] w-full items-center gap-3 rounded-md border border-[var(--border-solid)] bg-[var(--card)] px-4 text-left active:bg-white/5"
-              >
-                <span className={`min-w-0 flex-1 truncate text-[15px] font-semibold ${finished ? "text-[var(--muted)]" : ""}`}>
-                  {name}
-                </span>
-                <span
-                  className={`shrink-0 text-[12px] tabular-nums ${
-                    finished ? "text-[var(--green)]" : doneSets ? "text-[var(--blue)]" : "text-[var(--dim)]"
-                  }`}
-                >
-                  {finished ? `✓ ${doneSets}/${sets.length}` : doneSets ? `${doneSets}/${sets.length} sets` : (dimension ?? `${sets.length} sets`)}
-                </span>
-              </button>
-            );
-          }
-
           return (
             <section
               key={ex.id}
@@ -1175,11 +1118,7 @@ export function WorkoutLogger({
               <div className="flex items-start justify-between gap-2.5">
                 <div className="min-w-0">
                   <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
-                    <h2 className="text-[17px] font-bold leading-snug">
-                      <button type="button" onClick={toggle} aria-expanded={true} className="text-left">
-                        {name}
-                      </button>
-                    </h2>
+                    <h2 className="text-[17px] font-bold leading-snug">{name}</h2>
                     <span className="rounded-[4px] bg-[var(--card-2)] px-2 py-0.5 text-[11px] font-bold text-[var(--muted)]">
                       {ex.muscle}
                     </span>
@@ -1537,25 +1476,14 @@ export function WorkoutLogger({
                 </div>
               )}
 
-              {noteOpen[ex.id] || (notes[ex.id] ?? "").trim() ? (
-                <input
-                  className="field !py-2.5 text-sm"
-                  placeholder="Session note"
-                  autoFocus={noteOpen[ex.id] && !(notes[ex.id] ?? "").trim()}
-                  value={notes[ex.id] ?? ""}
-                  onChange={(e) =>
-                    setNotes((n) => ({ ...n, [ex.id]: e.target.value }))
-                  }
-                />
-              ) : (
-                <button
-                  type="button"
-                  onClick={() => setNoteOpen((o) => ({ ...o, [ex.id]: true }))}
-                  className="min-h-[36px] text-[13px] font-semibold text-[var(--blue)]"
-                >
-                  + Add note
-                </button>
-              )}
+              <input
+                className="field !py-2.5 text-sm"
+                placeholder="Session note (optional)"
+                value={notes[ex.id] ?? ""}
+                onChange={(e) =>
+                  setNotes((n) => ({ ...n, [ex.id]: e.target.value }))
+                }
+              />
             </section>
           );
         })}

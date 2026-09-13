@@ -8,8 +8,6 @@ import { clearTabCache } from "@/lib/tabCache";
 import { shortDayLabel, type DateOverrides, type ScheduleSlots } from "@/lib/schedule";
 import { saveDateOverride } from "@/lib/scheduleClient";
 import { MakeupDayButton } from "@/components/MakeupDayButton";
-import { KeyLiftsCard } from "@/components/KeyLiftsCard";
-import { BpWeightTrendCard } from "@/components/BpWeightTrendCard";
 import { resolveWeekdayWorkout } from "@/lib/weekdaySchedule";
 import { markRestDayComplete, getActiveProgramId } from "@/lib/workoutsClient";
 import { getProgram } from "@/lib/programs";
@@ -154,6 +152,26 @@ export function TrainTabs({
 
       <WeekStrip weekInfo={weekInfo} todayKey={todayKey} />
 
+      {guidance ? (
+        <div
+          className={`rounded-md border px-4 py-3 ${
+            guidance.deload
+              ? "border-[var(--yellow)]/35 bg-[var(--yellow)]/10"
+              : "border-[var(--border)] bg-[var(--surface)]"
+          }`}
+        >
+          <p
+            className={`text-[11px] font-bold uppercase tracking-[0.12em] ${
+              guidance.deload ? "text-[var(--yellow)]" : "text-[var(--blue)]"
+            }`}
+          >
+            Week {recompWeek} · {guidance.phase}
+          </p>
+          <p className="mt-1 text-[13px] leading-snug text-[var(--muted)]">
+            {guidance.note}
+          </p>
+        </div>
+      ) : null}
 
       <div className="flex gap-1 rounded-md border border-white/5 bg-[var(--surface)] p-1">
         {(
@@ -188,7 +206,7 @@ export function TrainTabs({
           history={history}
           overrides={overrides}
           onOverridesChange={setOverrides}
-          guidance={guidance ? { ...guidance, week: recompWeek } : null}
+          weekInfo={weekInfo}
         />
       ) : null}
       {tab === "calendar" ? (
@@ -286,7 +304,7 @@ function WorkoutsTab({
   history,
   overrides,
   onOverridesChange,
-  guidance,
+  weekInfo,
 }: {
   todayName: string | null;
   todayDay: { id: string; name: string; subtitle: string } | null;
@@ -296,14 +314,46 @@ function WorkoutsTab({
   history: Hist[];
   overrides: DateOverrides;
   onOverridesChange: (o: DateOverrides) => void;
-  guidance: { phase: string; note: string; deload: boolean; week: number } | null;
+  weekInfo: WeekDayInfo[];
 }) {
   const router = useRouter();
-  const [showAllHistory, setShowAllHistory] = useState(false);
   const hasOverride = Object.prototype.hasOwnProperty.call(overrides, dateKey(new Date()));
   const [restBusy, setRestBusy] = useState(false);
   const [restMsg, setRestMsg] = useState("");
 
+  const stats = useMemo(() => {
+    const weekStart = weekInfo[0]?.date
+      ? new Date(
+          weekInfo[0].date.getFullYear(),
+          weekInfo[0].date.getMonth(),
+          weekInfo[0].date.getDate()
+        )
+      : new Date();
+    const isTraining = (h: Hist) => !/rest/i.test(h.dayName.trim());
+    const weekSessions = history.filter(
+      (h) => isTraining(h) && new Date(h.startedAt) >= weekStart
+    );
+    const scheduled = weekInfo.filter((d) => !d.resolved.isRest).length;
+    const weekVolume = weekSessions.reduce((n, h) => n + h.volume, 0);
+
+    // Consecutive weeks (ending this week) with at least one training session
+    let streak = 0;
+    for (let w = 0; w < 26; w++) {
+      const start = new Date(weekStart);
+      start.setDate(start.getDate() - w * 7);
+      const end = new Date(start);
+      end.setDate(end.getDate() + 7);
+      const any = history.some((h) => {
+        if (!isTraining(h)) return false;
+        const t = new Date(h.startedAt);
+        return t >= start && t < end;
+      });
+      if (any) streak++;
+      else if (w > 0) break;
+    }
+
+    return { weekSessions: weekSessions.length, scheduled, weekVolume, streak };
+  }, [history, weekInfo]);
 
   async function completeRest() {
     setRestBusy(true);
@@ -348,17 +398,10 @@ function WorkoutsTab({
               <p className="text-[22px] font-extrabold leading-tight">
                 {todayDone ? "Rest complete" : "Rest / Recovery"}
               </p>
-              <p className="mt-1 text-[14px] text-[var(--muted)]">Zone-2 walk or prehab. Hit your steps.</p>
-            </div>
-            {guidance ? (
-              <p className={`text-[13px] leading-snug ${guidance.deload ? "text-[var(--yellow)]" : "text-[var(--muted)]"}`}>
-                <span className={`font-bold ${guidance.deload ? "" : "text-[var(--blue)]"}`}>
-                  Week {guidance.week} · {guidance.phase}.
-                </span>{" "}
-                {guidance.note}
+              <p className="mt-1 text-[15px] text-[var(--muted)]">
+                Off day — Zone-2 walk and/or prehab. Hit steps and nutrition.
               </p>
-            ) : null}
-
+            </div>
             {!todayDone ? (
               <button
                 type="button"
@@ -370,6 +413,9 @@ function WorkoutsTab({
               </button>
             ) : null}
             {restMsg ? <p className="text-[11px] text-[var(--yellow)]">{restMsg}</p> : null}
+            <Link href="/dashboard" className="text-[13px] font-bold text-[var(--blue)]">
+              Log steps & water on Home →
+            </Link>
           </div>
         ) : todayDay ? (
           <div className="reg space-y-4 rounded-md border border-[var(--border-solid)] bg-[var(--card)] p-5">
@@ -414,14 +460,6 @@ function WorkoutsTab({
                 </span>
               ) : null}
             </div>
-            {guidance ? (
-              <p className={`text-[13px] leading-snug ${guidance.deload ? "text-[var(--yellow)]" : "text-[var(--muted)]"}`}>
-                <span className={`font-bold ${guidance.deload ? "" : "text-[var(--blue)]"}`}>
-                  Week {guidance.week} · {guidance.phase}.
-                </span>{" "}
-                {guidance.note}
-              </p>
-            ) : null}
             <div className="flex gap-2.5">
               <Link
                 href={`/train/${todayDay.id}/session`}
@@ -461,6 +499,27 @@ function WorkoutsTab({
           onOverridesChange={onOverridesChange}
         />
       </section>
+
+      <div className="grid grid-cols-3 gap-2">
+        <div className="rounded-md border border-white/5 bg-[var(--surface)] px-3 py-2.5">
+          <p className="text-[17px] font-extrabold tabular-nums">
+            {stats.weekSessions}/{stats.scheduled || "—"}
+          </p>
+          <p className="text-[10.5px] font-semibold text-[var(--muted)]">Sessions</p>
+        </div>
+        <div className="rounded-md border border-white/5 bg-[var(--surface)] px-3 py-2.5">
+          <p className="text-[17px] font-extrabold tabular-nums">
+            {stats.weekVolume >= 1000
+              ? `${(stats.weekVolume / 1000).toFixed(1)}k`
+              : Math.round(stats.weekVolume)}
+          </p>
+          <p className="text-[10.5px] font-semibold text-[var(--muted)]">Week lb</p>
+        </div>
+        <div className="rounded-md border border-white/5 bg-[var(--surface)] px-3 py-2.5">
+          <p className="text-[17px] font-extrabold tabular-nums">{stats.streak} wk</p>
+          <p className="text-[10.5px] font-semibold text-[var(--muted)]">Streak</p>
+        </div>
+      </div>
 
       <section className="space-y-2.5">
         <div className="flex items-center justify-between gap-2">
@@ -508,26 +567,21 @@ function WorkoutsTab({
             );
           })}
         </div>
+        <Link
+          href="/train/manage"
+          className="btn-secondary flex min-h-[44px] w-full items-center justify-center text-sm"
+        >
+          + Add workout day
+        </Link>
       </section>
 
       <section className="space-y-2.5">
-        <div className="flex items-baseline justify-between gap-2">
-          <h2 className="text-[17px] font-bold">Recent</h2>
-          {history.length > 3 ? (
-            <button
-              type="button"
-              className="text-[13px] font-bold text-[var(--blue)]"
-              onClick={() => setShowAllHistory((v) => !v)}
-            >
-              {showAllHistory ? "Show less" : `See all ${history.length}`}
-            </button>
-          ) : null}
-        </div>
+        <h2 className="text-[17px] font-bold">History</h2>
         <div className="overflow-hidden rounded-md border border-white/5 bg-[var(--surface)]">
           {history.length === 0 ? (
             <p className="p-4 text-sm text-[var(--muted)]">No sessions logged yet.</p>
           ) : (
-            (showAllHistory ? history : history.slice(0, 3)).map((h) => {
+            history.map((h) => {
               const mins = Math.round(h.durationSeconds / 60);
               const hours = Math.floor(mins / 60);
               const rem = mins % 60;
@@ -1090,26 +1144,9 @@ function ProgressionTab({ history }: { history: Hist[] }) {
       };
     };
 
-    // Consecutive weeks, ending this one, with at least one training session.
-    // An untrained current week doesn't break the streak until it's over.
-    let streak = 0;
-    for (let w = 0; w < 26; w++) {
-      const from = new Date(startOfWeek);
-      from.setDate(from.getDate() - w * 7);
-      const to = new Date(from);
-      to.setDate(to.getDate() + 7);
-      const trained = history.some((h) => {
-        const t = new Date(h.startedAt);
-        return t >= from && t < to && !/rest/i.test(h.dayName.trim());
-      });
-      if (trained) streak++;
-      else if (w > 0) break;
-    }
-
     return {
       this: bucket(startOfWeek, new Date(now.getTime() + 86400000)),
       last: bucket(startOfLast, startOfWeek),
-      streak,
     };
   }, [history]);
 
@@ -1119,12 +1156,7 @@ function ProgressionTab({ history }: { history: Hist[] }) {
   return (
     <div className="space-y-5">
       <section className="space-y-2.5">
-        <div className="flex items-baseline justify-between gap-2">
-          <h2 className="text-[17px] font-bold">This week</h2>
-          <p className="text-[12px] font-semibold tabular-nums text-[var(--muted)]">
-            {weeks.streak}-week streak
-          </p>
-        </div>
+        <h2 className="text-[17px] font-bold">This week</h2>
         <div className="grid grid-cols-3 gap-2">
           <TrendStat
             label="Sessions"
@@ -1198,9 +1230,6 @@ function ProgressionTab({ history }: { history: Hist[] }) {
           </div>
         )}
       </section>
-
-      <KeyLiftsCard />
-      <BpWeightTrendCard />
     </div>
   );
 }
