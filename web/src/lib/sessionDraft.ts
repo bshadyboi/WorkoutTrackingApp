@@ -30,6 +30,20 @@ export type SessionDraft = {
   nameOverrides: Record<string, string>;
   /** Per-exercise rest seconds between sets */
   restByExercise?: Record<string, number>;
+  /** Movements added mid-session that aren't in the day's plan. */
+  addedExercises?: AddedExercise[];
+};
+
+export type AddedExercise = {
+  id: string;
+  name: string;
+  muscle: string;
+  default_sets: number;
+  has_crown_set: boolean;
+  crown_rep_range: string;
+  working_rep_range: string;
+  sort_order: number;
+  unilateral?: boolean | null;
 };
 
 function key(dayId: string, logDate?: string) {

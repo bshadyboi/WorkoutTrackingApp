@@ -5,6 +5,7 @@ import { useEffect, useMemo, useRef, useState, useTransition } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { catalogEntry, formVideoUrl } from "@/lib/exerciseCatalog";
 import { SwapExerciseSheet } from "@/components/SwapExerciseSheet";
+import { AddExerciseSheet, type AddExercisePick } from "@/components/AddExerciseSheet";
 import {
   clearDraft,
   loadDraft,
@@ -147,9 +148,19 @@ export function WorkoutLogger({
   const supabaseRef = useRef(createClient());
   const [, startTransition] = useTransition();
 
-  const sorted = useMemo(
+  const baseSorted = useMemo(
     () => [...exercises].sort((a, b) => a.sort_order - b.sort_order),
     [exercises]
+  );
+  /** Movements added during this session (kept in the draft until finish). */
+  const [addedExercises, setAddedExercises] = useState<Exercise[]>([]);
+  const [showAdd, setShowAdd] = useState(false);
+  const sorted = useMemo(
+    () =>
+      addedExercises.length
+        ? [...baseSorted, ...addedExercises.filter((a) => !baseSorted.some((b) => b.id === a.id))]
+        : baseSorted,
+    [baseSorted, addedExercises]
   );
 
   const [saving, setSaving] = useState(false);
@@ -164,7 +175,7 @@ export function WorkoutLogger({
   const [editOneSided, setEditOneSided] = useState<boolean | null>(null);
   const [restByExercise, setRestByExercise] = useState<Record<string, number>>(() => {
     const init: Record<string, number> = {};
-    for (const ex of sorted) {
+    for (const ex of baseSorted) {
       init[ex.id] = getRestPref(ex.name, defaultRestSeconds(ex, 0));
     }
     return init;
@@ -196,6 +207,7 @@ export function WorkoutLogger({
       notes: Record<string, string>;
       nameOverrides: Record<string, string>;
       restByExercise: Record<string, number>;
+      addedExercises: Exercise[];
     };
   } | null>(null);
   /** This week's reps-in-reserve target from the plan, used to flag a set taken too close to failure. */
@@ -228,7 +240,7 @@ export function WorkoutLogger({
 
   const [setsByExercise, setSetsByExercise] = useState<Record<string, DraftSet[]>>(() => {
     const init: Record<string, DraftSet[]> = {};
-    for (const ex of sorted) {
+    for (const ex of baseSorted) {
       const prev = previousByExercise[ex.name] ?? [];
       const warmEx = isWarmupExerciseName(ex.name);
       const uni = isUnilateral(ex);
@@ -250,9 +262,13 @@ export function WorkoutLogger({
     const draft = loadDraft(dayId, logDate);
     if (draft?.setsByExercise) {
       const overrides = draft.nameOverrides ?? {};
+      // An added movement kept in the plan is already in the day's exercises.
+      const added = (draft.addedExercises ?? []).filter(
+        (a) => !baseSorted.some((b) => b.id === a.id)
+      );
       const normalized: Record<string, DraftSet[]> = {};
       for (const [id, sets] of Object.entries(draft.setsByExercise)) {
-        const ex = sorted.find((e) => e.id === id);
+        const ex = baseSorted.find((e) => e.id === id) ?? added.find((e) => e.id === id);
         const label = overrides[id] ?? ex?.name ?? "";
         const warmEx = isWarmupExerciseName(label);
         normalized[id] = sets.map((s) => ({
@@ -260,7 +276,8 @@ export function WorkoutLogger({
           isWarmup: s.isWarmup ?? warmEx,
         }));
       }
-      setSetsByExercise(normalized);
+      setSetsByExercise((cur) => ({ ...cur, ...normalized }));
+      setAddedExercises(added);
       setNotes(draft.notes ?? {});
       setNameOverrides(overrides);
       if (draft.restByExercise) setRestByExercise(draft.restByExercise);
@@ -269,7 +286,7 @@ export function WorkoutLogger({
       setDraftBanner(true);
     }
     setDraftReady(true);
-  }, [dayId, logDate, sorted]);
+  }, [dayId, logDate, baseSorted]);
 
   useEffect(() => {
     setBarLbState(getBarLb());
@@ -327,8 +344,10 @@ export function WorkoutLogger({
       notes,
       nameOverrides,
       restByExercise,
+      addedExercises,
     }, logDate);
   }, [
+    addedExercises,
     draftReady,
     hasProgress,
     dayId,
@@ -449,6 +468,7 @@ export function WorkoutLogger({
       notes,
       nameOverrides,
       restByExercise,
+      addedExercises,
     }, logDate);
     setShowLeaveConfirm(false);
     router.push(`/train/${dayId}`);
@@ -662,6 +682,76 @@ export function WorkoutLogger({
       .from("workout_exercises")
       .update({ name: newName })
       .eq("id", exerciseId);
+  }
+
+  const [addBusy, setAddBusy] = useState(false);
+
+  /**
+   * Add a movement mid-session. It goes at the end of the workout; when the
+   * lifter asks to keep it, it's also written to the day's plan so next session
+   * opens with it (and a resumed draft doesn't list it twice).
+   */
+  async function addExercise(pick: AddExercisePick) {
+    if (addBusy) return;
+    const sortOrder = Math.max(0, ...sorted.map((e) => e.sort_order)) + 1;
+    let id = `added-${Date.now().toString(36)}`;
+
+    if (pick.keep) {
+      setAddBusy(true);
+      const row = {
+        workout_day_id: dayId,
+        name: pick.name,
+        muscle: pick.muscle,
+        default_sets: pick.sets,
+        has_crown_set: false,
+        crown_rep_range: "",
+        working_rep_range: pick.repRange,
+        sort_order: sortOrder,
+        unilateral: pick.sided,
+      };
+      const supabase = supabaseRef.current;
+      let res = await supabase.from("workout_exercises").insert(row).select("id").single();
+      if (res.error && /unilateral/i.test(res.error.message)) {
+        const { unilateral, ...rest } = row;
+        void unilateral;
+        res = await supabase.from("workout_exercises").insert(rest).select("id").single();
+      }
+      setAddBusy(false);
+      if (res.data?.id) id = res.data.id;
+      else setError(`Added for this session only — ${res.error?.message ?? "could not save to plan"}`);
+    }
+
+    const ex: Exercise = {
+      id,
+      name: pick.name,
+      muscle: pick.muscle,
+      default_sets: pick.sets,
+      has_crown_set: false,
+      crown_rep_range: "",
+      working_rep_range: pick.repRange,
+      sort_order: sortOrder,
+      unilateral: pick.sided,
+    };
+    const uni = isUnilateral(ex);
+    const prev = previousByExercise[ex.name] ?? [];
+    const prevR = uni ? previousByExercise[rightSideKey(ex.name)] ?? [] : [];
+    const warmEx = isWarmupExerciseName(ex.name);
+
+    setSetsByExercise((cur) => ({
+      ...cur,
+      [id]: Array.from({ length: ex.default_sets }, (_, i) =>
+        buildSet(
+          i,
+          prev[i] ?? prev[prev.length - 1],
+          warmEx,
+          uni ? (prevR[i] ?? prevR[prevR.length - 1] ?? null) : undefined
+        )
+      ),
+    }));
+    setRestByExercise((r) => ({ ...r, [id]: getRestPref(ex.name, 180) }));
+    if (pick.sided !== null) setUnilateralOverride((o) => ({ ...o, [id]: pick.sided as boolean }));
+    setAddedExercises((a) => [...a, ex]);
+    setShowAdd(false);
   }
 
   function bumpRest(exerciseId: string, delta: number) {
@@ -919,6 +1009,7 @@ export function WorkoutLogger({
           notes,
           nameOverrides,
           restByExercise,
+          addedExercises,
         },
       };
 
@@ -987,6 +1078,7 @@ export function WorkoutLogger({
       setNotes(snap.notes);
       setNameOverrides(snap.nameOverrides);
       setRestByExercise(snap.restByExercise);
+      setAddedExercises(snap.addedExercises);
       setSessionDayName(snap.dayName);
       setStartedAt(snap.startedAt);
       saveDraft({
@@ -1728,9 +1820,26 @@ export function WorkoutLogger({
             </section>
           );
         })}
+
+        <button
+          type="button"
+          onClick={() => setShowAdd(true)}
+          className="w-full rounded-md border border-dashed border-[var(--border-solid)] py-3.5 text-[14px] font-bold text-[var(--blue)] active:bg-white/5"
+        >
+          + Add exercise
+        </button>
       </div>
 
       {error ? <p className="px-4 pt-3 text-sm text-red-400">{error}</p> : null}
+
+      {showAdd ? (
+        <AddExerciseSheet
+          dayName={sessionDayName}
+          busy={addBusy}
+          onClose={() => setShowAdd(false)}
+          onAdd={(pick) => void addExercise(pick)}
+        />
+      ) : null}
 
       {showFinishConfirm ? (
         <div
