@@ -18,13 +18,23 @@ function work(
   };
 }
 
-/** Prehab block — log lightly; 8–12 min before every upper day. */
+/**
+ * Prehab block — before every upper day, both shoulders.
+ *
+ * The first three are the physical therapist's home program (Jaime M,
+ * Sep 15 2026) for a tight left rotator cuff; the PT prescribes them 2–4 times
+ * a day, so this is one of those rounds, not all of them. The Y raise and wall
+ * slides were dropped because they take the arm overhead, which the left
+ * shoulder should avoid for now.
+ */
 const UPPER_PREHAB: WorkoutTemplate["exercises"] = [
-  work("Band Pull-Aparts", "Rear Delts", 2, "15–20", "Prehab · 8–12 min block"),
+  work("Pec Ball Roll (SMR)", "Chest", 1, "30s per side", "PT · hold on tender spots"),
+  work("Doorway Pec Stretch (Single Arm)", "Chest", 1, "35s per side", "PT · upper arm level, no bouncing"),
+  work("Scapular Squeeze", "Back", 2, "15 · 2s hold", "PT"),
+  work("Band Pull-Aparts", "Rear Delts", 2, "15–20", "Prehab"),
   work("Face Pulls + External Rotation", "Rear Delts", 2, "12–15", "Prehab"),
-  work("Prone Y / T Raise", "Rear Delts", 2, "10–12", "Prehab"),
+  work("Prone T Raise", "Rear Delts", 2, "10–12", "Prehab"),
   work("Side-Lying External Rotation", "Rear Delts", 2, "12–15", "Prehab · per side"),
-  work("Scapular Wall Slides", "Shoulders", 2, "10–12", "Prehab"),
 ];
 
 /**
@@ -65,8 +75,8 @@ export const DERRICK_RECOMP_WORKOUTS: WorkoutTemplate[] = [
       ...UPPER_PREHAB,
       work("30° Incline DB Press (Neutral)", "Upper Chest", 4, "6–10"),
       work("DB Floor Press (Neutral)", "Chest", 3, "8–12"),
-      work("Landmine Press", "Shoulders", 3, "8–10"),
-      work("Lateral Raise", "Side Delts", 4, "10–15 · to failure"),
+      work("One-Arm Landmine Press", "Shoulders", 3, "8–10"),
+      work("One-Arm Cable Lateral Raise", "Side Delts", 4, "10–15 · to failure"),
       work("Face Pull", "Rear Delts", 3, "15–20 · to failure"),
       work("Triceps Pushdown", "Triceps", 4, "12–15 · to failure"),
     ],
@@ -76,10 +86,10 @@ export const DERRICK_RECOMP_WORKOUTS: WorkoutTemplate[] = [
     subtitle: "Shoulder-Safe Aesthetics · lats + biceps",
     exercises: [
       ...UPPER_PREHAB,
-      work("Neutral Pulldown / Assisted Chin", "Lats", 4, "8–10"),
-      work("Chest-Supported T-Bar Row", "Back", 4, "8–10"),
-      work("Seated Cable Row", "Back", 3, "10–12"),
-      work("Straight-Arm Pulldown", "Lats", 3, "12–15 · to failure"),
+      work("Single-Arm Pulldown", "Lats", 4, "8–10"),
+      work("Chest-Supported DB Row", "Back", 4, "8–10"),
+      work("Seated One-Arm Cable Row (D-Handle)", "Back", 3, "10–12"),
+      work("One-Arm DB Row", "Lats", 3, "12–15 · to failure"),
       work("EZ-Bar Curl", "Biceps", 4, "8–10 · to failure"),
       work("Incline DB Curl", "Biceps", 3, "10–12 · to failure"),
     ],
@@ -94,7 +104,7 @@ export const DERRICK_RECOMP_WORKOUTS: WorkoutTemplate[] = [
       work("Calf Raise", "Calves", 3, "10–15 · to failure"),
       work("Chest-Supported DB Row", "Back", 3, "10–12"),
       work("Hammer Curl", "Biceps", 3, "10–12 · to failure"),
-      work("Overhead Rope Extension", "Triceps", 3, "12–15 · to failure"),
+      work("Unilateral Tricep Pushdown", "Triceps", 3, "12–15 · to failure"),
     ],
   },
   {
@@ -102,11 +112,11 @@ export const DERRICK_RECOMP_WORKOUTS: WorkoutTemplate[] = [
     subtitle: "Shoulder-Safe Aesthetics · incline press + delt volume",
     exercises: [
       ...UPPER_PREHAB,
-      work("Incline Machine / Cable Chest Press", "Upper Chest", 3, "8–12"),
+      work("One-Arm Cable Chest Press", "Upper Chest", 3, "8–12"),
       work("Cable Fly (Short of Stretch)", "Chest", 2, "12–15 · to failure"),
       work("One-Arm Cable Lateral Raise", "Side Delts", 4, "12–15 · to failure"),
-      work("Rear-Delt Fly", "Rear Delts", 3, "12–15 · to failure"),
-      work("Overhead Rope Extension", "Triceps", 4, "12–15 · to failure"),
+      work("Jeff Nippard Single Arm Rear Delt Fly", "Rear Delts", 3, "12–15 · to failure"),
+      work("Unilateral Tricep Pushdown", "Triceps", 4, "12–15 · to failure"),
     ],
   },
   {

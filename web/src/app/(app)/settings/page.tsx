@@ -2,6 +2,7 @@
 
 import { FormEvent, useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
+import { LeftShoulderToggle } from "@/components/LeftShoulderToggle";
 import { PushEnableButton } from "@/components/PushEnableButton";
 import { DEFAULT_TARGETS, normalizeTargets, type MacroTargets } from "@/lib/targets";
 
@@ -154,6 +155,8 @@ export default function SettingsPage() {
           </p>
         ) : null}
       </form>
+
+      <LeftShoulderToggle />
 
       <PushEnableButton />
 

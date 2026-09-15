@@ -19,6 +19,7 @@ import { derrickRecompGuidance, derrickRecompWeek } from "@/lib/derrickRecomp";
 import { dateKey } from "@/lib/protocol";
 import { Explain } from "@/components/Explain";
 import { isUnilateral, rightSideKey } from "@/lib/unilateral";
+import { leftArmNote, leftShoulderLimited } from "@/lib/shoulderLimits";
 import { parseRepRange, suggestOverload } from "@/lib/overload";
 import { renameExerciseEverywhere } from "@/lib/exerciseRename";
 import {
@@ -209,6 +210,10 @@ export function WorkoutLogger({
     } catch {
       /* treat as explained */
     }
+  }, []);
+  const [leftLimited, setLeftLimited] = useState(true);
+  useEffect(() => {
+    setLeftLimited(leftShoulderLimited());
   }, []);
   const [shoulder, setShoulder] = useState<"fine" | "pinchy" | "painful" | null>(null);
   const [shoulderLift, setShoulderLift] = useState<string>("");
@@ -1171,6 +1176,11 @@ export function WorkoutLogger({
                         <span className="block truncate text-[12px] text-[var(--muted)]">
                           {ex.working_rep_range || `${ex.default_sets} sets`}
                         </span>
+                        {leftLimited && leftArmNote(name) ? (
+                          <span className="block truncate text-[11.5px] font-semibold text-[var(--yellow)]">
+                            {leftArmNote(name)}
+                          </span>
+                        ) : null}
                       </span>
                     </button>
                     <a
@@ -1248,6 +1258,9 @@ export function WorkoutLogger({
                     <p className="mt-1.5 text-[13px] font-semibold text-[var(--blue)]">
                       30 min incline walk
                     </p>
+                  ) : null}
+                  {leftLimited && leftArmNote(name) ? (
+                    <p className="mt-1 text-[12px] font-semibold text-[var(--yellow)]">{leftArmNote(name)}</p>
                   ) : null}
                   {cat?.notes ? (
                     <p className="mt-1 text-[12px] text-[var(--yellow)]">{cat.notes}</p>
@@ -1353,6 +1366,7 @@ export function WorkoutLogger({
                               ex.has_crown_set && i === 0
                                 ? ex.crown_rep_range
                                 : ex.working_rep_range,
+                            noLoadIncrease: sided && leftLimited,
                           });
                     const suggestionR = sided
                       ? suggestOverload({

@@ -72,6 +72,30 @@ export function suggestOverload(input: {
   repRange: string;
   /** Bodyweight or unloaded movements progress on reps only. */
   loadable?: boolean;
+  /**
+   * Never raise the weight — a side kept light on medical advice. Where the
+   * rule would add load, hold at the top of the range instead.
+   */
+  noLoadIncrease?: boolean;
+}): OverloadSuggestion | null {
+  const suggestion = suggestOverloadUncapped(input);
+  if (!input.noLoadIncrease || !suggestion || suggestion.kind !== "add-load") return suggestion;
+  const prev = input.previous!;
+  const range = parseRepRange(input.repRange)!;
+  const w = Number.isInteger(prev.weight) ? String(prev.weight) : prev.weight.toFixed(1);
+  const detail = "Left shoulder is kept light for now — no added weight until you switch the limit off in Settings.";
+  // Still room in the range: progress on reps. At the top: hold there.
+  if (prev.reps < range.high) {
+    const reps = Math.max(prev.reps + 1, range.low);
+    return { kind: "add-reps", weight: prev.weight || null, reps, label: `Try ${w} × ${reps}`, detail };
+  }
+  return { kind: "hold", weight: prev.weight || null, reps: range.high, label: `Hold ${w} × ${range.high}`, detail };
+}
+
+function suggestOverloadUncapped(input: {
+  previous?: { weight: number; reps: number; rir?: number | null } | null;
+  repRange: string;
+  loadable?: boolean;
 }): OverloadSuggestion | null {
   const range = parseRepRange(input.repRange);
   if (!range) return null;

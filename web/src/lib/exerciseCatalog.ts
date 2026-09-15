@@ -542,7 +542,7 @@ export const EXERCISE_CATALOG: ExerciseCatalogEntry[] = [
     notes:
       "Pull apart / back with high elbows. Squeeze rear delts — not traps. To failure.",
     youtubeUrl: "https://www.youtube.com/watch?v=ljgqer1ZpXg",
-    alternatives: ["Face Pull", "Cable Rear Delt Fly", "Reverse Fly", "Rear Delt Pulls"],
+    alternatives: ["One-Arm Face Pull (to Chin)", "Face Pull", "Cable Rear Delt Fly", "Reverse Fly", "Rear Delt Pulls"],
   },
   {
     name: "Weighted Cable Crunch",
@@ -804,7 +804,7 @@ export const EXERCISE_CATALOG: ExerciseCatalogEntry[] = [
     muscle: "Rear Delts",
     notes: "External rotation at end. Rear delts + mid traps. To failure 15–20 reps.",
     youtubeUrl: "https://www.youtube.com/watch?v=rep-qVOkpg0",
-    alternatives: ["Rear Delt Fly / Face Pull", "Cable Rear Delt Fly"],
+    alternatives: ["One-Arm Face Pull (to Chin)", "Rear Delt Fly / Face Pull", "Cable Rear Delt Fly"],
   },
   {
     name: "Cable Concentration or Preacher Curls",
@@ -1684,6 +1684,57 @@ export const EXERCISE_CATALOG: ExerciseCatalogEntry[] = [
     notes: "One arm, cable behind you. Skip it on any day the shoulder complains in the overhead position.",
     alternatives: ["Overhead Cable Tricep Extensions (Rope)", "Unilateral Tricep Pushdown", "Triceps Pushdown"],
   },
+  // —— Left-shoulder-friendly one-arm variations ——
+  // One arm at a time so the left side can run lighter and shorter than the
+  // right while the rotator cuff loosens up (PT, Sep 2026).
+  {
+    name: "One-Arm Face Pull (to Chin)",
+    muscle: "Rear Delts",
+    notes: "Pull to the chin, not the forehead — keeps the left elbow below head height.",
+    alternatives: ["Face Pulls or Cable Rear Delt Flyes", "Cable Rear Delt Fly", "Jeff Nippard Single Arm Rear Delt Fly"],
+  },
+  {
+    name: "One-Arm Landmine Press",
+    muscle: "Shoulders",
+    notes: "Press up and forward. Left arm stops at chin height and stays light.",
+    alternatives: ["One-Arm Cable Chest Press", "DB Floor Press"],
+  },
+  {
+    name: "Seated One-Arm Cable Row (D-Handle)",
+    muscle: "Back",
+    notes: "D-handle, pull to the hip, shoulder blade back and down.",
+    alternatives: ["Single Arm DB Row", "Chest-Supported Row", "Seated Cable Row"],
+  },
+  {
+    name: "One-Arm Cable Chest Press",
+    muscle: "Upper Chest",
+    notes: "Cable at chest height or a little lower. Brace against the bench so the torso doesn't twist.",
+    alternatives: ["Incline Chest Press", "Chest Press", "One-Arm Landmine Press"],
+  },
+  {
+    name: "Jeff Nippard Single Arm Rear Delt Fly",
+    muscle: "Rear Delts",
+    notes: "One arm across the body at shoulder height or below.",
+    alternatives: ["One-Arm Face Pull (to Chin)", "Cable Rear Delt Fly", "Rear Delt Raise"],
+  },
+  {
+    name: "Pec Ball Roll (SMR)",
+    muscle: "Chest",
+    notes: "Ball against a wall or doorframe. Roll the whole chest; hold 30s on tender spots. Both sides.",
+    alternatives: [],
+  },
+  {
+    name: "Doorway Pec Stretch (Single Arm)",
+    muscle: "Chest",
+    notes: "Upper arm level with the floor, forearm up the frame. Step through until you feel it; control depth with the front knee. No pain, no bouncing.",
+    alternatives: [],
+  },
+  {
+    name: "Scapular Squeeze",
+    muscle: "Back",
+    notes: "Squeeze the shoulder blades back and down, hold 2 seconds.",
+    alternatives: [],
+  },
 ];
 
 /** Map alternate names → catalog entry name (lowercase keys). */
@@ -1872,6 +1923,10 @@ const ALIASES: Record<string, string> = {
   "one-arm cable lateral raise": "Single Arm Cable Lateral Raise",
   "single-arm pulldown": "Single-Arm Lat Pulldown",
   "straight-arm pulldown": "Straight-Arm Pulldown",
+  // —— Left-shoulder swaps ——
+  "one-arm db row": "Single Arm DB Row",
+  "face pulls + external rotation": "Face Pulls or Cable Rear Delt Flyes",
+  "prone t raise": "Rear Delt Raise",
 };
 
 const byName = new Map(EXERCISE_CATALOG.map((e) => [e.name.toLowerCase(), e]));

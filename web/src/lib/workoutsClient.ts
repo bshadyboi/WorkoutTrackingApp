@@ -14,6 +14,115 @@ import { LEGACY_ELEVATE_DAY_NAMES } from "@/lib/elevateChallenge";
 import { DERRICK_RECOMP_START, LEGACY_DERRICK_DAY_NAMES } from "@/lib/derrickRecomp";
 import { parseOverrides, parseSlots, type ScheduleSlots } from "@/lib/schedule";
 
+const LEFT_SHOULDER_FLAG = "fittrack-left-shoulder-swaps-20260915";
+
+/** Day-name prefix → [old exercise name, new exercise name] for that day only. */
+const LEFT_SHOULDER_RENAMES: [string, [string, string][]][] = [
+  ["Push A", [["Landmine Press", "One-Arm Landmine Press"], ["Lateral Raise", "One-Arm Cable Lateral Raise"]]],
+  [
+    "Pull A",
+    [
+      ["Neutral Pulldown / Assisted Chin", "Single-Arm Pulldown"],
+      ["Chest-Supported T-Bar Row", "Chest-Supported DB Row"],
+      ["Seated Cable Row", "Seated One-Arm Cable Row (D-Handle)"],
+      ["Straight-Arm Pulldown", "One-Arm DB Row"],
+    ],
+  ],
+  ["Legs + Pump", [["Overhead Rope Extension", "Unilateral Tricep Pushdown"]]],
+  [
+    "Push B",
+    [
+      ["Incline Machine / Cable Chest Press", "One-Arm Cable Chest Press"],
+      ["Rear-Delt Fly", "Jeff Nippard Single Arm Rear Delt Fly"],
+      ["Overhead Rope Extension", "Unilateral Tricep Pushdown"],
+    ],
+  ],
+];
+
+const PT_PREHAB = [
+  { name: "Pec Ball Roll (SMR)", muscle: "Chest", default_sets: 1, working_rep_range: "1×30s per side" },
+  { name: "Doorway Pec Stretch (Single Arm)", muscle: "Chest", default_sets: 1, working_rep_range: "1×35s per side" },
+  { name: "Scapular Squeeze", muscle: "Back", default_sets: 2, working_rep_range: "2×15 · 2s hold" },
+];
+
+/**
+ * Brings existing accounts onto the left-shoulder layout without resetting the
+ * program. Rows are renamed in place so exercise ids — and any workout in
+ * progress keyed by them — survive; set history is deliberately left under the
+ * old names, since these are different movements. Every step matches on the
+ * old state, so running it again is a no-op.
+ */
+async function applyLeftShoulderSwaps() {
+  if (localStorage.getItem(LEFT_SHOULDER_FLAG) === "1") return;
+  const supabase = createClient();
+  const {
+    data: { session },
+  } = await supabase.auth.getSession();
+  const user = session?.user;
+  if (!user) return;
+
+  const { data: days, error } = await supabase
+    .from("workout_days")
+    .select("id, name, workout_exercises(id, name, sort_order)")
+    .eq("user_id", user.id);
+  if (error || !days) return;
+
+  let failed = false;
+  for (const day of days) {
+    const exercises = (day.workout_exercises as { id: string; name: string; sort_order: number }[] | null) ?? [];
+    const renames = LEFT_SHOULDER_RENAMES.find(([prefix]) => day.name.startsWith(prefix))?.[1] ?? [];
+    for (const [from, to] of renames) {
+      const row = exercises.find((e) => e.name === from);
+      if (!row) continue;
+      const { error: e } = await supabase.from("workout_exercises").update({ name: to }).eq("id", row.id);
+      if (e) failed = true;
+    }
+
+    const isPrehabDay = exercises.some((e) => e.name === "Band Pull-Aparts");
+    if (!isPrehabDay) continue;
+
+    const yt = exercises.find((e) => e.name === "Prone Y / T Raise");
+    if (yt) {
+      const { error: e } = await supabase.from("workout_exercises").update({ name: "Prone T Raise" }).eq("id", yt.id);
+      if (e) failed = true;
+    }
+    const slides = exercises.find((e) => e.name === "Scapular Wall Slides");
+    if (slides) {
+      const { error: e } = await supabase.from("workout_exercises").delete().eq("id", slides.id);
+      if (e) failed = true;
+    }
+    const missing = PT_PREHAB.filter((p) => !exercises.some((e) => e.name === p.name));
+    if (missing.length) {
+      // Negative sort orders put the PT's moves ahead of the existing prehab
+      // without renumbering (and so without touching) the rows already there.
+      const lowest = Math.min(0, ...exercises.map((e) => e.sort_order));
+      const { error: e } = await supabase.from("workout_exercises").insert(
+        missing.map((p, i) => ({
+          workout_day_id: day.id,
+          name: p.name,
+          muscle: p.muscle,
+          default_sets: p.default_sets,
+          has_crown_set: false,
+          crown_rep_range: "",
+          working_rep_range: p.working_rep_range,
+          sort_order: lowest - missing.length + i,
+        }))
+      );
+      if (e) failed = true;
+    }
+  }
+
+  if (!failed) {
+    try {
+      localStorage.setItem(LEFT_SHOULDER_FLAG, "1");
+      sessionStorage.removeItem("ft-tab:train");
+      sessionStorage.removeItem("ft-tab:dashboard");
+    } catch {
+      /* ignore */
+    }
+  }
+}
+
 /** One-time: switch to Derrick Recomp 4-day Tue start + dedupe days. */
 /** Bumped for the Shoulder-Safe Aesthetics layout (Push/Pull/Legs, starts Sep 14). */
 const SWITCH_DERRICK_FLAG = "fittrack-switch-shoulder-safe-aesthetics-20260914";
@@ -264,6 +373,8 @@ export async function applyProgram(
  */
 export async function syncWorkoutLibraryOnce() {
   if (typeof window === "undefined") return;
+
+  await applyLeftShoulderSwaps();
 
   // Soft-switch to Derrick Recomp; keep Elevate / PPL templates in Manage
   if (localStorage.getItem(SWITCH_DERRICK_FLAG) !== "1") {
