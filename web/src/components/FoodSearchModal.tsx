@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import type { FoodHit } from "@/lib/foods";
+import { shrinkToJpeg } from "@/lib/photo";
 
 export type MealItem = {
   id: string;
@@ -13,6 +14,25 @@ export type MealItem = {
   carbs: number;
   fat: number;
   servingLabel: string;
+};
+
+type AiFood = {
+  name: string;
+  brand: string;
+  serving_label: string;
+  calories: number;
+  protein: number;
+  carbs: number;
+  fat: number;
+  assumption: string;
+};
+
+type AiResult = {
+  items: AiFood[];
+  confidence: "high" | "medium" | "low";
+  note: string;
+  /** How the numbers were arrived at — a read label is exact, words are an estimate. */
+  read: boolean;
 };
 
 export function FoodSearchModal({
@@ -39,6 +59,52 @@ export function FoodSearchModal({
   const videoRef = useRef<HTMLVideoElement>(null);
   const [scanning, setScanning] = useState(false);
   const streamRef = useRef<MediaStream | null>(null);
+  const labelRef = useRef<HTMLInputElement>(null);
+  const [ai, setAi] = useState<AiResult | null>(null);
+  const [aiBusy, setAiBusy] = useState("");
+
+  /**
+   * Ask for macros the food databases don't have: a meal described in words,
+   * or a nutrition label photographed off the packet.
+   */
+  async function askClaude(payload: { text: string } | { file: File }) {
+    setError("");
+    setAi(null);
+    const isLabel = "file" in payload;
+    setAiBusy(isLabel ? "Reading the label…" : "Working out the macros…");
+    try {
+      const body = isLabel
+        ? { image: await shrinkToJpeg(payload.file), media_type: "image/jpeg" }
+        : { text: payload.text };
+      const res = await fetch("/api/foods/describe", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data?.error || "Lookup failed");
+      setAi({ ...(data as Omit<AiResult, "read">), read: isLabel });
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Lookup failed");
+    } finally {
+      setAiBusy("");
+    }
+  }
+
+  function addAi(item: AiFood, close: boolean) {
+    onAdd({
+      id: `${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+      meal,
+      name: item.name,
+      brand: item.brand || undefined,
+      calories: Math.round(item.calories),
+      protein: Math.round(item.protein),
+      carbs: Math.round(item.carbs),
+      fat: Math.round(item.fat),
+      servingLabel: item.serving_label || "1 serving",
+    });
+    if (close) onClose();
+  }
 
   useEffect(() => {
     // Popular curated items when opening empty search
@@ -242,13 +308,114 @@ export function FoodSearchModal({
               🖼 Roll
             </button>
           </div>
-          <button
-            type="button"
-            className="w-full rounded-[4px] bg-[var(--raised)] py-2 text-xs font-semibold text-[var(--blue)]"
-            onClick={() => setManual((v) => !v)}
-          >
-            ✎ Manual entry
-          </button>
+          <div className="grid grid-cols-2 gap-2">
+            <button
+              type="button"
+              className="rounded-[4px] bg-[var(--raised)] py-2 text-xs font-semibold text-[var(--blue)] disabled:opacity-50"
+              disabled={Boolean(aiBusy)}
+              onClick={() => labelRef.current?.click()}
+            >
+              🏷 Scan label
+            </button>
+            <button
+              type="button"
+              className="rounded-[4px] bg-[var(--raised)] py-2 text-xs font-semibold text-[var(--blue)]"
+              onClick={() => setManual((v) => !v)}
+            >
+              ✎ Manual entry
+            </button>
+          </div>
+
+          {q.trim().length >= 3 ? (
+            <button
+              type="button"
+              className="w-full rounded-[4px] border border-dashed border-[var(--border-solid)] py-2.5 text-xs font-bold text-[var(--blue)] disabled:opacity-50"
+              disabled={Boolean(aiBusy)}
+              onClick={() => void askClaude({ text: q.trim() })}
+            >
+              {aiBusy || `Work out the macros for “${q.trim()}”`}
+            </button>
+          ) : (
+            <p className="text-center text-[11px] text-[var(--muted)]">
+              Not in the list? Type what you ate — “8 oz ground beef, cup of rice” — and
+              we&apos;ll work out the macros.
+            </p>
+          )}
+
+          <input
+            ref={labelRef}
+            type="file"
+            accept="image/*"
+            capture="environment"
+            className="hidden"
+            onChange={(e) => {
+              const f = e.target.files?.[0];
+              e.target.value = "";
+              if (f) void askClaude({ file: f });
+            }}
+          />
+
+          {ai ? (
+            <div className="space-y-2 rounded-md border border-[var(--blue)]/40 bg-[var(--blue)]/5 p-3">
+              <div className="flex items-center justify-between gap-2">
+                <p className="text-[11px] font-bold uppercase tracking-wide text-[var(--blue)]">
+                  {ai.read ? "Read off the label" : "Estimated"}
+                  {ai.confidence !== "high" ? " · check it" : ""}
+                </p>
+                <button
+                  type="button"
+                  className="text-[11px] font-bold text-[var(--muted)]"
+                  onClick={() => setAi(null)}
+                >
+                  Clear
+                </button>
+              </div>
+
+              {ai.items.length === 0 ? (
+                <p className="text-[12.5px] text-[var(--muted)]">
+                  {ai.note || "Nothing to log from that."}
+                </p>
+              ) : (
+                <>
+                  {ai.items.map((item, i) => (
+                    <button
+                      key={`${item.name}-${i}`}
+                      type="button"
+                      onClick={() => addAi(item, ai.items.length === 1)}
+                      className="w-full rounded-md bg-[var(--surface)] p-2.5 text-left active:opacity-80"
+                    >
+                      <p className="truncate text-sm font-semibold">{item.name}</p>
+                      <p className="truncate text-[11px] text-[var(--muted)]">
+                        {[item.brand, item.serving_label].filter(Boolean).join(" · ")}
+                      </p>
+                      <p className="mt-0.5 font-mono text-[11.5px] tabular-nums text-[var(--text)]">
+                        {Math.round(item.calories)} cal · {Math.round(item.protein)}p ·{" "}
+                        {Math.round(item.carbs)}c · {Math.round(item.fat)}f
+                      </p>
+                      {item.assumption ? (
+                        <p className="mt-0.5 text-[11px] text-[var(--yellow)]">{item.assumption}</p>
+                      ) : null}
+                    </button>
+                  ))}
+                  {ai.items.length > 1 ? (
+                    <button
+                      type="button"
+                      className="btn-accent w-full !py-2 text-xs"
+                      onClick={() => {
+                        ai.items.forEach((item) => addAi(item, false));
+                        onClose();
+                      }}
+                    >
+                      Add all {ai.items.length}
+                    </button>
+                  ) : null}
+                </>
+              )}
+              {ai.note && ai.items.length ? (
+                <p className="text-[11px] text-[var(--muted)]">{ai.note}</p>
+              ) : null}
+            </div>
+          ) : null}
           <input
             ref={fileRef}
             type="file"
