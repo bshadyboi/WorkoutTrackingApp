@@ -35,6 +35,11 @@ import {
   type LiftPoint,
   type LiftSeries,
 } from "@/lib/liftProgress";
+import {
+  buildSideBalance,
+  sideBalanceLine,
+  type SideSeries,
+} from "@/lib/sideBalance";
 
 type Day = {
   id: string;
@@ -1094,6 +1099,7 @@ function TrendStat({
 
 function ProgressionTab({ history }: { history: Hist[] }) {
   const [series, setSeries] = useState<LiftSeries[] | null>(null);
+  const [sides, setSides] = useState<SideSeries[]>([]);
   const [loadError, setLoadError] = useState("");
 
   // Set-level rows are only needed on this tab, so they load on demand rather
@@ -1108,13 +1114,41 @@ function ProgressionTab({ history }: { history: Hist[] }) {
       const user = session?.user;
       if (!user || cancelled) return;
 
-      const { data, error } = await supabase
+      const base = supabase
         .from("workout_sessions")
-        .select("started_at, set_logs(exercise_name, weight, reps, is_completed, is_warmup)")
+        .select("started_at, set_logs(exercise_name, weight, reps, is_completed, is_warmup, side)")
         .eq("user_id", user.id)
         .not("ended_at", "is", null)
         .order("started_at", { ascending: false })
         .limit(60);
+
+      // `side` arrives with schema_shoulder.sql; without it the lift charts
+      // still work, there is just no left-versus-right story to tell.
+      type QueryResult = { data: SideRow[] | null; error: { message: string } | null };
+      type SideRow = {
+        started_at: string;
+        set_logs:
+          | {
+              exercise_name: string;
+              weight: number;
+              reps: number;
+              is_completed: boolean;
+              is_warmup?: boolean;
+              side?: "L" | "R" | null;
+            }[]
+          | null;
+      };
+
+      let { data, error } = (await base) as QueryResult;
+      if (error && /side/i.test(error.message)) {
+        ({ data, error } = (await supabase
+          .from("workout_sessions")
+          .select("started_at, set_logs(exercise_name, weight, reps, is_completed, is_warmup)")
+          .eq("user_id", user.id)
+          .not("ended_at", "is", null)
+          .order("started_at", { ascending: false })
+          .limit(60)) as QueryResult);
+      }
 
       if (cancelled) return;
       if (error) {
@@ -1123,6 +1157,7 @@ function ProgressionTab({ history }: { history: Hist[] }) {
         return;
       }
       setSeries(buildLiftSeries(data ?? [], 10));
+      setSides(buildSideBalance(data ?? []));
     })();
     return () => {
       cancelled = true;
@@ -1176,6 +1211,61 @@ function ProgressionTab({ history }: { history: Hist[] }) {
 
   return (
     <div className="space-y-5">
+      {sides.length ? (
+        <section className="space-y-2.5">
+          <div>
+            <h2 className="text-[15px] font-bold">Left vs right</h2>
+            <p className="text-[11.5px] text-[var(--muted)]">
+              Top set each side · is the left catching up?
+            </p>
+          </div>
+          <div className="card space-y-2.5 p-3.5">
+            {sides.map((s) => {
+              const closing =
+                s.points.length > 1 &&
+                ((s.latest.gapPct > 0 && s.changePct < 0) ||
+                  (s.latest.gapPct < 0 && s.changePct > 0));
+              const even = s.latest.gapPct === 0;
+              const width = Math.min(100, Math.abs(s.latest.gapPct));
+              return (
+                <div key={s.name}>
+                  <div className="flex items-baseline justify-between gap-3">
+                    <p className="min-w-0 truncate text-[13px] font-semibold">{s.name}</p>
+                    <p
+                      className="shrink-0 text-[11.5px] font-bold"
+                      style={{
+                        color: even || closing ? "var(--green)" : "var(--yellow)",
+                      }}
+                    >
+                      {sideBalanceLine(s)}
+                    </p>
+                  </div>
+                  <div className="mt-1 h-1.5 overflow-hidden rounded-full bg-[var(--border-solid)]">
+                    <div
+                      className="h-full rounded-full"
+                      style={{
+                        width: `${100 - width}%`,
+                        background: even || closing ? "var(--green)" : "var(--yellow)",
+                      }}
+                    />
+                  </div>
+                  <p className="mt-1 font-mono text-[11px] tabular-nums text-[var(--muted)]">
+                    L {formatLiftWeight(s.latest.left)} · R {formatLiftWeight(s.latest.right)}
+                    {s.points.length > 1
+                      ? ` · was ${s.points[0].gapPct > 0 ? "L" : "R"} ${Math.abs(s.points[0].gapPct)}% behind`
+                      : ""}
+                  </p>
+                </div>
+              );
+            })}
+            <p className="pt-0.5 text-[11px] text-[var(--dim)]">
+              The left stays lighter on purpose while the cuff settles — what matters is
+              the gap shrinking over weeks, not matching the right today.
+            </p>
+          </div>
+        </section>
+      ) : null}
+
       {shoulderLog.total ? (
         <section className="space-y-2.5">
           <div className="flex items-baseline justify-between gap-2">
