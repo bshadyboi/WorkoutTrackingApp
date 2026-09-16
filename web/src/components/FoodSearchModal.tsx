@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import type { FoodHit } from "@/lib/foods";
 import { shrinkToJpeg } from "@/lib/photo";
+import { readBarcodeFromImage, watchForBarcode } from "@/lib/barcode";
 
 export type MealItem = {
   id: string;
@@ -155,33 +156,18 @@ export function FoodSearchModal({
       streamRef.current = stream;
       setScanning(true);
       requestAnimationFrame(() => {
-        if (videoRef.current) {
-          videoRef.current.srcObject = stream;
-          void videoRef.current.play();
-        }
-      });
+        const video = videoRef.current;
+        if (!video) return;
+        video.srcObject = stream;
+        void video.play();
 
-      // Prefer BarcodeDetector when available (Chrome/Android; limited on iOS)
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const BD = (window as any).BarcodeDetector;
-      if (BD) {
-        const detector = new BD({ formats: ["ean_13", "ean_8", "upc_a", "upc_e", "code_128"] });
-        const tick = async () => {
-          if (!videoRef.current || !streamRef.current) return;
-          try {
-            const codes = await detector.detect(videoRef.current);
-            if (codes?.[0]?.rawValue) {
-              stopScan();
-              await lookupCode(String(codes[0].rawValue));
-              return;
-            }
-          } catch {
-            /* keep scanning */
-          }
-          if (streamRef.current) requestAnimationFrame(tick);
-        };
-        requestAnimationFrame(tick);
-      }
+        // Chrome/Android have a built-in reader; Safari doesn't, so fall back
+        // to decoding frames ourselves instead of asking for typed digits.
+        void watchForBarcode(video, () => Boolean(streamRef.current), (code) => {
+          stopScan();
+          void lookupCode(code);
+        });
+      });
     } catch {
       setError("Camera blocked — use barcode type-in or photo from camera roll.");
       setScanning(false);
@@ -213,31 +199,20 @@ export function FoodSearchModal({
 
   async function onPhoto(file: File) {
     setError("");
-    // Try BarcodeDetector on bitmap; else prompt for manual barcode
     try {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const BD = (window as any).BarcodeDetector;
-      if (BD && "createImageBitmap" in window) {
-        const bmp = await createImageBitmap(file);
-        const detector = new BD({
-          formats: ["ean_13", "ean_8", "upc_a", "upc_e", "code_128"],
-        });
-        const codes = await detector.detect(bmp);
-        bmp.close();
-        if (codes?.[0]?.rawValue) {
-          await lookupCode(String(codes[0].rawValue));
-          return;
-        }
+      const code = await readBarcodeFromImage(file);
+      if (code) {
+        await lookupCode(code);
+        return;
       }
-      const typed = window.prompt(
-        "Couldn’t read a barcode from that photo. Type the barcode numbers:"
-      );
-      if (typed) await lookupCode(typed);
-      else setError("No barcode found — search by name instead.");
     } catch {
-      const typed = window.prompt("Type the barcode numbers from the package:");
-      if (typed) await lookupCode(typed);
+      /* fall through to typing it in */
     }
+    const typed = window.prompt(
+      "Couldn’t read a barcode from that photo. Type the numbers under the barcode:"
+    );
+    if (typed) await lookupCode(typed);
+    else setError("No barcode found — search by name, or use Scan label.");
   }
 
   function addHit(f: FoodHit) {

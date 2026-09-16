@@ -161,9 +161,68 @@ export async function searchOpenFoodFacts(query: string, limit = 20): Promise<Fo
     .slice(0, limit);
 }
 
-export async function lookupBarcode(barcode: string): Promise<FoodHit | null> {
-  const code = barcode.trim();
-  if (!code) return null;
+/**
+ * A packaged food's macros, read off the barcode.
+ *
+ * Two sources, most reliable first: USDA FoodData Central (US branded foods,
+ * label-accurate, needs a free key) then Open Food Facts (crowd-sourced, global).
+ *
+ * Both publish numbers per serving *and* per 100 g, and a product often has one
+ * but not the other for a given nutrient. Mixing the two bases silently invents
+ * a food — 240 calories per serving next to 25 g of protein per 100 g — so each
+ * lookup picks one basis and takes every number from it.
+ */
+async function lookupUsdaBarcode(code: string): Promise<FoodHit | null> {
+  const key = process.env.USDA_FDC_API_KEY;
+  if (!key) return null;
+  const res = await fetch(
+    `https://api.nal.usda.gov/fdc/v1/foods/search?query=${encodeURIComponent(code)}` +
+      `&dataType=Branded&pageSize=1&api_key=${encodeURIComponent(key)}`
+  );
+  if (!res.ok) return null;
+  const data = await res.json();
+  const food = data?.foods?.[0] as Record<string, unknown> | undefined;
+  if (!food) return null;
+  // The search matches on text too, so make sure we got this exact barcode.
+  const gtin = String(food.gtinUpc ?? "").replace(/^0+/, "");
+  if (gtin !== code.replace(/^0+/, "")) return null;
+
+  const per100: Record<string, number> = {};
+  for (const n of (food.foodNutrients as Record<string, unknown>[]) ?? []) {
+    const id = Number(n.nutrientId);
+    const v = Number(n.value);
+    if (!Number.isFinite(v)) continue;
+    if (id === 1008) per100.calories = v;
+    if (id === 1003) per100.protein = v;
+    if (id === 1005) per100.carbs = v;
+    if (id === 1004) per100.fat = v;
+  }
+  if (!per100.calories) return null;
+
+  // USDA gives branded nutrients per 100 g/ml with the label serving alongside.
+  const size = Number(food.servingSize);
+  const unit = String(food.servingSizeUnit ?? "").toLowerCase();
+  const scale = Number.isFinite(size) && size > 0 && (unit === "g" || unit === "ml") ? size / 100 : 1;
+  const label =
+    scale === 1
+      ? "100 g"
+      : String(food.householdServingFullText || `${size} ${unit}`);
+
+  return {
+    id: code,
+    name: String(food.description || "").trim() || "Scanned product",
+    brand: food.brandName ? String(food.brandName).trim() : undefined,
+    calories: Math.round(per100.calories * scale),
+    protein: Math.round((per100.protein ?? 0) * scale),
+    carbs: Math.round((per100.carbs ?? 0) * scale),
+    fat: Math.round((per100.fat ?? 0) * scale),
+    servingLabel: label,
+    source: "openfoodfacts",
+    barcode: code,
+  };
+}
+
+async function lookupOpenFoodFacts(code: string): Promise<FoodHit | null> {
   const res = await fetch(
     `https://world.openfoodfacts.org/api/v2/product/${encodeURIComponent(code)}.json`,
     { headers: { "User-Agent": "FitTrack/1.0 (workout-tracking)" } }
@@ -176,24 +235,42 @@ export async function lookupBarcode(barcode: string): Promise<FoodHit | null> {
   if (!n) return null;
   const name = String(p.product_name || "").trim();
   if (!name) return null;
+
+  const servingKcal = num(n["energy-kcal_serving"]);
+  const hundredKcal =
+    num(n["energy-kcal_100g"]) || Math.round(num(n["energy_100g"]) / 4.184);
+
+  // One basis for all four numbers, never a mix of the two.
+  const useServing = servingKcal > 0;
+  const suffix = useServing ? "_serving" : "_100g";
+  const calories = useServing ? servingKcal : hundredKcal;
+  if (!calories) return null;
+
   return {
     id: code,
     name,
     brand: p.brands ? String(p.brands).split(",")[0]?.trim() : undefined,
-    calories:
-      num(n["energy-kcal_serving"]) ||
-      num(n["energy-kcal_100g"]) ||
-      Math.round(num(n["energy_100g"]) / 4.184),
-    protein: num(n.proteins_serving) || num(n.proteins_100g),
-    carbs: num(n.carbohydrates_serving) || num(n.carbohydrates_100g),
-    fat: num(n.fat_serving) || num(n.fat_100g),
-    servingLabel: String(p.serving_size || "1 serving"),
+    calories,
+    protein: num(n[`proteins${suffix}`]),
+    carbs: num(n[`carbohydrates${suffix}`]),
+    fat: num(n[`fat${suffix}`]),
+    servingLabel: useServing ? String(p.serving_size || "1 serving") : "100 g",
     source: "openfoodfacts",
     barcode: code,
-    imageUrl: p.image_front_small_url
-      ? String(p.image_front_small_url)
-      : undefined,
+    imageUrl: p.image_front_small_url ? String(p.image_front_small_url) : undefined,
   };
+}
+
+export async function lookupBarcode(barcode: string): Promise<FoodHit | null> {
+  const code = barcode.trim().replace(/\D/g, "");
+  if (!code) return null;
+  try {
+    const usda = await lookupUsdaBarcode(code);
+    if (usda) return usda;
+  } catch {
+    /* fall through to Open Food Facts */
+  }
+  return lookupOpenFoodFacts(code);
 }
 
 export async function searchFoods(query: string): Promise<FoodHit[]> {
