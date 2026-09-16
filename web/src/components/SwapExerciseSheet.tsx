@@ -9,6 +9,25 @@ import {
   type SwapRecommendation,
 } from "@/lib/exerciseCatalog";
 
+/** How sure the scan was, said plainly — the photo decides, not the app. */
+const CONFIDENCE = {
+  high: {
+    label: "Sure",
+    color: "var(--green)",
+    hint: "Clear match — the machine or its label gave it away.",
+  },
+  medium: {
+    label: "Fairly sure",
+    color: "var(--yellow)",
+    hint: "Worth a glance at the name before you use it.",
+  },
+  low: {
+    label: "Guessing",
+    color: "var(--red)",
+    hint: "This machine could be several lifts — pick the one you mean.",
+  },
+} as const;
+
 function MusclePills({ muscle }: { muscle?: string }) {
   if (!muscle) return null;
   const tags = muscle
@@ -193,9 +212,22 @@ export function SwapExerciseSheet({
           <section className="mb-4 rounded-md border border-[var(--border-solid)] bg-[var(--card)] p-3">
             <div className="flex items-start justify-between gap-3">
               <div className="min-w-0">
-                <p className="text-[11px] font-bold uppercase tracking-wide text-[var(--muted)]">
-                  From your photo
-                </p>
+                <div className="flex items-center gap-2">
+                  <p className="text-[11px] font-bold uppercase tracking-wide text-[var(--muted)]">
+                    From your photo
+                  </p>
+                  {scan.guesses.length ? (
+                    <span
+                      className="rounded-[3px] px-1.5 py-0.5 text-[10px] font-extrabold uppercase tracking-wide"
+                      style={{
+                        color: CONFIDENCE[scan.confidence].color,
+                        background: `color-mix(in srgb, ${CONFIDENCE[scan.confidence].color} 16%, transparent)`,
+                      }}
+                    >
+                      {CONFIDENCE[scan.confidence].label}
+                    </span>
+                  ) : null}
+                </div>
                 <p className="mt-0.5 text-[13.5px] font-semibold">{scan.equipment}</p>
                 {scan.label_text ? (
                   <p className="mt-0.5 text-[11.5px] text-[var(--muted)]">
@@ -262,9 +294,9 @@ export function SwapExerciseSheet({
             {scan.setup_tip ? (
               <p className="mt-2.5 text-[12px] text-[var(--muted)]">{scan.setup_tip}</p>
             ) : null}
-            {scan.confidence !== "high" && scan.guesses.length ? (
+            {scan.guesses.length ? (
               <p className="mt-1.5 text-[11.5px] text-[var(--dim)]">
-                Not certain — check the name before you log it.
+                {CONFIDENCE[scan.confidence].hint}
               </p>
             ) : null}
           </section>
