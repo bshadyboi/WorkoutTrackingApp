@@ -175,8 +175,11 @@ export async function searchOpenFoodFacts(query: string, limit = 20): Promise<Fo
 async function lookupUsdaBarcode(code: string): Promise<FoodHit | null> {
   const key = process.env.USDA_FDC_API_KEY;
   if (!key) return null;
+  // FoodData Central stores barcodes as 14-digit GTINs and only matches that
+  // exact spelling — a scanned 12-digit UPC finds nothing until it is padded.
+  const gtin14 = code.padStart(14, "0");
   const res = await fetch(
-    `https://api.nal.usda.gov/fdc/v1/foods/search?query=${encodeURIComponent(code)}` +
+    `https://api.nal.usda.gov/fdc/v1/foods/search?query=${encodeURIComponent(gtin14)}` +
       `&dataType=Branded&pageSize=1&api_key=${encodeURIComponent(key)}`
   );
   if (!res.ok) return null;
@@ -200,13 +203,18 @@ async function lookupUsdaBarcode(code: string): Promise<FoodHit | null> {
   if (!per100.calories) return null;
 
   // USDA gives branded nutrients per 100 g/ml with the label serving alongside.
+  // Units come through as "GRM" / "MLT" as often as "g" / "ml".
   const size = Number(food.servingSize);
-  const unit = String(food.servingSizeUnit ?? "").toLowerCase();
-  const scale = Number.isFinite(size) && size > 0 && (unit === "g" || unit === "ml") ? size / 100 : 1;
+  const raw = String(food.servingSizeUnit ?? "").toLowerCase();
+  const weighed = raw.startsWith("g") || raw.startsWith("ml") || raw === "grm" || raw === "mlt";
+  const scale = Number.isFinite(size) && size > 0 && weighed ? size / 100 : 1;
   const label =
     scale === 1
       ? "100 g"
-      : String(food.householdServingFullText || `${size} ${unit}`);
+      : String(
+          food.householdServingFullText ||
+            `${size} ${raw.startsWith("ml") || raw === "mlt" ? "ml" : "g"}`
+        );
 
   return {
     id: code,
@@ -236,24 +244,34 @@ async function lookupOpenFoodFacts(code: string): Promise<FoodHit | null> {
   const name = String(p.product_name || "").trim();
   if (!name) return null;
 
-  const servingKcal = num(n["energy-kcal_serving"]);
-  const hundredKcal =
-    num(n["energy-kcal_100g"]) || Math.round(num(n["energy_100g"]) / 4.184);
+  // One basis for all four numbers, never a mix — and only a basis that
+  // actually carries the macros. Plenty of products list calories per serving
+  // and nothing else, which used to come back as "776 cal, 0g everything".
+  const basis = (suffix: "_serving" | "_100g") => {
+    const calories =
+      suffix === "_serving"
+        ? num(n["energy-kcal_serving"])
+        : num(n["energy-kcal_100g"]) || Math.round(num(n["energy_100g"]) / 4.184);
+    const protein = num(n[`proteins${suffix}`]);
+    const carbs = num(n[`carbohydrates${suffix}`]);
+    const fat = num(n[`fat${suffix}`]);
+    return { calories, protein, carbs, fat, whole: protein + carbs + fat > 0 };
+  };
 
-  // One basis for all four numbers, never a mix of the two.
-  const useServing = servingKcal > 0;
-  const suffix = useServing ? "_serving" : "_100g";
-  const calories = useServing ? servingKcal : hundredKcal;
-  if (!calories) return null;
+  const perServing = basis("_serving");
+  const perHundred = basis("_100g");
+  const useServing = perServing.calories > 0 && perServing.whole;
+  const picked = useServing ? perServing : perHundred;
+  if (!picked.calories || !picked.whole) return null;
 
   return {
     id: code,
     name,
     brand: p.brands ? String(p.brands).split(",")[0]?.trim() : undefined,
-    calories,
-    protein: num(n[`proteins${suffix}`]),
-    carbs: num(n[`carbohydrates${suffix}`]),
-    fat: num(n[`fat${suffix}`]),
+    calories: picked.calories,
+    protein: picked.protein,
+    carbs: picked.carbs,
+    fat: picked.fat,
     servingLabel: useServing ? String(p.serving_size || "1 serving") : "100 g",
     source: "openfoodfacts",
     barcode: code,
