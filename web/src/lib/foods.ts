@@ -20,6 +20,7 @@ export const STAPLE_FOODS: FoodHit[] = [
   { id: "staple-overnight-oats", name: "Overnight oats", brand: "50g Quaker oats · chia · ISO100 Fruity Pebbles · Silk almond milk · honey", calories: 437, protein: 34, carbs: 59, fat: 10, servingLabel: "1 jar", source: "staple" },
   { id: "staple-cream-of-rice", name: "Cream of Rice", brand: "Huge Supplements", calories: 108, protein: 2, carbs: 25, fat: 0, servingLabel: "1 scoop", source: "staple" },
   { id: "staple-ground-beef-93", name: "Ground beef 93/7", calories: 474, protein: 65.5, carbs: 0, fat: 21.5, servingLabel: "8 oz cooked", source: "staple" },
+  { id: "staple-ground-beef-93-5oz", name: "Ground beef 93/7", brand: "5 oz portion", calories: 296, protein: 41, carbs: 0, fat: 13.4, servingLabel: "5 oz cooked", source: "staple" },
   { id: "staple-bibigo-rice", name: "Sticky Rice bowl", brand: "Bibigo", calories: 290, protein: 6, carbs: 67, fat: 0.5, servingLabel: "210 g", source: "staple" },
   { id: "staple-gold-potato", name: "Gold potato", calories: 164, protein: 4.4, carbs: 37, fat: 0, servingLabel: "1 medium", source: "staple" },
   { id: "staple-quest-chips", name: "Quest chips", brand: "Quest", calories: 140, protein: 19, carbs: 21, fat: 4, servingLabel: "1 bag", source: "staple" },
