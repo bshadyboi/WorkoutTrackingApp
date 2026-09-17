@@ -10,7 +10,26 @@ export type FoodHit = {
   source: "mine" | "usda" | "nutritionix" | "openfoodfacts" | "restaurant" | "manual" | "staple";
   barcode?: string;
   imageUrl?: string;
+  /** The macros don't add up to the calories — a nutrient is missing. */
+  suspect?: boolean;
 };
+
+/**
+ * Protein and carbs run 4 calories a gram, fat 9. When the macros a database
+ * gives fall well short of its own calorie figure, a nutrient is missing from
+ * the record rather than absent from the food — a Kirkland chicken bake listed
+ * at 540 calories with 0 g of carbs is missing its carbs, not carb-free.
+ */
+function macrosLookIncomplete(
+  calories: number,
+  protein: number,
+  carbs: number,
+  fat: number
+) {
+  if (calories <= 0) return false;
+  const fromMacros = protein * 4 + carbs * 4 + fat * 9;
+  return Math.abs(calories - fromMacros) > calories * 0.25;
+}
 
 /**
  * The lifter's own everyday foods, with the exact macros for the portion they
@@ -238,14 +257,20 @@ function usdaHit(food: UsdaFood, code?: string): FoodHit | null {
   const brand = titleBrand(String(food.brandName || food.brandOwner || ""));
   const barcode = code ?? String(food.gtinUpc ?? "").replace(/^0+/, "") ?? undefined;
 
+  const calories = Math.round(per100.calories * scale);
+  const protein = Math.round((per100.protein ?? 0) * scale);
+  const carbs = Math.round((per100.carbs ?? 0) * scale);
+  const fat = Math.round((per100.fat ?? 0) * scale);
+
   return {
     id: barcode || `usda-${String(food.fdcId ?? Math.random())}`,
     name: tidyName(String(food.description || ""), brand) || "Food",
     brand: brand || undefined,
-    calories: Math.round(per100.calories * scale),
-    protein: Math.round((per100.protein ?? 0) * scale),
-    carbs: Math.round((per100.carbs ?? 0) * scale),
-    fat: Math.round((per100.fat ?? 0) * scale),
+    calories,
+    protein,
+    carbs,
+    fat,
+    suspect: macrosLookIncomplete(calories, protein, carbs, fat),
     servingLabel: label,
     source: "usda",
     barcode: barcode || undefined,
@@ -333,6 +358,12 @@ async function lookupOpenFoodFacts(code: string): Promise<FoodHit | null> {
     protein: picked.protein,
     carbs: picked.carbs,
     fat: picked.fat,
+    suspect: macrosLookIncomplete(
+      picked.calories,
+      picked.protein,
+      picked.carbs,
+      picked.fat
+    ),
     servingLabel: useServing ? String(p.serving_size || "1 serving") : "100 g",
     source: "openfoodfacts",
     barcode: code,

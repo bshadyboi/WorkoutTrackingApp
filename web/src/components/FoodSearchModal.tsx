@@ -680,6 +680,11 @@ export function FoodSearchModal({
                   <p className="mt-0.5 text-[11px] text-[var(--blue)]">
                     {f.calories} cal · {f.protein}p · {f.carbs}c · {f.fat}f
                   </p>
+                  {f.suspect ? (
+                    <p className="mt-0.5 text-[10.5px] font-semibold text-[var(--yellow)]">
+                      Macros don&apos;t add up to the calories — check the packet
+                    </p>
+                  ) : null}
                 </div>
               </button>
               <button
