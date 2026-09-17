@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import type { FoodHit } from "@/lib/foods";
 import { shrinkToJpeg } from "@/lib/photo";
 import { readBarcodeFromImage, watchForBarcode } from "@/lib/barcode";
+import { getMyFood, saveMyFood } from "@/lib/myFoods";
 
 export type MealItem = {
   id: string;
@@ -62,6 +63,64 @@ export function FoodSearchModal({
   const streamRef = useRef<MediaStream | null>(null);
   const labelRef = useRef<HTMLInputElement>(null);
   const [ai, setAi] = useState<AiResult | null>(null);
+  /** A scanned product, held for checking against the packet before it's logged. */
+  const [scanned, setScanned] = useState<FoodHit | null>(null);
+  const [vName, setVName] = useState("");
+  const [vServing, setVServing] = useState("");
+  const [vCal, setVCal] = useState("");
+  const [vPro, setVPro] = useState("");
+  const [vCarb, setVCarb] = useState("");
+  const [vFat, setVFat] = useState("");
+  const [saveNote, setSaveNote] = useState("");
+
+  function openScanned(f: FoodHit) {
+    setScanned(f);
+    setVName(f.name);
+    setVServing(f.servingLabel);
+    setVCal(String(f.calories));
+    setVPro(String(f.protein));
+    setVCarb(String(f.carbs));
+    setVFat(String(f.fat));
+    setSaveNote("");
+  }
+
+  function verifiedItem(): MealItem {
+    return {
+      id: `${Date.now()}-scan`,
+      meal,
+      name: vName.trim() || scanned?.name || "Scanned food",
+      brand: scanned?.brand,
+      calories: Number(vCal) || 0,
+      protein: Number(vPro) || 0,
+      carbs: Number(vCarb) || 0,
+      fat: Number(vFat) || 0,
+      servingLabel: vServing.trim() || "1 serving",
+    };
+  }
+
+  /** Bind these numbers to the barcode, so the next scan skips the databases. */
+  async function keepAndAdd() {
+    const item = verifiedItem();
+    if (scanned?.barcode) {
+      setSaveNote("Saving…");
+      const err = await saveMyFood({
+        barcode: scanned.barcode,
+        name: item.name,
+        brand: item.brand ?? "",
+        servingLabel: item.servingLabel,
+        calories: item.calories,
+        protein: item.protein,
+        carbs: item.carbs,
+        fat: item.fat,
+      });
+      if (err) {
+        setSaveNote(err);
+        return;
+      }
+    }
+    onAdd(item);
+    onClose();
+  }
   const [aiBusy, setAiBusy] = useState("");
 
   /**
@@ -177,18 +236,27 @@ export function FoodSearchModal({
   async function lookupCode(code: string) {
     setLoading(true);
     setError("");
+    setAi(null);
     try {
+      // Anything already checked against the packet wins over every database.
+      const mine = await getMyFood(code.trim());
+      if (mine) {
+        openScanned(mine);
+        setHits([]);
+        return;
+      }
+
       const res = await fetch(
         `/api/foods/search?barcode=${encodeURIComponent(code)}`
       );
       const data = await res.json();
       const foods = (data.foods ?? []) as FoodHit[];
       if (!foods.length) {
-        setError(`No product for barcode ${code}`);
+        setError(`No product for barcode ${code} — try Scan label instead.`);
         setHits([]);
       } else {
-        setHits(foods);
-        setQ(foods[0].name);
+        openScanned(foods[0]);
+        setHits([]);
       }
     } catch {
       setError("Barcode lookup failed");
@@ -329,6 +397,83 @@ export function FoodSearchModal({
               if (f) void askClaude({ file: f });
             }}
           />
+
+          {scanned ? (
+            <div className="space-y-2 rounded-md border border-[var(--green)]/40 bg-[var(--green)]/5 p-3">
+              <div className="flex items-center justify-between gap-2">
+                <p className="text-[11px] font-bold uppercase tracking-wide text-[var(--green)]">
+                  {scanned.source === "mine"
+                    ? "Yours · checked before"
+                    : `Scanned · ${scanned.source === "usda" ? "USDA" : scanned.source === "nutritionix" ? "Nutritionix" : "Open Food Facts"}`}
+                </p>
+                <button
+                  type="button"
+                  className="text-[11px] font-bold text-[var(--muted)]"
+                  onClick={() => setScanned(null)}
+                >
+                  Clear
+                </button>
+              </div>
+
+              <input
+                className="field !py-2"
+                value={vName}
+                onChange={(e) => setVName(e.target.value)}
+                placeholder="Food name"
+              />
+              <input
+                className="field !py-2 text-[12px]"
+                value={vServing}
+                onChange={(e) => setVServing(e.target.value)}
+                placeholder="Serving, e.g. 1 bar (60 g)"
+              />
+              <div className="grid grid-cols-4 gap-2">
+                {(
+                  [
+                    ["Cal", vCal, setVCal],
+                    ["P", vPro, setVPro],
+                    ["C", vCarb, setVCarb],
+                    ["F", vFat, setVFat],
+                  ] as const
+                ).map(([label, value, set]) => (
+                  <input
+                    key={label}
+                    className="field !px-2 !py-2 text-center text-sm"
+                    inputMode="decimal"
+                    placeholder={label}
+                    value={value}
+                    onChange={(e) => set(e.target.value)}
+                  />
+                ))}
+              </div>
+              <p className="text-[11px] text-[var(--muted)]">
+                Check it against the packet. Fixing it once binds these numbers to the
+                barcode — every later scan skips the databases.
+              </p>
+              <div className="grid grid-cols-2 gap-2">
+                <button
+                  type="button"
+                  className="btn-secondary !py-2 text-xs"
+                  onClick={() => {
+                    onAdd(verifiedItem());
+                    onClose();
+                  }}
+                >
+                  Add once
+                </button>
+                <button
+                  type="button"
+                  className="btn-accent !py-2 text-xs"
+                  onClick={() => void keepAndAdd()}
+                >
+                  Save as mine &amp; add
+                </button>
+              </div>
+              {saveNote ? (
+                <p className="text-[11px] text-[var(--yellow)]">{saveNote}</p>
+              ) : null}
+            </div>
+          ) : null}
 
           {ai ? (
             <div className="space-y-2 rounded-md border border-[var(--blue)]/40 bg-[var(--blue)]/5 p-3">

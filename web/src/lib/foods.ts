@@ -7,7 +7,7 @@ export type FoodHit = {
   carbs: number;
   fat: number;
   servingLabel: string;
-  source: "usda" | "openfoodfacts" | "restaurant" | "manual" | "staple";
+  source: "mine" | "usda" | "nutritionix" | "openfoodfacts" | "restaurant" | "manual" | "staple";
   barcode?: string;
   imageUrl?: string;
 };
@@ -292,16 +292,72 @@ async function lookupOpenFoodFacts(code: string): Promise<FoodHit | null> {
   };
 }
 
+/**
+ * Nutritionix — a commercial catalogue of US branded products, much broader
+ * than either free source. Optional: without keys it is simply skipped.
+ */
+async function lookupNutritionix(code: string): Promise<FoodHit | null> {
+  const appId = process.env.NUTRITIONIX_APP_ID;
+  const appKey = process.env.NUTRITIONIX_API_KEY;
+  if (!appId || !appKey) return null;
+
+  const res = await fetch(
+    `https://trackapi.nutritionix.com/v2/search/item?upc=${encodeURIComponent(code)}`,
+    { headers: { "x-app-id": appId, "x-app-key": appKey } }
+  );
+  if (!res.ok) return null;
+  const data = await res.json();
+  const f = data?.foods?.[0] as Record<string, unknown> | undefined;
+  if (!f) return null;
+
+  const calories = num(f.nf_calories);
+  const protein = num(f.nf_protein);
+  const carbs = num(f.nf_total_carbohydrate);
+  const fat = num(f.nf_total_fat);
+  if (!calories || protein + carbs + fat <= 0) return null;
+
+  // Their numbers are already for one serving, described by these three fields.
+  const qty = Number(f.serving_qty);
+  const unit = String(f.serving_unit ?? "").trim();
+  const grams = Number(f.serving_weight_grams);
+  const label = [
+    Number.isFinite(qty) && qty > 0 ? `${qty} ${unit}`.trim() : unit,
+    Number.isFinite(grams) && grams > 0 ? `(${Math.round(grams)} g)` : "",
+  ]
+    .filter(Boolean)
+    .join(" ");
+
+  return {
+    id: code,
+    name: String(f.food_name || "").trim() || "Scanned product",
+    brand: f.brand_name ? String(f.brand_name).trim() : undefined,
+    calories,
+    protein,
+    carbs,
+    fat,
+    servingLabel: label || "1 serving",
+    source: "nutritionix",
+    barcode: code,
+    imageUrl:
+      (f.photo as Record<string, unknown> | undefined)?.thumb != null
+        ? String((f.photo as Record<string, unknown>).thumb)
+        : undefined,
+  };
+}
+
 export async function lookupBarcode(barcode: string): Promise<FoodHit | null> {
   const code = barcode.trim().replace(/\D/g, "");
   if (!code) return null;
-  try {
-    const usda = await lookupUsdaBarcode(code);
-    if (usda) return usda;
-  } catch {
-    /* fall through to Open Food Facts */
+  // Most label-accurate first, broadest last; a source that errors is skipped.
+  for (const lookup of [lookupUsdaBarcode, lookupNutritionix, lookupOpenFoodFacts]) {
+    try {
+      const hit = await lookup(code);
+      if (hit) return hit;
+    } catch {
+      /* try the next source */
+    }
   }
-  return lookupOpenFoodFacts(code);
+  return null;
 }
 
 export async function searchFoods(query: string): Promise<FoodHit[]> {
