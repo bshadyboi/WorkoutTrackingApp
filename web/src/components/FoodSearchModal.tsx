@@ -72,9 +72,11 @@ export function FoodSearchModal({
   const [vCarb, setVCarb] = useState("");
   const [vFat, setVFat] = useState("");
   const [saveNote, setSaveNote] = useState("");
+  const [qty, setQty] = useState("1");
 
   function openScanned(f: FoodHit) {
     setScanned(f);
+    setQty("1");
     setVName(f.name);
     setVServing(f.servingLabel);
     setVCal(String(f.calories));
@@ -84,17 +86,25 @@ export function FoodSearchModal({
     setSaveNote("");
   }
 
+  /** How many of the listed serving — 3 × "1 oz cooked" logs 3 oz. */
+  const qtyNum = Math.max(0, Number(qty) || 0);
+
+  function round(n: number) {
+    return Math.round(n * 10) / 10;
+  }
+
   function verifiedItem(): MealItem {
+    const serving = vServing.trim() || "1 serving";
     return {
       id: `${Date.now()}-scan`,
       meal,
       name: vName.trim() || scanned?.name || "Scanned food",
       brand: scanned?.brand,
-      calories: Number(vCal) || 0,
-      protein: Number(vPro) || 0,
-      carbs: Number(vCarb) || 0,
-      fat: Number(vFat) || 0,
-      servingLabel: vServing.trim() || "1 serving",
+      calories: Math.round((Number(vCal) || 0) * qtyNum),
+      protein: round((Number(vPro) || 0) * qtyNum),
+      carbs: round((Number(vCarb) || 0) * qtyNum),
+      fat: round((Number(vFat) || 0) * qtyNum),
+      servingLabel: qtyNum === 1 ? serving : `${qty} × ${serving}`,
     };
   }
 
@@ -103,15 +113,16 @@ export function FoodSearchModal({
     const item = verifiedItem();
     if (scanned?.barcode) {
       setSaveNote("Saving…");
+      // Store one serving — the quantity is per-meal, not part of the product.
       const err = await saveMyFood({
         barcode: scanned.barcode,
-        name: item.name,
+        name: vName.trim() || item.name,
         brand: item.brand ?? "",
-        servingLabel: item.servingLabel,
-        calories: item.calories,
-        protein: item.protein,
-        carbs: item.carbs,
-        fat: item.fat,
+        servingLabel: vServing.trim() || "1 serving",
+        calories: Number(vCal) || 0,
+        protein: Number(vPro) || 0,
+        carbs: Number(vCarb) || 0,
+        fat: Number(vFat) || 0,
       });
       if (err) {
         setSaveNote(err);
@@ -446,9 +457,49 @@ export function FoodSearchModal({
                   />
                 ))}
               </div>
+              <div className="flex items-center gap-2">
+                <span className="text-[11px] font-bold uppercase tracking-wide text-[var(--muted)]">
+                  How many
+                </span>
+                <div className="flex flex-1 items-center gap-2">
+                  <button
+                    type="button"
+                    className="btn-secondary !px-3 !py-1.5 text-sm"
+                    onClick={() => setQty(String(Math.max(0.5, qtyNum - 1)))}
+                  >
+                    −
+                  </button>
+                  <input
+                    className="field !py-1.5 w-16 text-center text-sm"
+                    inputMode="decimal"
+                    value={qty}
+                    onChange={(e) => setQty(e.target.value)}
+                  />
+                  <button
+                    type="button"
+                    className="btn-secondary !px-3 !py-1.5 text-sm"
+                    onClick={() => setQty(String(qtyNum + 1))}
+                  >
+                    +
+                  </button>
+                  <span className="text-[11px] text-[var(--muted)]">
+                    × {vServing.trim() || "serving"}
+                  </span>
+                </div>
+              </div>
+
+              {qtyNum !== 1 ? (
+                <p className="font-mono text-[12px] tabular-nums text-[var(--blue)]">
+                  Logs {Math.round((Number(vCal) || 0) * qtyNum)} cal ·{" "}
+                  {round((Number(vPro) || 0) * qtyNum)}p ·{" "}
+                  {round((Number(vCarb) || 0) * qtyNum)}c ·{" "}
+                  {round((Number(vFat) || 0) * qtyNum)}f
+                </p>
+              ) : null}
+
               <p className="text-[11px] text-[var(--muted)]">
-                Check it against the packet. Fixing it once binds these numbers to the
-                barcode — every later scan skips the databases.
+                The four boxes are one serving. Check them against the packet — fixing
+                them once binds the numbers to the barcode.
               </p>
               <div className="grid grid-cols-2 gap-2">
                 <button
@@ -607,11 +658,11 @@ export function FoodSearchModal({
 
           <div className="space-y-2 pb-4">
             {hits.map((f) => (
+              <div key={f.id + f.name} className="relative">
               <button
-                key={f.id + f.name}
                 type="button"
                 onClick={() => addHit(f)}
-                className="flex w-full items-start gap-3 rounded-md border border-[var(--border)] bg-[var(--surface)] p-3 text-left active:opacity-80"
+                className="flex w-full items-start gap-3 rounded-md border border-[var(--border)] bg-[var(--surface)] p-3 pr-12 text-left active:opacity-80"
               >
                 {f.imageUrl ? (
                   // eslint-disable-next-line @next/next/no-img-element
@@ -631,6 +682,16 @@ export function FoodSearchModal({
                   </p>
                 </div>
               </button>
+              <button
+                type="button"
+                aria-label={`Choose how many of ${f.name}`}
+                title="Log more than one"
+                className="absolute right-2 top-1/2 -translate-y-1/2 rounded-[4px] bg-[var(--raised)] px-2.5 py-2 text-[13px] font-extrabold text-[var(--blue)]"
+                onClick={() => openScanned(f)}
+              >
+                ×2
+              </button>
+              </div>
             ))}
             {!loading && q && hits.length === 0 ? (
               <p className="text-sm text-[var(--muted)]">No hits — try Manual.</p>
