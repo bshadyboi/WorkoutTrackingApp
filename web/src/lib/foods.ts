@@ -280,9 +280,12 @@ async function lookupUsdaBarcode(code: string): Promise<FoodHit | null> {
 
 /** Branded products by name — the deepest catalogue of US groceries here. */
 async function searchUsdaFoods(query: string, limit = 15): Promise<FoodHit[]> {
+  // Branded only. The generic tables match loosely on single words — a search
+  // for "chicken bake" came back with baked plantains and taco shells, which
+  // pushed the actual Costco product off the list.
   const foods = await usdaSearch({
     query,
-    dataType: "Branded,Foundation,SR Legacy",
+    dataType: "Branded",
     pageSize: String(limit),
   });
   return foods.map((f) => usdaHit(f)).filter((f): f is FoodHit => f != null);
