@@ -173,28 +173,40 @@ export async function searchOpenFoodFacts(query: string, limit = 20): Promise<Fo
  * a food — 240 calories per serving next to 25 g of protein per 100 g — so each
  * lookup picks one basis and takes every number from it.
  */
-async function lookupUsdaBarcode(code: string): Promise<FoodHit | null> {
-  const key = process.env.USDA_FDC_API_KEY;
-  if (!key) return null;
-  // FoodData Central stores barcodes as 14-digit GTINs and only matches that
-  // exact spelling — a scanned 12-digit UPC finds nothing until it is padded.
-  const gtin14 = code.padStart(14, "0");
-  const res = await fetch(
-    `https://api.nal.usda.gov/fdc/v1/foods/search?query=${encodeURIComponent(gtin14)}` +
-      `&dataType=Branded&pageSize=1&api_key=${encodeURIComponent(key)}`
-  );
-  if (!res.ok) return null;
-  const data = await res.json();
-  const food = data?.foods?.[0] as Record<string, unknown> | undefined;
-  if (!food) return null;
-  // The search matches on text too, so make sure we got this exact barcode.
-  const gtin = String(food.gtinUpc ?? "").replace(/^0+/, "");
-  if (gtin !== code.replace(/^0+/, "")) return null;
+type UsdaFood = Record<string, unknown>;
 
-  // The nutrient list repeats itself, and the repeats are on a different basis
-  // (a second serving size, or the prepared food). The first appearance of each
-  // nutrient is the per-100 g figure, so later duplicates are ignored — keeping
-  // the last one turned a bowl of Cheerios into 23 calories.
+/** USDA writes branded names in capitals: "KIRKLAND SIGNATURE, CHICKEN BAKES". */
+function tidyName(raw: string, brand: string) {
+  let name = raw.trim().replace(/\s*,\s*/g, ", ");
+  if (brand && name.toLowerCase().startsWith(brand.toLowerCase())) {
+    name = name.slice(brand.length).replace(/^[\s,]+/, "");
+  }
+  if (name === name.toUpperCase()) {
+    name = name
+      .toLowerCase()
+      .replace(/(^|[\s,(/-])([a-z])/g, (_, lead: string, ch: string) => lead + ch.toUpperCase());
+  }
+  return name || raw.trim();
+}
+
+function titleBrand(raw: string) {
+  const brand = raw.trim();
+  if (brand !== brand.toUpperCase()) return brand;
+  return brand
+    .toLowerCase()
+    .replace(/(^|[\s,(/-])([a-z])/g, (_, lead: string, ch: string) => lead + ch.toUpperCase());
+}
+
+/**
+ * Turn one FoodData Central record into a food, on the label's serving where
+ * there is one.
+ *
+ * Two traps live in this data. Nutrients are listed per 100 g/ml but the list
+ * repeats itself on other bases, so only the first appearance of each counts —
+ * keeping the last turned a bowl of Cheerios into 23 calories. And serving
+ * units arrive as "GRM" / "MLT" as often as "g" / "ml".
+ */
+function usdaHit(food: UsdaFood, code?: string): FoodHit | null {
   const per100: Record<string, number> = {};
   const keep = (field: string, v: number) => {
     if (Number.isFinite(v) && per100[field] === undefined) per100[field] = v;
@@ -209,8 +221,6 @@ async function lookupUsdaBarcode(code: string): Promise<FoodHit | null> {
   }
   if (!per100.calories) return null;
 
-  // USDA gives branded nutrients per 100 g/ml with the label serving alongside.
-  // Units come through as "GRM" / "MLT" as often as "g" / "ml".
   const size = Number(food.servingSize);
   const raw = String(food.servingSizeUnit ?? "").toLowerCase();
   const weighed = raw.startsWith("g") || raw.startsWith("ml") || raw === "grm" || raw === "mlt";
@@ -223,16 +233,12 @@ async function lookupUsdaBarcode(code: string): Promise<FoodHit | null> {
             `${size} ${raw.startsWith("ml") || raw === "mlt" ? "ml" : "g"}`
         );
 
-  const brand = food.brandName ? String(food.brandName).trim() : "";
-  let name = String(food.description || "").trim() || "Scanned product";
-  // Descriptions often repeat the brand: "Cheerios" + "Cheerios Cereal".
-  if (brand && name.toLowerCase().startsWith(`${brand.toLowerCase()} `)) {
-    name = name.slice(brand.length + 1);
-  }
+  const brand = titleBrand(String(food.brandName || food.brandOwner || ""));
+  const barcode = code ?? String(food.gtinUpc ?? "").replace(/^0+/, "") ?? undefined;
 
   return {
-    id: code,
-    name,
+    id: barcode || `usda-${String(food.fdcId ?? Math.random())}`,
+    name: tidyName(String(food.description || ""), brand) || "Food",
     brand: brand || undefined,
     calories: Math.round(per100.calories * scale),
     protein: Math.round((per100.protein ?? 0) * scale),
@@ -240,8 +246,44 @@ async function lookupUsdaBarcode(code: string): Promise<FoodHit | null> {
     fat: Math.round((per100.fat ?? 0) * scale),
     servingLabel: label,
     source: "usda",
-    barcode: code,
+    barcode: barcode || undefined,
   };
+}
+
+async function usdaSearch(params: Record<string, string>): Promise<UsdaFood[]> {
+  const key = process.env.USDA_FDC_API_KEY;
+  if (!key) return [];
+  const query = new URLSearchParams({ ...params, api_key: key });
+  const res = await fetch(`https://api.nal.usda.gov/fdc/v1/foods/search?${query}`);
+  if (!res.ok) return [];
+  const data = await res.json();
+  return (data?.foods as UsdaFood[]) ?? [];
+}
+
+async function lookupUsdaBarcode(code: string): Promise<FoodHit | null> {
+  // FoodData Central stores barcodes as 14-digit GTINs and only matches that
+  // exact spelling — a scanned 12-digit UPC finds nothing until it is padded.
+  const foods = await usdaSearch({
+    query: code.padStart(14, "0"),
+    dataType: "Branded",
+    pageSize: "1",
+  });
+  const food = foods[0];
+  if (!food) return null;
+  // The search matches on text too, so make sure we got this exact barcode.
+  const gtin = String(food.gtinUpc ?? "").replace(/^0+/, "");
+  if (gtin !== code.replace(/^0+/, "")) return null;
+  return usdaHit(food, code);
+}
+
+/** Branded products by name — the deepest catalogue of US groceries here. */
+async function searchUsdaFoods(query: string, limit = 15): Promise<FoodHit[]> {
+  const foods = await usdaSearch({
+    query,
+    dataType: "Branded,Foundation,SR Legacy",
+    pageSize: String(limit),
+  });
+  return foods.map((f) => usdaHit(f)).filter((f): f is FoodHit => f != null);
 }
 
 async function lookupOpenFoodFacts(code: string): Promise<FoodHit | null> {
@@ -361,21 +403,34 @@ export async function lookupBarcode(barcode: string): Promise<FoodHit | null> {
   return null;
 }
 
+/**
+ * Search every catalogue at once: the lifter's own staples first, then USDA's
+ * branded data (deepest for US groceries — Kirkland, Great Value and the rest),
+ * then Open Food Facts. Duplicates are dropped on brand + name, so the most
+ * trustworthy copy of a product is the one shown.
+ *
+ * Nutritionix is deliberately absent: its search endpoint returns calories
+ * without macros, and a food logged as 0 g protein is worse than no result.
+ * It still answers barcodes, where the full numbers come back.
+ */
 export async function searchFoods(query: string): Promise<FoodHit[]> {
   const local = searchLocalFoods(query, 12);
   if (!query.trim()) return local;
-  try {
-    const remote = await searchOpenFoodFacts(query, 15);
-    const seen = new Set(local.map((f) => f.name.toLowerCase()));
-    const merged = [...local];
-    for (const f of remote) {
-      const k = f.name.toLowerCase();
-      if (seen.has(k)) continue;
-      seen.add(k);
-      merged.push(f);
-    }
-    return merged.slice(0, 25);
-  } catch {
-    return local;
+
+  const [usda, off] = await Promise.all([
+    searchUsdaFoods(query, 20).catch(() => []),
+    searchOpenFoodFacts(query, 12).catch(() => []),
+  ]);
+
+  const key = (f: FoodHit) => `${f.brand ?? ""}|${f.name}`.toLowerCase().replace(/\s+/g, " ").trim();
+  const seen = new Set(local.map(key));
+  const merged = [...local];
+  for (const f of [...usda, ...off]) {
+    const k = key(f);
+    if (seen.has(k)) continue;
+    seen.add(k);
+    merged.push(f);
   }
+  return merged.slice(0, 30);
 }
+
