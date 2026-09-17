@@ -28,7 +28,7 @@ export function MorningWeightCard({
         user_id: user.id,
         date,
         morning_weight: value,
-        target_calories: 2100,
+        target_calories: 2350,
         target_protein: 190,
         target_carbs: 200,
         target_fats: 60,

@@ -24,6 +24,7 @@ export const STAPLE_FOODS: FoodHit[] = [
   { id: "staple-gold-potato", name: "Gold potato", calories: 164, protein: 4.4, carbs: 37, fat: 0, servingLabel: "1 medium", source: "staple" },
   { id: "staple-quest-chips", name: "Quest chips", brand: "Quest", calories: 140, protein: 19, carbs: 21, fat: 4, servingLabel: "1 bag", source: "staple" },
   { id: "staple-oikos-triple-zero", name: "Triple Zero yogurt", brand: "Oikos", calories: 90, protein: 15, carbs: 7, fat: 0, servingLabel: "1 cup", source: "staple" },
+  { id: "staple-banana", name: "Banana", brand: "Medium", calories: 105, protein: 1.3, carbs: 27, fat: 0.4, servingLabel: "1 medium", source: "staple" },
   { id: "staple-nates-honey", name: "Honey", brand: "Nate's", calories: 60, protein: 0, carbs: 17, fat: 0, servingLabel: "1 tbsp", source: "staple" },
 ];
 

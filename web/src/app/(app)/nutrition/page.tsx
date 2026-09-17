@@ -49,9 +49,9 @@ type DailyLog = {
 
 /** The targets the lifter asked for; applied once over the untouched program baseline. */
 const REQUESTED_TARGETS: MacroTargets = {
-  target_calories: 2100,
+  target_calories: 2350,
   target_protein: 190,
-  target_carbs: 222,
+  target_carbs: 275,
   target_fats: 47,
 };
 

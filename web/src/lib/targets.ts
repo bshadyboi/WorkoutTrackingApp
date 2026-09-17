@@ -7,9 +7,9 @@ export type MacroTargets = {
 
 /** Used only when the profile has no targets of its own. */
 export const DEFAULT_TARGETS: MacroTargets = {
-  target_calories: 2100,
+  target_calories: 2350,
   target_protein: 190,
-  target_carbs: 222,
+  target_carbs: 275,
   target_fats: 47,
 };
 
