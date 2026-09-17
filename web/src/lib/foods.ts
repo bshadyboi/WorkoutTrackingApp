@@ -190,15 +190,21 @@ async function lookupUsdaBarcode(code: string): Promise<FoodHit | null> {
   const gtin = String(food.gtinUpc ?? "").replace(/^0+/, "");
   if (gtin !== code.replace(/^0+/, "")) return null;
 
+  // The nutrient list repeats itself, and the repeats are on a different basis
+  // (a second serving size, or the prepared food). The first appearance of each
+  // nutrient is the per-100 g figure, so later duplicates are ignored — keeping
+  // the last one turned a bowl of Cheerios into 23 calories.
   const per100: Record<string, number> = {};
+  const keep = (field: string, v: number) => {
+    if (Number.isFinite(v) && per100[field] === undefined) per100[field] = v;
+  };
   for (const n of (food.foodNutrients as Record<string, unknown>[]) ?? []) {
     const id = Number(n.nutrientId);
     const v = Number(n.value);
-    if (!Number.isFinite(v)) continue;
-    if (id === 1008) per100.calories = v;
-    if (id === 1003) per100.protein = v;
-    if (id === 1005) per100.carbs = v;
-    if (id === 1004) per100.fat = v;
+    if (id === 1008) keep("calories", v);
+    if (id === 1003) keep("protein", v);
+    if (id === 1005) keep("carbs", v);
+    if (id === 1004) keep("fat", v);
   }
   if (!per100.calories) return null;
 
@@ -216,10 +222,17 @@ async function lookupUsdaBarcode(code: string): Promise<FoodHit | null> {
             `${size} ${raw.startsWith("ml") || raw === "mlt" ? "ml" : "g"}`
         );
 
+  const brand = food.brandName ? String(food.brandName).trim() : "";
+  let name = String(food.description || "").trim() || "Scanned product";
+  // Descriptions often repeat the brand: "Cheerios" + "Cheerios Cereal".
+  if (brand && name.toLowerCase().startsWith(`${brand.toLowerCase()} `)) {
+    name = name.slice(brand.length + 1);
+  }
+
   return {
     id: code,
-    name: String(food.description || "").trim() || "Scanned product",
-    brand: food.brandName ? String(food.brandName).trim() : undefined,
+    name,
+    brand: brand || undefined,
     calories: Math.round(per100.calories * scale),
     protein: Math.round((per100.protein ?? 0) * scale),
     carbs: Math.round((per100.carbs ?? 0) * scale),
