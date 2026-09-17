@@ -7,7 +7,7 @@ export type FoodHit = {
   carbs: number;
   fat: number;
   servingLabel: string;
-  source: "openfoodfacts" | "restaurant" | "manual" | "staple";
+  source: "usda" | "openfoodfacts" | "restaurant" | "manual" | "staple";
   barcode?: string;
   imageUrl?: string;
 };
@@ -217,7 +217,7 @@ async function lookupUsdaBarcode(code: string): Promise<FoodHit | null> {
     carbs: Math.round((per100.carbs ?? 0) * scale),
     fat: Math.round((per100.fat ?? 0) * scale),
     servingLabel: label,
-    source: "openfoodfacts",
+    source: "usda",
     barcode: code,
   };
 }
