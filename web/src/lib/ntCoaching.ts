@@ -35,6 +35,14 @@ function work(
 
 export const NT_START = "2026-09-21";
 
+/**
+ * "Take every hard set close to failure — that's where the growth is on low
+ * volume." Two working sets a movement only works if they are genuinely hard,
+ * so the logger asks for 0–1 reps in reserve on these days rather than the
+ * ramped target the previous program used.
+ */
+export const NT_RIR_TARGET = 1;
+
 const STAIRMASTER = work(
   "Stairmaster (Level 6)",
   "Cardio",

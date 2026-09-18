@@ -7,6 +7,13 @@ import { FastedBloodPressureCard } from "@/components/FastedBloodPressureCard";
 import { MorningCheckinCard } from "@/components/MorningCheckinCard";
 import { FoodSearchModal, type MealItem } from "@/components/FoodSearchModal";
 import { OrderAdviceSheet } from "@/components/OrderAdviceSheet";
+import {
+  NT_CARB_SWAPS,
+  NT_MEALS,
+  NT_PROTEIN_SWAPS,
+  planMealTotals,
+  type PlanFood,
+} from "@/lib/ntPlan";
 import { MealBuilderSheet } from "@/components/MealBuilderSheet";
 import { MacroTargetsSheet } from "@/components/MacroTargetsSheet";
 import { NutritionTrend } from "@/components/NutritionTrend";
@@ -149,6 +156,10 @@ export default function NutritionPage() {
   const [editingSaved, setEditingSaved] = useState(false);
   const [builder, setBuilder] = useState<{ name: string; slot: MealSlot; items: SavedMealItem[] } | null>(null);
   const [orderSlot, setOrderSlot] = useState<MealSlot | null>(null);
+  /** Which plan meal is open, and any swap chosen inside it. */
+  const [openPlanMeal, setOpenPlanMeal] = useState<string | null>(null);
+  const [planSwaps, setPlanSwaps] = useState<Record<string, string>>({});
+  const [openSaved, setOpenSaved] = useState<string | null>(null);
   const [builderSaving, setBuilderSaving] = useState(false);
   const [builderError, setBuilderError] = useState("");
   const [editingTargets, setEditingTargets] = useState(false);
@@ -330,6 +341,41 @@ export default function NutritionPage() {
 
   function logStaple(f: FoodHit) {
     addItems([stapleToItem(f, quickSlot, Date.now())], `Added ${f.name} to ${quickSlot}`);
+  }
+
+  /** A plan meal's foods, with whatever swap has been chosen for each slot. */
+  function planItemsFor(mealId: string): PlanFood[] {
+    const meal = NT_MEALS.find((m) => m.id === mealId);
+    if (!meal) return [];
+    return meal.items.map((item) => {
+      const swap = meal.swaps?.find((sw) => sw.itemId === item.id);
+      if (!swap) return item;
+      const chosen = planSwaps[`${mealId}:${item.id}`];
+      if (!chosen) return item;
+      const pool = swap.kind === "protein" ? NT_PROTEIN_SWAPS : NT_CARB_SWAPS;
+      return pool.find((p) => p.id === chosen) ?? item;
+    });
+  }
+
+  function logPlanMeal(mealId: string) {
+    const meal = NT_MEALS.find((m) => m.id === mealId);
+    if (!meal) return;
+    const stamp = Date.now();
+    addItems(
+      planItemsFor(mealId).map((f, i) => ({
+        id: `${stamp}-${i}-plan`,
+        meal: meal.slot,
+        name: f.name,
+        brand: f.brand,
+        calories: f.calories,
+        protein: f.protein,
+        carbs: f.carbs,
+        fat: f.fat,
+        servingLabel: f.servingLabel,
+      })),
+      `Logged ${meal.name} to ${meal.slot}`
+    );
+    setOpenPlanMeal(null);
   }
 
   function logSaved(meal: SavedMeal) {
@@ -528,6 +574,105 @@ export default function NutritionPage() {
 
           <section className="space-y-2.5">
             <div className="flex items-baseline justify-between gap-2">
+              <h2 className="text-[17px] font-bold">NT plan</h2>
+              <p className="text-[12px] font-semibold text-[var(--muted)]">Tap to see inside</p>
+            </div>
+            <div className="overflow-hidden rounded-md border border-[var(--border)] bg-[var(--card)]">
+              {NT_MEALS.map((meal, i) => {
+                const items = planItemsFor(meal.id);
+                const t = planMealTotals(items);
+                const open = openPlanMeal === meal.id;
+                return (
+                  <div key={meal.id} className={i > 0 ? "border-t border-white/5" : ""}>
+                    <div className="flex items-center gap-3 px-4 py-3">
+                      <button
+                        type="button"
+                        className="min-w-0 flex-1 text-left"
+                        onClick={() => setOpenPlanMeal(open ? null : meal.id)}
+                      >
+                        <p className="truncate text-[15px] font-bold">
+                          {meal.name}
+                          <span className="ml-1.5 text-[11px] font-bold text-[var(--muted)]">
+                            {open ? "▾" : "▸"}
+                          </span>
+                        </p>
+                        <p className="truncate text-[12.5px] tabular-nums text-[var(--muted)]">
+                          {meal.slot} · {roundMacro(t.calories)} cal · {roundMacro(t.protein)}p ·{" "}
+                          {roundMacro(t.carbs)}c · {roundMacro(t.fat)}f
+                        </p>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => logPlanMeal(meal.id)}
+                        className="flex h-10 shrink-0 items-center gap-1.5 rounded-md bg-[var(--accent)] px-3.5 text-[13.5px] font-extrabold text-[var(--on-accent)] active:scale-95"
+                      >
+                        <IconPlus size={14} /> Log
+                      </button>
+                    </div>
+
+                    {open ? (
+                      <div className="space-y-2.5 px-4 pb-3.5">
+                        <p className="text-[11.5px] text-[var(--dim)]">{meal.note}</p>
+                        {items.map((item, n) => {
+                          const swap = meal.swaps?.find(
+                            (sw) => sw.itemId === meal.items[n].id
+                          );
+                          const pool =
+                            swap?.kind === "protein"
+                              ? NT_PROTEIN_SWAPS
+                              : swap?.kind === "carb"
+                                ? NT_CARB_SWAPS
+                                : null;
+                          const key = `${meal.id}:${meal.items[n].id}`;
+                          return (
+                            <div key={item.id} className="rounded-md bg-[var(--surface)] p-2.5">
+                              <p className="truncate text-[13px] font-semibold">{item.name}</p>
+                              <p className="truncate font-mono text-[11.5px] tabular-nums text-[var(--muted)]">
+                                {item.servingLabel} · {roundMacro(item.calories)} cal ·{" "}
+                                {roundMacro(item.protein)}p · {roundMacro(item.carbs)}c ·{" "}
+                                {roundMacro(item.fat)}f
+                              </p>
+                              {pool ? (
+                                <div className="mt-2 flex flex-wrap gap-1.5">
+                                  <span className="text-[10.5px] font-bold uppercase tracking-wide text-[var(--dim)]">
+                                    Swap:
+                                  </span>
+                                  {pool.map((alt) => {
+                                    const on = planSwaps[key]
+                                      ? planSwaps[key] === alt.id
+                                      : alt.id === meal.items[n].id;
+                                    return (
+                                      <button
+                                        key={alt.id}
+                                        type="button"
+                                        onClick={() =>
+                                          setPlanSwaps((cur) => ({ ...cur, [key]: alt.id }))
+                                        }
+                                        className={`rounded-[4px] px-2 py-1 text-[11px] font-bold ${
+                                          on
+                                            ? "bg-[var(--blue)] text-[var(--on-blue)]"
+                                            : "bg-[var(--raised)] text-[var(--muted)]"
+                                        }`}
+                                      >
+                                        {alt.name} · {alt.servingLabel}
+                                      </button>
+                                    );
+                                  })}
+                                </div>
+                              ) : null}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    ) : null}
+                  </div>
+                );
+              })}
+            </div>
+          </section>
+
+          <section className="space-y-2.5">
+            <div className="flex items-baseline justify-between gap-2">
               <h2 className="text-[17px] font-bold">Saved meals</h2>
               <div className="flex items-center gap-3">
                 {saved.length ? (
@@ -553,12 +698,34 @@ export default function NutritionPage() {
                   const t = mealTotals(m.items);
                   return (
                     <div key={m.id} className={`flex items-center gap-3 px-4 py-3 ${i > 0 ? "border-t border-white/5" : ""}`}>
-                      <div className="min-w-0 flex-1">
-                        <p className="truncate text-[15px] font-bold">{m.name}</p>
+                      <button
+                        type="button"
+                        className="min-w-0 flex-1 text-left"
+                        onClick={() => setOpenSaved((cur) => (cur === m.id ? null : m.id))}
+                      >
+                        <p className="truncate text-[15px] font-bold">
+                          {m.name}
+                          {m.items.length > 1 ? (
+                            <span className="ml-1.5 text-[11px] font-bold text-[var(--muted)]">
+                              {openSaved === m.id ? "▾" : "▸"}
+                            </span>
+                          ) : null}
+                        </p>
                         <p className="truncate text-[12.5px] tabular-nums text-[var(--muted)]">
                           {m.meal} · {m.items.length} {m.items.length === 1 ? "food" : "foods"} · {roundMacro(t.calories)} cal · {roundMacro(t.protein)}p
                         </p>
-                      </div>
+                        {openSaved === m.id ? (
+                          <div className="mt-1.5 space-y-0.5">
+                            {m.items.map((it, n) => (
+                              <p key={`${it.name}-${n}`} className="truncate text-[11.5px] text-[var(--dim)]">
+                                {it.name}
+                                {it.servingLabel ? ` · ${it.servingLabel}` : ""} · {roundMacro(it.calories)} cal ·{" "}
+                                {roundMacro(it.protein)}p
+                              </p>
+                            ))}
+                          </div>
+                        ) : null}
+                      </button>
                       {editingSaved ? (
                         <button
                           type="button"

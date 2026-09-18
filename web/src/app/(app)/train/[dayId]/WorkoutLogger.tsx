@@ -17,6 +17,7 @@ import { formatPrescription, setTargetLabel } from "@/lib/workouts";
 import { IconCheck, IconMore, IconPlayCircle, IconSwap, IconX } from "@/components/icons";
 import { splitWarmupBlock } from "@/lib/prehab";
 import { derrickRecompGuidance, derrickRecompWeek } from "@/lib/derrickRecomp";
+import { NT_RIR_TARGET } from "@/lib/ntCoaching";
 import { dateKey } from "@/lib/protocol";
 import { Explain } from "@/components/Explain";
 import { isUnilateral, rightSideKey } from "@/lib/unilateral";
@@ -214,10 +215,19 @@ export function WorkoutLogger({
       addedExercises: Exercise[];
     };
   } | null>(null);
-  /** This week's reps-in-reserve target from the plan, used to flag a set taken too close to failure. */
+  /**
+   * This week's reps-in-reserve target, used to flag a set taken too close to
+   * failure — or, on NT Coaching days, not close enough. NT's instruction is
+   * "take every hard set close to failure", which is the opposite of the
+   * previous program's week-by-week ramp, so the day decides.
+   */
+  const ntDay = dayName.startsWith("NT ");
   const rirTarget = useMemo(
-    () => derrickRecompGuidance(derrickRecompWeek(logDate ?? dateKey(new Date())))?.rirTarget ?? null,
-    [logDate]
+    () =>
+      ntDay
+        ? NT_RIR_TARGET
+        : derrickRecompGuidance(derrickRecompWeek(logDate ?? dateKey(new Date())))?.rirTarget ?? null,
+    [logDate, ntDay]
   );
   const [rirExplained, setRirExplained] = useState(true);
   useEffect(() => {
@@ -1691,13 +1701,16 @@ export function WorkoutLogger({
                                 );
                               })}
                             </div>
-                            {typeof set.rir === "number" && rirTarget != null && set.rir < rirTarget - 1 ? (
+                            {typeof set.rir === "number" && rirTarget != null && !ntDay && set.rir < rirTarget - 1 ? (
                               <span className="basis-full text-[11.5px] text-[var(--yellow)]">
                                 Plan wants about {rirTarget} left this week — that set was close to failure.
                               </span>
                             ) : !rirExplained ? (
                               <span className="basis-full text-[11.5px] text-[var(--muted)]">
-                                How many more reps could you have done? Your plan wants {rirTarget ?? "1–3"} left this week.
+                                How many more reps could you have done?{" "}
+                                {ntDay
+                                  ? "NT wants every hard set close to failure — 0 or 1 left."
+                                  : `Your plan wants ${rirTarget ?? "1–3"} left this week.`}
                               </span>
                             ) : null}
                           </div>
