@@ -115,6 +115,12 @@ export default function NutritionPage() {
   const [loading, setLoading] = useState(true);
   const [loggedDays, setLoggedDays] = useState<Set<string>>(new Set());
   const [error, setError] = useState("");
+  /**
+   * A meal list that never reached the server. Food kept only in page state
+   * looks logged until the app is opened on another device — the whole point
+   * of logging it — so a failed write has to say so and offer another go.
+   */
+  const [unsaved, setUnsaved] = useState<{ items: MealItem[]; reason: string } | null>(null);
   const [toast, setToast] = useState<{ text: string; undoIds?: string[] } | null>(null);
   const [quickSlot, setQuickSlot] = useState<MealSlot>(slotForNow);
   const [searchSlot, setSearchSlot] = useState<MealSlot | null>(null);
@@ -255,7 +261,10 @@ export default function NutritionPage() {
       data: { session },
     } = await supabaseRef.current.auth.getSession();
     const user = session?.user;
-    if (!user) return;
+    if (!user) {
+      setUnsaved({ items: next, reason: "You're signed out on this device." });
+      return;
+    }
 
     const t = mealTotals(next);
     const payload = {
@@ -269,11 +278,16 @@ export default function NutritionPage() {
       actual_fats: Math.round(t.fat),
       ...targets,
     };
-    const { error: err } = await supabaseRef.current.from("daily_logs").upsert(payload, { onConflict: "user_id,date" });
+    const { error: err } = await supabaseRef.current
+      .from("daily_logs")
+      .upsert(payload, { onConflict: "user_id,date" })
+      .then((r) => r, (e: Error) => ({ error: e }));
     if (err) {
-      setError(err.message);
+      setUnsaved({ items: next, reason: err.message });
+      setError("");
       return;
     }
+    setUnsaved(null);
     setError("");
     setLoggedDays((s) => {
       const copy = new Set(s);
@@ -438,6 +452,25 @@ export default function NutritionPage() {
           </button>
         ))}
       </div>
+
+      {unsaved ? (
+        <div className="rounded-md border border-[var(--red)]/50 bg-[var(--red)]/10 p-3">
+          <p className="text-[13px] font-bold text-[var(--red)]">
+            Not saved — this food is only on this device
+          </p>
+          <p className="mt-1 text-[12px] text-[var(--muted)]">
+            It won&apos;t show on your phone, and it&apos;ll be gone when this page closes.
+            {unsaved.reason ? ` (${unsaved.reason})` : ""}
+          </p>
+          <button
+            type="button"
+            className="btn-accent mt-2.5 !py-2 text-xs"
+            onClick={() => void persistMeals(unsaved.items)}
+          >
+            Try saving again
+          </button>
+        </div>
+      ) : null}
 
       {error ? <p className="text-[13px] text-[var(--yellow)]">{error}</p> : null}
 
