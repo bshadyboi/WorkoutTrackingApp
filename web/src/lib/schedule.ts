@@ -186,6 +186,24 @@ export function seedDerrickRecompSlots(
   ];
 }
 
+/** NT Coaching — Sun Active Recovery · Mon Upper A · Tue Lower A · Wed Rest ·
+ * Thu Upper B · Fri Lower B · Sat Upper C.
+ */
+export function seedNtCoachingSlots(
+  days: { id: string; name: string }[]
+): ScheduleSlots {
+  const idFor = (name: string) => days.find((d) => d.name === name)?.id ?? null;
+  return [
+    idFor("NT Active Recovery"),
+    idFor("NT Upper A"),
+    idFor("NT Lower A"),
+    null,
+    idFor("NT Upper B"),
+    idFor("NT Lower B"),
+    idFor("NT Upper C"),
+  ];
+}
+
 /** PPL Aesthetics — Sun Rest · Mon Push A · Tue Pull A · Wed hybrid · Thu Push B · Fri Pull B · Sat Rest */
 export function seedPplAestheticsSlots(
   days: { id: string; name: string }[]

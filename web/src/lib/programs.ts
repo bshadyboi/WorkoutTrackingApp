@@ -12,13 +12,15 @@ import {
 } from "@/lib/derrickRecomp";
 import {
   seedDerrickRecompSlots,
+  seedNtCoachingSlots,
   seedElevateChallengeSlots,
   seedPplAestheticsSlots,
   type ScheduleSlots,
 } from "@/lib/schedule";
+import { NT_TIP, NT_WEEKLY_LABELS, NT_WORKOUTS } from "@/lib/ntCoaching";
 import { PPL_WEEKLY_LABELS } from "@/lib/weekdaySchedule";
 
-export type ProgramId = "ppl-aesthetics" | "elevate-challenge" | "derrick-recomp";
+export type ProgramId = "ppl-aesthetics" | "elevate-challenge" | "derrick-recomp" | "nt-coaching";
 
 export type ProgramDef = {
   id: ProgramId;
@@ -35,6 +37,18 @@ export type ProgramDef = {
 };
 
 export const PROGRAMS: Record<ProgramId, ProgramDef> = {
+  "nt-coaching": {
+    id: "nt-coaching",
+    name: "NT Coaching Split",
+    shortName: "NT Coaching",
+    description:
+      "6-day upper/lower from NT Coaching, starting Mon Sep 21. Three identical upper days, two identical lower days, Wednesday off, Sunday stairmaster.",
+    weeklyLabels: NT_WEEKLY_LABELS,
+    tip: NT_TIP,
+    workouts: NT_WORKOUTS,
+    dayNames: NT_WORKOUTS.map((w) => w.name),
+    seedSlots: seedNtCoachingSlots,
+  },
   "derrick-recomp": {
     id: "derrick-recomp",
     name: "Shoulder-Safe Aesthetics",
@@ -76,7 +90,12 @@ export const PROGRAMS: Record<ProgramId, ProgramDef> = {
 export const DEFAULT_PROGRAM_ID: ProgramId = "derrick-recomp";
 
 export function isProgramId(v: unknown): v is ProgramId {
-  return v === "ppl-aesthetics" || v === "elevate-challenge" || v === "derrick-recomp";
+  return (
+    v === "ppl-aesthetics" ||
+    v === "elevate-challenge" ||
+    v === "derrick-recomp" ||
+    v === "nt-coaching"
+  );
 }
 
 export function getProgram(id: ProgramId | string | null | undefined): ProgramDef {

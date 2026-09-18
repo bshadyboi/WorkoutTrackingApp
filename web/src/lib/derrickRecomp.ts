@@ -27,7 +27,7 @@ function work(
  * slides were dropped because they take the arm overhead, which the left
  * shoulder should avoid for now.
  */
-const UPPER_PREHAB: WorkoutTemplate["exercises"] = [
+export const UPPER_PREHAB: WorkoutTemplate["exercises"] = [
   work("Pec Ball Roll (SMR)", "Chest", 1, "30s per side", "PT · hold on tender spots"),
   work("Doorway Pec Stretch (Single Arm)", "Chest", 1, "35s per side", "PT · upper arm level, no bouncing"),
   work("Scapular Squeeze", "Back", 2, "15 · 2s hold", "PT"),
