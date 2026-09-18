@@ -37,7 +37,7 @@ function macrosLookIncomplete(
  */
 export const STAPLE_FOODS: FoodHit[] = [
   { id: "staple-overnight-oats", name: "Overnight oats", brand: "50g Quaker oats · chia · ISO100 Fruity Pebbles · Silk almond milk · honey", calories: 437, protein: 34, carbs: 59, fat: 10, servingLabel: "1 jar", source: "staple" },
-  { id: "staple-cream-of-rice", name: "Cream of Rice", brand: "Huge Supplements", calories: 108, protein: 2, carbs: 25, fat: 0, servingLabel: "1 scoop", source: "staple" },
+  { id: "staple-cream-of-rice", name: "Creamy Rice, Milk Chocolate", brand: "Huge Supplements", calories: 120, protein: 3, carbs: 27, fat: 0, servingLabel: "1 scoop (33 g)", source: "staple" },
   { id: "staple-ground-beef-93", name: "Ground beef 93/7", calories: 474, protein: 65.5, carbs: 0, fat: 21.5, servingLabel: "8 oz cooked", source: "staple" },
   { id: "staple-ground-beef-93-1oz", name: "Ground beef 93/7", brand: "1 oz · scale with ×", calories: 59, protein: 8.2, carbs: 0, fat: 2.7, servingLabel: "1 oz cooked", source: "staple" },
   { id: "staple-ground-beef-93-5oz", name: "Ground beef 93/7", brand: "5 oz portion", calories: 296, protein: 41, carbs: 0, fat: 13.4, servingLabel: "5 oz cooked", source: "staple" },
