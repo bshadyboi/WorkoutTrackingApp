@@ -36,6 +36,12 @@ import {
   type LiftSeries,
 } from "@/lib/liftProgress";
 import {
+  flagNotes,
+  parseSessionNotes,
+  repeatedPain,
+  type FlaggedNote,
+} from "@/lib/sessionNotes";
+import {
   buildSideBalance,
   sideBalanceLine,
   type SideSeries,
@@ -1100,6 +1106,7 @@ function TrendStat({
 function ProgressionTab({ history }: { history: Hist[] }) {
   const [series, setSeries] = useState<LiftSeries[] | null>(null);
   const [sides, setSides] = useState<SideSeries[]>([]);
+  const [flagged, setFlagged] = useState<FlaggedNote[]>([]);
   const [loadError, setLoadError] = useState("");
 
   // Set-level rows are only needed on this tab, so they load on demand rather
@@ -1113,6 +1120,23 @@ function ProgressionTab({ history }: { history: Hist[] }) {
       } = await supabase.auth.getSession();
       const user = session?.user;
       if (!user || cancelled) return;
+
+      // Notes ride along with the set rows this tab already loads.
+      void supabase
+        .from("workout_sessions")
+        .select("started_at, day_name, notes")
+        .eq("user_id", user.id)
+        .not("ended_at", "is", null)
+        .not("notes", "is", null)
+        .order("started_at", { ascending: false })
+        .limit(25)
+        .then(({ data: noteRows }) => {
+          if (cancelled) return;
+          const parsed = (noteRows ?? []).flatMap((r) =>
+            parseSessionNotes(r.notes, String(r.started_at).slice(0, 10), r.day_name)
+          );
+          setFlagged(flagNotes(parsed).slice(0, 8));
+        });
 
       const base = supabase
         .from("workout_sessions")
@@ -1209,8 +1233,50 @@ function ProgressionTab({ history }: { history: Hist[] }) {
     return { recent, flag, total: answered.length };
   }, [history]);
 
+  const painRepeats = useMemo(() => repeatedPain(flagged), [flagged]);
+
   return (
     <div className="space-y-5">
+      {flagged.length ? (
+        <section className="space-y-2.5">
+          <div>
+            <h2 className="text-[15px] font-bold">From your notes</h2>
+            <p className="text-[11.5px] text-[var(--muted)]">
+              What you wrote mid-workout, pulled back out
+            </p>
+          </div>
+          <div className="card space-y-2 p-3.5">
+            {painRepeats.length ? (
+              <p className="rounded-[4px] bg-[var(--yellow)]/10 px-2.5 py-2 text-[12px] leading-snug text-[var(--yellow)]">
+                <span className="font-bold">{painRepeats.join(", ")}</span> has come up more than
+                once. Hold the weight where it is, and mention it at your next PT session.
+              </p>
+            ) : null}
+            {flagged.map((f) => {
+              const when = new Date(`${f.date}T12:00:00`).toLocaleDateString(undefined, {
+                month: "short",
+                day: "numeric",
+              });
+              return (
+                <div key={`${f.date}-${f.exercise}-${f.note}`} className="flex gap-2.5">
+                  <span
+                    className="mt-1 h-1.5 w-1.5 shrink-0 rounded-full"
+                    style={{
+                      background: f.kind === "pain" ? "var(--red)" : "var(--yellow)",
+                    }}
+                  />
+                  <div className="min-w-0">
+                    <p className="text-[12.5px] font-semibold leading-snug">{f.exercise}</p>
+                    <p className="text-[12px] leading-snug text-[var(--muted)]">{f.note}</p>
+                    <p className="text-[11px] text-[var(--dim)]">{when}</p>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </section>
+      ) : null}
+
       {sides.length ? (
         <section className="space-y-2.5">
           <div>

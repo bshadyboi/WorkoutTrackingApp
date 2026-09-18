@@ -60,6 +60,7 @@ import {
   type BarLb,
 } from "@/lib/barPrefs";
 import type { BestSet } from "@/lib/wins";
+import type { ParsedNote } from "@/lib/sessionNotes";
 
 function setScore(weight: number, reps: number) {
   return weight * 1000 + reps;
@@ -133,6 +134,7 @@ export function WorkoutLogger({
   exercises,
   previousByExercise,
   bestByExercise = {},
+  lastNotes = {},
   logDate,
 }: {
   dayId: string;
@@ -141,6 +143,8 @@ export function WorkoutLogger({
   previousByExercise: Record<string, { weight: number; reps: number; rir?: number | null }[]>;
   /** All-time best working set per exercise name */
   bestByExercise?: Record<string, BestSet>;
+  /** What was written about each movement last time it was trained */
+  lastNotes?: Record<string, ParsedNote>;
   /** YYYY-MM-DD when backfilling a past workout */
   logDate?: string;
 }) {
@@ -1346,6 +1350,21 @@ export function WorkoutLogger({
                       ))}
                     </div>
                   ) : null}
+                  {(() => {
+                    // What he told himself last time, in front of him before
+                    // the first set rather than filed in an old session.
+                    const past = lastNotes[name] ?? lastNotes[ex.name];
+                    if (!past) return null;
+                    const when = new Date(`${past.date}T12:00:00`).toLocaleDateString(undefined, {
+                      month: "short",
+                      day: "numeric",
+                    });
+                    return (
+                      <p className="mt-1.5 rounded-[4px] border-l-2 border-[var(--blue)] bg-[var(--surface)] px-2 py-1.5 text-[12px] leading-snug text-[var(--muted)]">
+                        <span className="font-bold text-[var(--blue)]">{when}:</span> {past.note}
+                      </p>
+                    );
+                  })()}
                   {isCardio ? (
                     <p className="mt-1.5 text-[13px] font-semibold text-[var(--blue)]">
                       30 min incline walk

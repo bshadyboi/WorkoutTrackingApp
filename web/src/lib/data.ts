@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { DEFAULT_PROTOCOL } from "@/lib/protocol";
 import { BUILT_IN_WORKOUTS } from "@/lib/workouts";
 import { buildAllTimeBest } from "@/lib/wins";
+import { lastNoteByExercise } from "@/lib/sessionNotes";
 
 export async function ensureWorkoutLibrary(userId: string) {
   const supabase = await createClient();
@@ -175,4 +176,22 @@ export function formatPrevious(sets: { weight: number; reps: number }[]) {
       })
       .join(", ")
   );
+}
+
+/**
+ * The last thing the lifter wrote about each movement, so it can be shown
+ * again while he is doing it rather than buried in an old session.
+ */
+export async function getLastNoteByExercise(userId: string) {
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("workout_sessions")
+    .select("started_at, day_name, notes")
+    .eq("user_id", userId)
+    .not("ended_at", "is", null)
+    .not("notes", "is", null)
+    .order("started_at", { ascending: false })
+    .limit(25);
+
+  return lastNoteByExercise(data ?? []);
 }

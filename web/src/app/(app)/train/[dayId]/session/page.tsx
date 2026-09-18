@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { dateKey } from "@/lib/protocol";
-import { getPreviousSetsByExercise, getAllTimeBestByExercise } from "@/lib/data";
+import { getPreviousSetsByExercise, getAllTimeBestByExercise, getLastNoteByExercise } from "@/lib/data";
 import { WorkoutLogger } from "../WorkoutLogger";
 
 export default async function TrainSessionPage({
@@ -28,9 +28,10 @@ export default async function TrainSessionPage({
 
   if (!day) notFound();
 
-  const [previous, bestByExercise] = await Promise.all([
+  const [previous, bestByExercise, lastNotes] = await Promise.all([
     getPreviousSetsByExercise(user.id),
     getAllTimeBestByExercise(user.id),
+    getLastNoteByExercise(user.id),
   ]);
   const exercises = day.workout_exercises ?? [];
   const logDate =
@@ -43,6 +44,7 @@ export default async function TrainSessionPage({
       dayId={day.id}
       dayName={day.name}
       exercises={exercises}
+      lastNotes={lastNotes}
       previousByExercise={previous}
       bestByExercise={bestByExercise}
       logDate={logDate}
