@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import type { FoodHit } from "@/lib/foods";
 import { shrinkToJpeg } from "@/lib/photo";
-import { readBarcodeFromImage, watchForBarcode } from "@/lib/barcode";
+import { isRetailBarcode, readBarcodeFromImage, watchForBarcode } from "@/lib/barcode";
 import { getMyFood, saveMyFood } from "@/lib/myFoods";
 
 export type MealItem = {
@@ -249,6 +249,17 @@ export function FoodSearchModal({
     setError("");
     setAi(null);
     try {
+      // Amazon and warehouse stickers (FNSKU, "X0056C49TL") get stuck straight
+      // over the manufacturer's UPC. They scan fine and mean nothing to a food
+      // database, so say that rather than reporting "no product found".
+      if (!isRetailBarcode(code.trim())) {
+        setError(
+          `${code.trim()} is a warehouse label, not a product barcode — the real one is underneath it. Use Scan label instead.`
+        );
+        setHits([]);
+        return;
+      }
+
       // Anything already checked against the packet wins over every database.
       const mine = await getMyFood(code.trim());
       if (mine) {
