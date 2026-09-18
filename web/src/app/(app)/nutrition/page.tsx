@@ -92,6 +92,26 @@ function slotForNow(): MealSlot {
   return "Snacks";
 }
 
+/**
+ * Four bags of Quest chips is one line that says ×4, not four lines.
+ *
+ * Items are grouped on what makes them the same food at the same portion, so
+ * the count can be nudged up and down instead of logging and deleting rows one
+ * at a time. Order follows the first time each food appears.
+ */
+function groupItems(items: MealItem[]) {
+  const key = (m: MealItem) =>
+    [m.name, m.brand ?? "", m.servingLabel, m.calories, m.protein, m.carbs, m.fat].join("|");
+  const groups: { key: string; first: MealItem; ids: string[] }[] = [];
+  for (const m of items) {
+    const k = key(m);
+    const found = groups.find((g) => g.key === k);
+    if (found) found.ids.push(m.id);
+    else groups.push({ key: k, first: m, ids: [m.id] });
+  }
+  return groups;
+}
+
 function stapleToItem(f: FoodHit, slot: MealSlot, stamp: number): MealItem {
   return {
     id: `${stamp}-${f.id}`,
@@ -625,25 +645,56 @@ export default function NutritionPage() {
                     </div>
                     {items.length ? (
                       <div className="mt-2 space-y-1.5">
-                        {items.map((it) => (
-                          <div key={it.id} className="flex items-center gap-2 rounded-md bg-[var(--surface)] py-2 pl-3 pr-1">
-                            <div className="min-w-0 flex-1">
-                              <p className="truncate text-[13.5px] font-semibold">{it.name}</p>
-                              <p className="truncate text-[11.5px] tabular-nums text-[var(--muted)]">
-                                {it.servingLabel ? `${it.servingLabel} · ` : ""}
-                                {roundMacro(it.calories)} cal · {roundMacro(it.protein)}p · {roundMacro(it.carbs)}c · {roundMacro(it.fat)}f
-                              </p>
+                        {groupItems(items).map((g) => {
+                          const it = g.first;
+                          const n = g.ids.length;
+                          return (
+                            <div key={g.key} className="flex items-center gap-2 rounded-md bg-[var(--surface)] py-2 pl-3 pr-1">
+                              <div className="min-w-0 flex-1">
+                                <p className="truncate text-[13.5px] font-semibold">
+                                  {it.name}
+                                  {n > 1 ? (
+                                    <span className="ml-1.5 text-[12px] font-extrabold text-[var(--blue)]">×{n}</span>
+                                  ) : null}
+                                </p>
+                                <p className="truncate text-[11.5px] tabular-nums text-[var(--muted)]">
+                                  {it.servingLabel ? `${n > 1 ? `${n} × ` : ""}${it.servingLabel} · ` : ""}
+                                  {roundMacro(it.calories * n)} cal · {roundMacro(it.protein * n)}p ·{" "}
+                                  {roundMacro(it.carbs * n)}c · {roundMacro(it.fat * n)}f
+                                </p>
+                              </div>
+                              <button
+                                type="button"
+                                aria-label={`One fewer ${it.name}`}
+                                onClick={() => removeItems([g.ids[g.ids.length - 1]])}
+                                className="flex h-10 w-8 shrink-0 items-center justify-center rounded-[4px] text-[15px] font-bold text-[var(--muted)] active:text-[var(--text)]"
+                              >
+                                −
+                              </button>
+                              <button
+                                type="button"
+                                aria-label={`One more ${it.name}`}
+                                onClick={() =>
+                                  addItems(
+                                    [{ ...it, id: `${Date.now()}-${Math.random().toString(36).slice(2, 7)}` }],
+                                    `Added ${it.name} to ${slot}`
+                                  )
+                                }
+                                className="flex h-10 w-8 shrink-0 items-center justify-center rounded-[4px] text-[15px] font-bold text-[var(--blue)] active:text-[var(--text)]"
+                              >
+                                +
+                              </button>
+                              <button
+                                type="button"
+                                aria-label={n > 1 ? `Remove all ${n} ${it.name}` : `Remove ${it.name}`}
+                                onClick={() => removeItems(g.ids)}
+                                className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[4px] text-[var(--muted)] active:text-[var(--text)]"
+                              >
+                                <IconX size={15} />
+                              </button>
                             </div>
-                            <button
-                              type="button"
-                              aria-label={`Remove ${it.name}`}
-                              onClick={() => removeItems([it.id])}
-                              className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[4px] text-[var(--muted)] active:text-[var(--text)]"
-                            >
-                              <IconX size={15} />
-                            </button>
-                          </div>
-                        ))}
+                          );
+                        })}
                       </div>
                     ) : null}
                     <div className="mt-2.5 flex gap-1.5">
