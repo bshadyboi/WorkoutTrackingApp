@@ -6,6 +6,7 @@ import { WaterStepsCards } from "@/components/WaterStepsCards";
 import { FastedBloodPressureCard } from "@/components/FastedBloodPressureCard";
 import { MorningCheckinCard } from "@/components/MorningCheckinCard";
 import { FoodSearchModal, type MealItem } from "@/components/FoodSearchModal";
+import { OrderAdviceSheet } from "@/components/OrderAdviceSheet";
 import { MealBuilderSheet } from "@/components/MealBuilderSheet";
 import { MacroTargetsSheet } from "@/components/MacroTargetsSheet";
 import { NutritionTrend } from "@/components/NutritionTrend";
@@ -121,6 +122,7 @@ export default function NutritionPage() {
   const [deviceOnly, setDeviceOnly] = useState(false);
   const [editingSaved, setEditingSaved] = useState(false);
   const [builder, setBuilder] = useState<{ name: string; slot: MealSlot; items: SavedMealItem[] } | null>(null);
+  const [orderSlot, setOrderSlot] = useState<MealSlot | null>(null);
   const [builderSaving, setBuilderSaving] = useState(false);
   const [builderError, setBuilderError] = useState("");
   const [editingTargets, setEditingTargets] = useState(false);
@@ -621,6 +623,15 @@ export default function NutritionPage() {
                       </button>
                       <button
                         type="button"
+                        aria-label={`What should I order for ${slot}`}
+                        title="Eating out? See what fits"
+                        onClick={() => setOrderSlot(slot)}
+                        className="flex h-10 w-11 items-center justify-center rounded-md bg-[var(--raised)] text-[15px] font-bold text-[var(--blue)]"
+                      >
+                        🍔
+                      </button>
+                      <button
+                        type="button"
                         onClick={() => void copyYesterday(slot)}
                         className="flex h-10 flex-1 items-center justify-center gap-1.5 rounded-md bg-[var(--raised)] text-[12.5px] font-bold text-[var(--muted)]"
                       >
@@ -705,6 +716,20 @@ export default function NutritionPage() {
             ) : null}
           </div>
         </div>
+      ) : null}
+
+      {orderSlot ? (
+        <OrderAdviceSheet
+          slot={orderSlot}
+          remaining={{
+            calories: targets.target_calories - totals.calories,
+            protein: targets.target_protein - totals.protein,
+            carbs: targets.target_carbs - totals.carbs,
+            fat: targets.target_fats - totals.fat,
+          }}
+          onClose={() => setOrderSlot(null)}
+          onLog={(items, label) => addItems(items, label)}
+        />
       ) : null}
 
       {searchSlot ? (
