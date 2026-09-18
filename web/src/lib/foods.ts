@@ -118,6 +118,10 @@ export const RESTAURANT_FOODS: FoodHit[] = [
   { id: "sweet-potato", name: "Sweet Potato", brand: "Generic", calories: 115, protein: 2, carbs: 27, fat: 0, servingLabel: "1 medium", source: "restaurant" },
   { id: "broccoli", name: "Broccoli", brand: "Generic", calories: 55, protein: 4, carbs: 11, fat: 0, servingLabel: "1 cup cooked", source: "restaurant" },
   { id: "fairlife-shake", name: "Core Power Elite Protein Shake", brand: "Fairlife", calories: 230, protein: 42, carbs: 8, fat: 2, servingLabel: "14 fl oz", source: "restaurant" },
+  { id: "fairlife-nutrition-plan", name: "Nutrition Plan 30g Shake", brand: "Fairlife", calories: 150, protein: 30, carbs: 4, fat: 2.5, servingLabel: "11.5 fl oz", source: "restaurant" },
+  { id: "fairlife-core-power", name: "Core Power 26g Protein Shake", brand: "Fairlife", calories: 170, protein: 26, carbs: 9, fat: 4.5, servingLabel: "14 fl oz", source: "restaurant" },
+  { id: "fairlife-milk-2", name: "2% Ultra-Filtered Milk", brand: "Fairlife", calories: 120, protein: 13, carbs: 6, fat: 4.5, servingLabel: "1 cup", source: "restaurant" },
+  { id: "fairlife-milk-skim", name: "Fat-Free Ultra-Filtered Milk", brand: "Fairlife", calories: 80, protein: 13, carbs: 6, fat: 0, servingLabel: "1 cup", source: "restaurant" },
   { id: "premier-shake", name: "Premier Protein Shake", brand: "Premier Protein", calories: 160, protein: 30, carbs: 4, fat: 3, servingLabel: "11 fl oz", source: "restaurant" },
 ];
 
@@ -440,14 +444,81 @@ export async function lookupBarcode(barcode: string): Promise<FoodHit | null> {
 }
 
 /**
+ * Branded products by name from Nutritionix, when keys are configured.
+ *
+ * Their instant search returns calories and nothing else, so each candidate is
+ * looked up by id to get the real macros — a food logged as 0 g protein is
+ * worse than no result at all.
+ */
+async function searchNutritionixFoods(query: string, limit = 5): Promise<FoodHit[]> {
+  const appId = process.env.NUTRITIONIX_APP_ID;
+  const appKey = process.env.NUTRITIONIX_API_KEY;
+  if (!appId || !appKey) return [];
+  const headers = { "x-app-id": appId, "x-app-key": appKey };
+
+  const res = await fetch(
+    `https://trackapi.nutritionix.com/v2/search/instant?query=${encodeURIComponent(query)}&branded=true&common=false`,
+    { headers }
+  );
+  if (!res.ok) return [];
+  const data = await res.json();
+  const ids = ((data?.branded as Record<string, unknown>[]) ?? [])
+    .map((f) => String(f.nix_item_id ?? ""))
+    .filter(Boolean)
+    .slice(0, limit);
+
+  const items = await Promise.all(
+    ids.map(async (id) => {
+      const r = await fetch(
+        `https://trackapi.nutritionix.com/v2/search/item?nix_item_id=${encodeURIComponent(id)}`,
+        { headers }
+      );
+      if (!r.ok) return null;
+      const body = await r.json();
+      return (body?.foods?.[0] as Record<string, unknown>) ?? null;
+    })
+  ).catch(() => []);
+
+  return items
+    .map((f): FoodHit | null => {
+      if (!f) return null;
+      const calories = num(f.nf_calories);
+      const protein = num(f.nf_protein);
+      const carbs = num(f.nf_total_carbohydrate);
+      const fat = num(f.nf_total_fat);
+      if (!calories || protein + carbs + fat <= 0) return null;
+      const qty = Number(f.serving_qty);
+      const unit = String(f.serving_unit ?? "").trim();
+      const grams = Number(f.serving_weight_grams);
+      return {
+        id: `nx-${String(f.nix_item_id ?? Math.random())}`,
+        name: String(f.food_name || "").trim() || "Food",
+        brand: f.brand_name ? String(f.brand_name).trim() : undefined,
+        calories,
+        protein,
+        carbs,
+        fat,
+        suspect: macrosLookIncomplete(calories, protein, carbs, fat),
+        servingLabel: [
+          Number.isFinite(qty) && qty > 0 ? `${qty} ${unit}`.trim() : unit,
+          Number.isFinite(grams) && grams > 0 ? `(${Math.round(grams)} g)` : "",
+        ]
+          .filter(Boolean)
+          .join(" ") || "1 serving",
+        source: "nutritionix",
+        barcode: f.upc ? String(f.upc) : undefined,
+      };
+    })
+    .filter((f): f is FoodHit => f != null);
+}
+
+/**
  * Search every catalogue at once: the lifter's own staples first, then USDA's
  * branded data (deepest for US groceries — Kirkland, Great Value and the rest),
  * then Open Food Facts. Duplicates are dropped on brand + name, so the most
  * trustworthy copy of a product is the one shown.
  *
- * Nutritionix is deliberately absent: its search endpoint returns calories
- * without macros, and a food logged as 0 g protein is worse than no result.
- * It still answers barcodes, where the full numbers come back.
+ * Nutritionix is the fallback for searches the free sources answer thinly.
  */
 export async function searchFoods(query: string): Promise<FoodHit[]> {
   const local = searchLocalFoods(query, 12);
@@ -458,10 +529,16 @@ export async function searchFoods(query: string): Promise<FoodHit[]> {
     searchOpenFoodFacts(query, 12).catch(() => []),
   ]);
 
+  // Nutritionix is asked only when the free sources come up thin — its instant
+  // search has no macros, so each hit needs its own lookup, and the free tier
+  // is worth spending on the searches that actually found nothing.
+  const thin = local.length + usda.length + off.length < 6;
+  const nutritionix = thin ? await searchNutritionixFoods(query, 5).catch(() => []) : [];
+
   const key = (f: FoodHit) => `${f.brand ?? ""}|${f.name}`.toLowerCase().replace(/\s+/g, " ").trim();
   const seen = new Set(local.map(key));
   const merged = [...local];
-  for (const f of [...usda, ...off]) {
+  for (const f of [...usda, ...nutritionix, ...off]) {
     const k = key(f);
     if (seen.has(k)) continue;
     seen.add(k);
