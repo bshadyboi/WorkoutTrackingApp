@@ -211,35 +211,45 @@ export function FoodSearchModal({
     return () => stopScan();
   }, []);
 
+  useEffect(() => {
+    if (!scanning) return;
+    const video = videoRef.current;
+    const stream = streamRef.current;
+    if (!video || !stream) return;
+
+    video.srcObject = stream;
+    // iOS refuses to play without these, and a refusal is silent.
+    video.muted = true;
+    video.playsInline = true;
+    void video.play().catch(() => setError("Tap the video to start the camera."));
+
+    void watchForBarcode(video, () => Boolean(streamRef.current), (code) => {
+      stopScan();
+      void lookupCode(code);
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [scanning]);
+
   function stopScan() {
     streamRef.current?.getTracks().forEach((t) => t.stop());
     streamRef.current = null;
     setScanning(false);
   }
 
+  /**
+   * Open the camera. The stream is held in a ref and attached by the effect
+   * below: setting `scanning` only queues a render, so the <video> element does
+   * not exist yet at this point — attaching here left the preview black.
+   */
   async function startScan() {
     setError("");
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: "environment" },
+      streamRef.current = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: { ideal: "environment" } },
       });
-      streamRef.current = stream;
       setScanning(true);
-      requestAnimationFrame(() => {
-        const video = videoRef.current;
-        if (!video) return;
-        video.srcObject = stream;
-        void video.play();
-
-        // Chrome/Android have a built-in reader; Safari doesn't, so fall back
-        // to decoding frames ourselves instead of asking for typed digits.
-        void watchForBarcode(video, () => Boolean(streamRef.current), (code) => {
-          stopScan();
-          void lookupCode(code);
-        });
-      });
     } catch {
-      setError("Camera blocked — use barcode type-in or photo from camera roll.");
+      setError("Camera blocked — allow camera access, or use Camera / Roll to take a photo.");
       setScanning(false);
     }
   }
@@ -452,20 +462,26 @@ export function FoodSearchModal({
               <div className="grid grid-cols-4 gap-2">
                 {(
                   [
-                    ["Cal", vCal, setVCal],
-                    ["P", vPro, setVPro],
-                    ["C", vCarb, setVCarb],
-                    ["F", vFat, setVFat],
+                    ["Calories", vCal, setVCal],
+                    ["Protein g", vPro, setVPro],
+                    ["Carbs g", vCarb, setVCarb],
+                    ["Fat g", vFat, setVFat],
                   ] as const
                 ).map(([label, value, set]) => (
-                  <input
-                    key={label}
-                    className="field !px-2 !py-2 text-center text-sm"
-                    inputMode="decimal"
-                    placeholder={label}
-                    value={value}
-                    onChange={(e) => set(e.target.value)}
-                  />
+                  <label key={label} className="block">
+                    {/* The placeholder used to be the only label, so a filled
+                        box was four bare numbers with nothing saying which. */}
+                    <span className="mb-1 block text-center text-[10px] font-bold uppercase tracking-wide text-[var(--muted)]">
+                      {label}
+                    </span>
+                    <input
+                      className="field w-full !px-2 !py-2 text-center text-sm"
+                      inputMode="decimal"
+                      aria-label={label}
+                      value={value}
+                      onChange={(e) => set(e.target.value)}
+                    />
+                  </label>
                 ))}
               </div>
               <div className="flex items-center gap-2">
@@ -624,7 +640,14 @@ export function FoodSearchModal({
 
           {scanning ? (
             <div className="space-y-2">
-              <video ref={videoRef} className="w-full rounded-md bg-black" muted playsInline />
+              <video
+                ref={videoRef}
+                className="w-full rounded-md bg-black"
+                autoPlay
+                muted
+                playsInline
+                onClick={() => void videoRef.current?.play()}
+              />
               <p className="text-center text-[11px] text-[var(--muted)]">
                 Point at a barcode. On iPhone, photo/barcode type-in works more reliably.
               </p>
@@ -653,10 +676,27 @@ export function FoodSearchModal({
             <div className="space-y-2 rounded-md border border-[var(--border)] p-3">
               <input className="field !py-2" placeholder="Food name" value={mName} onChange={(e) => setMName(e.target.value)} />
               <div className="grid grid-cols-4 gap-2">
-                <input className="field !px-2 !py-2 text-center text-sm" placeholder="Cal" inputMode="numeric" value={mCal} onChange={(e) => setMCal(e.target.value)} />
-                <input className="field !px-2 !py-2 text-center text-sm" placeholder="P" inputMode="numeric" value={mPro} onChange={(e) => setMPro(e.target.value)} />
-                <input className="field !px-2 !py-2 text-center text-sm" placeholder="C" inputMode="numeric" value={mCarb} onChange={(e) => setMCarb(e.target.value)} />
-                <input className="field !px-2 !py-2 text-center text-sm" placeholder="F" inputMode="numeric" value={mFat} onChange={(e) => setMFat(e.target.value)} />
+                {(
+                  [
+                    ["Calories", mCal, setMCal],
+                    ["Protein g", mPro, setMPro],
+                    ["Carbs g", mCarb, setMCarb],
+                    ["Fat g", mFat, setMFat],
+                  ] as const
+                ).map(([label, value, set]) => (
+                  <label key={label} className="block">
+                    <span className="mb-1 block text-center text-[10px] font-bold uppercase tracking-wide text-[var(--muted)]">
+                      {label}
+                    </span>
+                    <input
+                      className="field w-full !px-2 !py-2 text-center text-sm"
+                      inputMode="decimal"
+                      aria-label={label}
+                      value={value}
+                      onChange={(e) => set(e.target.value)}
+                    />
+                  </label>
+                ))}
               </div>
               <button type="button" className="btn-accent w-full !py-2" onClick={addManual}>
                 Add custom
