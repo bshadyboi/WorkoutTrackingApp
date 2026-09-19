@@ -78,13 +78,37 @@ async function nearbyPlaces(lat: number, lng: number): Promise<Place[]> {
 );
 out center 80;`;
 
-  const res = await fetch("https://overpass-api.de/api/interpreter", {
-    method: "POST",
-    headers: { "Content-Type": "text/plain", "User-Agent": "FitTrack/1.0 (workout tracking)" },
-    body: query,
-  });
-  if (!res.ok) return [];
-  const data = await res.json();
+  // The public Overpass servers are free and frequently busy — a "dispatcher"
+  // error comes back as HTML with a 200, so each mirror is tried in turn until
+  // one actually returns JSON.
+  const mirrors = [
+    "https://overpass-api.de/api/interpreter",
+    "https://overpass.private.coffee/api/interpreter",
+    "https://overpass.kumi.systems/api/interpreter",
+  ];
+
+  let data: { elements?: unknown[] } | null = null;
+  for (const url of mirrors) {
+    try {
+      const res = await fetch(url, {
+        method: "POST",
+        headers: { "Content-Type": "text/plain", "User-Agent": "FitTrack/1.0 (workout tracking)" },
+        body: query,
+        signal: AbortSignal.timeout(12_000),
+      });
+      if (!res.ok) continue;
+      const text = await res.text();
+      if (!text.trim().startsWith("{")) continue;
+      const parsed = JSON.parse(text) as { elements?: unknown[] };
+      if (Array.isArray(parsed.elements)) {
+        data = parsed;
+        break;
+      }
+    } catch {
+      /* try the next mirror */
+    }
+  }
+  if (!data) return [];
 
   const seen = new Set<string>();
   const places: Place[] = [];
