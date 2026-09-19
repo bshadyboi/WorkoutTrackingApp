@@ -10,6 +10,9 @@ import type { MealItem } from "@/components/FoodSearchModal";
 
 type Pick = {
   title: string;
+  /** Set when the pick came from a location search. */
+  place?: string;
+  distance_mi?: number;
   items: {
     name: string;
     serving_label: string;
@@ -55,8 +58,53 @@ export function OrderAdviceSheet({
 }) {
   const [place, setPlace] = useState("");
   const [busy, setBusy] = useState(false);
+  const [locating, setLocating] = useState(false);
   const [error, setError] = useState("");
   const [advice, setAdvice] = useState<Advice | null>(null);
+
+  /**
+   * Ask what's nearby. The phone's coordinates go to the server, which finds
+   * the restaurants around them — Claude never sees the location itself, only
+   * the list of places that came back.
+   */
+  async function askNearby() {
+    if (locating || busy) return;
+    if (typeof navigator === "undefined" || !navigator.geolocation) {
+      setError("This device won't share a location — type the place instead.");
+      return;
+    }
+    setLocating(true);
+    setError("");
+    setAdvice(null);
+
+    navigator.geolocation.getCurrentPosition(
+      async (pos) => {
+        try {
+          const res = await fetch("/api/foods/nearby", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              lat: pos.coords.latitude,
+              lng: pos.coords.longitude,
+              remaining,
+            }),
+          });
+          const data = await res.json().catch(() => ({}));
+          if (!res.ok) throw new Error(data?.error || "Could not work that out");
+          setAdvice(data as Advice);
+        } catch (err) {
+          setError(err instanceof Error ? err.message : "Could not work that out");
+        } finally {
+          setLocating(false);
+        }
+      },
+      () => {
+        setLocating(false);
+        setError("Location permission denied — type the place instead.");
+      },
+      { enableHighAccuracy: false, timeout: 15_000, maximumAge: 120_000 }
+    );
+  }
 
   async function ask() {
     const restaurant = place.trim();
@@ -87,7 +135,7 @@ export function OrderAdviceSheet({
         id: `${stamp}-${n}-order`,
         meal: slot,
         name: i.name,
-        brand: place.trim() || undefined,
+        brand: p.place || place.trim() || undefined,
         calories: Math.round(i.calories),
         protein: Math.round(i.protein),
         carbs: Math.round(i.carbs),
@@ -143,6 +191,15 @@ export function OrderAdviceSheet({
             </button>
           </div>
 
+          <button
+            type="button"
+            className="w-full rounded-md border border-dashed border-[var(--border-solid)] py-2.5 text-[12.5px] font-bold text-[var(--blue)] disabled:opacity-50"
+            disabled={locating || busy}
+            onClick={() => void askNearby()}
+          >
+            {locating ? "Finding what's around you…" : "📍 What's near me?"}
+          </button>
+
           {error ? <p className="text-sm text-[var(--yellow)]">{error}</p> : null}
 
           {advice?.picks.length === 0 ? (
@@ -160,7 +217,15 @@ export function OrderAdviceSheet({
                 className="space-y-2 rounded-md border border-[var(--border-solid)] bg-[var(--surface)] p-3"
               >
                 <div className="flex items-start justify-between gap-2">
-                  <p className="min-w-0 text-[14.5px] font-bold">{p.title}</p>
+                  <div className="min-w-0">
+                    {p.place ? (
+                      <p className="truncate text-[12px] font-bold text-[var(--blue)]">
+                        {p.place}
+                        {typeof p.distance_mi === "number" ? ` · ${p.distance_mi} mi` : ""}
+                      </p>
+                    ) : null}
+                    <p className="min-w-0 text-[14.5px] font-bold">{p.title}</p>
+                  </div>
                   <span
                     className="shrink-0 rounded-[3px] px-1.5 py-0.5 text-[10px] font-extrabold uppercase tracking-wide"
                     style={{ color: v.color, background: `color-mix(in srgb, ${v.color} 16%, transparent)` }}
