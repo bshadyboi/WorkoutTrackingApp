@@ -63,6 +63,57 @@ import {
 import type { BestSet } from "@/lib/wins";
 import type { ParsedNote } from "@/lib/sessionNotes";
 
+/**
+ * The rest countdown drawn as a clock face: a ring that empties as the seconds
+ * run down. Same countdown as the digits beside it — anchored to a real end
+ * time — just readable at arm's length when the phone is on the bench.
+ */
+function RestRing({
+  left,
+  total,
+  size,
+  stroke,
+  children,
+}: {
+  left: number;
+  total: number;
+  size: number;
+  stroke: number;
+  children?: React.ReactNode;
+}) {
+  const r = (size - stroke) / 2;
+  const circumference = 2 * Math.PI * r;
+  const fraction = total > 0 ? Math.max(0, Math.min(1, left / total)) : 0;
+
+  return (
+    <div className="relative shrink-0" style={{ width: size, height: size }}>
+      <svg width={size} height={size} className="-rotate-90">
+        <circle
+          cx={size / 2}
+          cy={size / 2}
+          r={r}
+          fill="none"
+          stroke="var(--border-solid)"
+          strokeWidth={stroke}
+        />
+        <circle
+          cx={size / 2}
+          cy={size / 2}
+          r={r}
+          fill="none"
+          stroke="var(--green)"
+          strokeWidth={stroke}
+          strokeLinecap="round"
+          strokeDasharray={circumference}
+          strokeDashoffset={circumference * (1 - fraction)}
+          style={{ transition: "stroke-dashoffset 250ms linear" }}
+        />
+      </svg>
+      <div className="absolute inset-0 flex flex-col items-center justify-center">{children}</div>
+    </div>
+  );
+}
+
 function setScore(weight: number, reps: number) {
   return weight * 1000 + reps;
 }
@@ -198,6 +249,7 @@ export function WorkoutLogger({
     endsAt: number;
   } | null>(null);
   const [restTick, setRestTick] = useState(0);
+  const [restFullScreen, setRestFullScreen] = useState(false);
   const [restEditExerciseId, setRestEditExerciseId] = useState<string | null>(null);
   const [ratingSessionId, setRatingSessionId] = useState<string | null>(null);
   const [ratingSaving, setRatingSaving] = useState(false);
@@ -434,6 +486,28 @@ export function WorkoutLogger({
   }, [activeRest?.endsAt, activeRest?.exerciseId]);
 
   const activeRestLeft = activeRest ? restSecondsLeft(activeRest.endsAt) : 0;
+  /** What the countdown started from, so the ring knows how full to be. */
+  const activeRestTotal = (() => {
+    if (!activeRest) return 0;
+    const ex = sorted.find((e) => e.id === activeRest.exerciseId);
+    const base = restByExercise[activeRest.exerciseId];
+    if (base) return base;
+    return ex ? defaultRestSeconds(ex, activeRest.afterSet) : 180;
+  })();
+
+  function restLabel() {
+    if (!activeRest) return "Rest";
+    const ex = sorted.find((e) => e.id === activeRest.exerciseId);
+    if (!ex) return "Rest";
+    const setsLen = setsByExercise[ex.id]?.length ?? 1;
+    const isLast = activeRest.afterSet >= setsLen - 1;
+    const exIdx = sorted.findIndex((e) => e.id === ex.id);
+    const nextEx = isLast && exIdx >= 0 ? sorted[exIdx + 1] : null;
+    if (isLast) {
+      return nextEx ? `Up next · ${displayName(nextEx)}` : `${displayName(ex)} complete`;
+    }
+    return `Next set · ${displayName(ex)}`;
+  }
   void restTick; // re-render tick
 
   function displayName(ex: Exercise) {
@@ -443,6 +517,7 @@ export function WorkoutLogger({
   function clearActiveRest() {
     cancelRestAlert();
     setActiveRest(null);
+    setRestFullScreen(false);
   }
 
   async function startRest(ex: Exercise, setIndex: number, seconds: number) {
@@ -2076,6 +2151,54 @@ export function WorkoutLogger({
         </div>
       ) : null}
 
+      {activeRest && activeRestLeft > 0 && restFullScreen ? (
+        <div
+          className="fixed inset-0 z-[70] flex flex-col items-center justify-center bg-[var(--bg)] px-6"
+          role="dialog"
+          aria-label="Rest clock"
+          onClick={() => setRestFullScreen(false)}
+        >
+          <RestRing left={activeRestLeft} total={activeRestTotal} size={280} stroke={12}>
+            <p className="font-mono text-[64px] font-extrabold leading-none tabular-nums text-[var(--green)]">
+              {formatRest(activeRestLeft)}
+            </p>
+            <p className="mt-1 text-[12px] font-bold uppercase tracking-wide text-[var(--muted)]">
+              Rest
+            </p>
+          </RestRing>
+
+          <p className="mt-7 max-w-[300px] text-center text-[15px] font-semibold text-[var(--text)]">
+            {restLabel()}
+          </p>
+
+          <div className="mt-7 flex gap-2.5" onClick={(e) => e.stopPropagation()}>
+            <button
+              type="button"
+              className="rounded-full bg-[var(--card-2)] px-5 py-3 text-sm font-bold text-[var(--text)]"
+              onClick={() => bumpRest(activeRest.exerciseId, -15)}
+            >
+              −15s
+            </button>
+            <button
+              type="button"
+              className="rounded-full bg-[var(--card-2)] px-5 py-3 text-sm font-bold text-[var(--text)]"
+              onClick={() => bumpRest(activeRest.exerciseId, 30)}
+            >
+              +30s
+            </button>
+            <button
+              type="button"
+              className="rounded-full bg-[var(--accent)] px-5 py-3 text-sm font-extrabold text-[var(--on-accent)]"
+              onClick={clearActiveRest}
+            >
+              Skip
+            </button>
+          </div>
+
+          <p className="mt-8 text-[12px] text-[var(--dim)]">Tap anywhere to go back to your sets</p>
+        </div>
+      ) : null}
+
       {activeRest && activeRestLeft > 0 ? (
         <div
           className="fixed inset-x-0 bottom-0 z-40 border-t border-[var(--border)] bg-[var(--surface)]/95 px-4 pt-3 backdrop-blur"
@@ -2083,36 +2206,29 @@ export function WorkoutLogger({
         >
           <div className="mx-auto max-w-lg space-y-2.5">
             <div className="flex items-center gap-3">
-              <div className="min-w-0 flex-1">
+              <button
+                type="button"
+                className="flex min-w-0 flex-1 items-center gap-3 text-left"
+                aria-label="Open the rest clock"
+                onClick={() => setRestFullScreen(true)}
+              >
+                <RestRing left={activeRestLeft} total={activeRestTotal} size={46} stroke={4} />
+                <span className="min-w-0 flex-1">
                 <p className="text-[11px] font-bold uppercase tracking-wide text-[var(--muted)]">
-                  Rest timer
+                  Rest timer · tap for clock
                 </p>
                 <p className="font-mono text-3xl font-bold tabular-nums text-[var(--green)]">
                   {formatRest(activeRestLeft)}
                 </p>
-                <p className="truncate text-xs text-[var(--muted)]">
-                  {(() => {
-                    const ex = sorted.find((e) => e.id === activeRest.exerciseId);
-                    if (!ex) return "Rest";
-                    const setsLen = setsByExercise[ex.id]?.length ?? 1;
-                    const isLast = activeRest.afterSet >= setsLen - 1;
-                    const exIdx = sorted.findIndex((e) => e.id === ex.id);
-                    const nextEx = isLast && exIdx >= 0 ? sorted[exIdx + 1] : null;
-                    if (isLast) {
-                      return nextEx
-                        ? `Up next · ${displayName(nextEx)}`
-                        : `${displayName(ex)} complete`;
-                    }
-                    return `Next set · ${displayName(ex)}`;
-                  })()}
-                </p>
+                <p className="truncate text-xs text-[var(--muted)]">{restLabel()}</p>
                 {typeof Notification !== "undefined" &&
                 Notification.permission !== "granted" ? (
                   <p className="mt-0.5 text-[10px] text-[var(--yellow)]">
                     Allow notifications for alerts when the app is locked
                   </p>
                 ) : null}
-              </div>
+                </span>
+              </button>
               <button
                 type="button"
                 className="rounded-full bg-[var(--raised)] px-3 py-2 text-xs font-bold"
