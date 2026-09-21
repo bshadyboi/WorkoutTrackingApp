@@ -13,6 +13,11 @@ import { UPPER_PREHAB } from "@/lib/derrickRecomp";
  * programs in the library. Exercise names deliberately match the shared
  * catalogue where the movement is the same, because set history, form videos
  * and swap suggestions are all keyed by exercise name.
+ *
+ * Two movements are run one arm at a time rather than as the sheet writes them
+ * — the pulldown and the lateral raise — so the left side works on its own and
+ * the right cannot quietly take over. The names chosen are the ones already
+ * carrying logged sets, so the first NT session opens on real numbers.
  */
 
 function work(
@@ -63,8 +68,8 @@ const UPPER_WORK: WorkoutTemplate["exercises"] = [
   ),
   work("Pec Deck", "Chest", 2, "10–12"),
   work("T-Bar Row", "Back", 2, "8–12"),
-  work("Lat Pulldown", "Lats", 2, "10–12"),
-  work("Machine Lateral Raise", "Side Delts", 2, "12–15", "One arm at a time when the machine allows"),
+  work("Single-Arm Pulldown", "Lats", 2, "10–12", "Left: start from head height, not fully overhead"),
+  work("One-Arm Cable Lateral Raise", "Side Delts", 2, "12–15", "Per side · keep the left light and controlled"),
   work("Rear Delt Fly", "Rear Delts", 2, "12–15"),
   work("Single Arm Tricep Pushdown", "Triceps", 2, "10–12", "Per arm"),
   work("Preacher Curl", "Biceps", 2, "10–12"),
