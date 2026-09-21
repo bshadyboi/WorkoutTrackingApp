@@ -53,12 +53,18 @@ const STAIRMASTER = work(
   "Cardio",
   1,
   "25 min",
-  "Level 6 · warm-up, not a finisher"
+  "Level 6 · after the lifting"
 );
 
-/** Upper A, B and C are the same session. */
+/**
+ * Upper A, B and C are the same session.
+ *
+ * The stairmaster closes the day rather than opening it: the sheet only pins it
+ * to upper days and never calls it a warm-up, and 25 minutes of stairs before
+ * two working sets of everything would spend the legs and lungs on the part
+ * that isn't the point. The cuff prehab is the actual warm-up.
+ */
 const UPPER_WORK: WorkoutTemplate["exercises"] = [
-  STAIRMASTER,
   work(
     "Incline Chest Press",
     "Upper Chest",
@@ -73,6 +79,7 @@ const UPPER_WORK: WorkoutTemplate["exercises"] = [
   work("Rear Delt Fly", "Rear Delts", 2, "12–15"),
   work("Single Arm Tricep Pushdown", "Triceps", 2, "10–12", "Per arm"),
   work("Preacher Curl", "Biceps", 2, "10–12"),
+  STAIRMASTER,
 ];
 
 /** Lower A and B are the same session. */
