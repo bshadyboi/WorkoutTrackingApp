@@ -35,6 +35,7 @@ import {
   type LiftPoint,
   type LiftSeries,
 } from "@/lib/liftProgress";
+import { MuscleMapCard } from "@/components/MuscleMapCard";
 import {
   flagNotes,
   parseSessionNotes,
@@ -1107,6 +1108,7 @@ function ProgressionTab({ history }: { history: Hist[] }) {
   const [series, setSeries] = useState<LiftSeries[] | null>(null);
   const [sides, setSides] = useState<SideSeries[]>([]);
   const [flagged, setFlagged] = useState<FlaggedNote[]>([]);
+  const [weekMuscles, setWeekMuscles] = useState<Record<string, number>>({});
   const [loadError, setLoadError] = useState("");
 
   // Set-level rows are only needed on this tab, so they load on demand rather
@@ -1140,7 +1142,7 @@ function ProgressionTab({ history }: { history: Hist[] }) {
 
       const base = supabase
         .from("workout_sessions")
-        .select("started_at, set_logs(exercise_name, weight, reps, is_completed, is_warmup, side)")
+        .select("started_at, set_logs(exercise_name, muscle, weight, reps, is_completed, is_warmup, side)")
         .eq("user_id", user.id)
         .not("ended_at", "is", null)
         .order("started_at", { ascending: false })
@@ -1154,6 +1156,7 @@ function ProgressionTab({ history }: { history: Hist[] }) {
         set_logs:
           | {
               exercise_name: string;
+              muscle?: string | null;
               weight: number;
               reps: number;
               is_completed: boolean;
@@ -1167,7 +1170,7 @@ function ProgressionTab({ history }: { history: Hist[] }) {
       if (error && /side/i.test(error.message)) {
         ({ data, error } = (await supabase
           .from("workout_sessions")
-          .select("started_at, set_logs(exercise_name, weight, reps, is_completed, is_warmup)")
+          .select("started_at, set_logs(exercise_name, muscle, weight, reps, is_completed, is_warmup)")
           .eq("user_id", user.id)
           .not("ended_at", "is", null)
           .order("started_at", { ascending: false })
@@ -1182,6 +1185,22 @@ function ProgressionTab({ history }: { history: Hist[] }) {
       }
       setSeries(buildLiftSeries(data ?? [], 10));
       setSides(buildSideBalance(data ?? []));
+
+      // Working sets per muscle over the last week. A one-sided lift logs a row
+      // per arm, so the right-hand row is skipped rather than counted twice.
+      const weekAgo = Date.now() - 7 * 86400000;
+      const counts: Record<string, number> = {};
+      for (const session of data ?? []) {
+        if (new Date(session.started_at).getTime() < weekAgo) continue;
+        for (const log of session.set_logs ?? []) {
+          if (!log.is_completed || log.is_warmup) continue;
+          if (log.side === "R") continue;
+          const muscle = (log.muscle ?? "").trim();
+          if (!muscle || muscle === "Cardio") continue;
+          counts[muscle] = (counts[muscle] ?? 0) + 1;
+        }
+      }
+      setWeekMuscles(counts);
     })();
     return () => {
       cancelled = true;
@@ -1276,6 +1295,8 @@ function ProgressionTab({ history }: { history: Hist[] }) {
           </div>
         </section>
       ) : null}
+
+      <MuscleMapCard setsByMuscle={weekMuscles} />
 
       {sides.length ? (
         <section className="space-y-2.5">
