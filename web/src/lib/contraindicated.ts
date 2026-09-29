@@ -16,7 +16,13 @@ export type Restriction = { pattern: RegExp; reason: string };
 
 export const SHOULDER_SMART_RESTRICTIONS: Restriction[] = [
   { pattern: /\bbarbell bench\b|\bbench press(es)?\b(?!.*\bfloor\b)/i, reason: "barbell bench is off the plan" },
-  { pattern: /wide[\s-]?grip/i, reason: "wide grip is off the plan" },
+  // Overhead wide-grip work only: the plan bans the wide pulldown because of
+  // where it puts the shoulder, not the grip itself. A wide-grip seated row is
+  // horizontal and stays off this list.
+  {
+    pattern: /wide[\s-]?grip.*(pulldown|pull[\s-]?up|chin|press)|(pulldown|pull[\s-]?up|chin|press).*wide[\s-]?grip/i,
+    reason: "wide-grip overhead work is off the plan",
+  },
   { pattern: /behind[\s-]the[\s-]neck/i, reason: "behind-the-neck work is off the plan" },
   { pattern: /\bdips?\b|dip machine/i, reason: "dips are off the plan" },
   { pattern: /upright rows?/i, reason: "upright rows are off the plan" },

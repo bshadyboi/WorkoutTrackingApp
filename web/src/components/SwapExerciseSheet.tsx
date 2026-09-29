@@ -1,7 +1,9 @@
 "use client";
 
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { scanMachine, verdictFor, type ScanResult } from "@/lib/scanMachine";
+import { getMyExercises, type MyExercise } from "@/lib/myExercises";
+import { restrictionFor } from "@/lib/contraindicated";
 import {
   getSwapRecommendations,
   searchExerciseCatalog,
@@ -122,6 +124,18 @@ export function SwapExerciseSheet({
   const [scanning, setScanning] = useState(false);
   const [scan, setScan] = useState<ScanResult | null>(null);
   const [scanError, setScanError] = useState("");
+  /** Movements this lifter has logged before, catalogued or not. */
+  const [mine, setMine] = useState<MyExercise[]>([]);
+
+  useEffect(() => {
+    let cancelled = false;
+    void getMyExercises().then((list) => {
+      if (!cancelled) setMine(list);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   async function runScan(file: File) {
     setScanning(true);
@@ -147,6 +161,15 @@ export function SwapExerciseSheet({
   );
 
   const searching = query.trim().length >= 2;
+
+  const myMatches = useMemo(() => {
+    const current = currentName.trim().toLowerCase();
+    const q = query.trim().toLowerCase();
+    return mine
+      .filter((m) => m.name.toLowerCase() !== current)
+      .filter((m) => (searching ? m.name.toLowerCase().includes(q) : true))
+      .slice(0, searching ? 8 : 6);
+  }, [mine, currentName, query, searching]);
   const recommendations = library.filter((s) => s.recommended);
   const similar = library.filter((s) => s.similar && !s.recommended);
   const list = searching ? searchHits : null;
@@ -208,6 +231,45 @@ export function SwapExerciseSheet({
       </div>
 
       <div className="min-h-0 flex-1 overflow-y-auto px-2 pb-28 pt-2">
+        {myMatches.length ? (
+          <section className="mb-4">
+            <p className="px-2 pb-1 text-[11px] font-bold uppercase tracking-wide text-[var(--muted)]">
+              Your exercises
+            </p>
+            {myMatches.map((m) => {
+              const banned = restrictionFor(m.name);
+              return (
+                <div
+                  key={m.name}
+                  className={`flex items-center gap-3 rounded-md px-2 py-2 ${
+                    chosen === m.name ? "bg-white/8" : ""
+                  }`}
+                >
+                  <button
+                    type="button"
+                    className="min-w-0 flex-1 text-left"
+                    onClick={() => setSelected(m.name)}
+                  >
+                    <p className="truncate text-sm font-bold text-[var(--text)]">{m.name}</p>
+                    <p className="truncate text-[11px] text-[var(--muted)]">
+                      {m.sets} {m.sets === 1 ? "set" : "sets"} logged
+                      {banned ? ` · ${banned}` : ""}
+                    </p>
+                  </button>
+                  <button
+                    type="button"
+                    aria-label={`Swap to ${m.name}`}
+                    className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[var(--raised)] text-[var(--muted)]"
+                    onClick={() => onSwapHere(m.name)}
+                  >
+                    ⇅
+                  </button>
+                </div>
+              );
+            })}
+          </section>
+        ) : null}
+
         {scan ? (
           <section className="mb-4 rounded-md border border-[var(--border-solid)] bg-[var(--card)] p-3">
             <div className="flex items-start justify-between gap-3">

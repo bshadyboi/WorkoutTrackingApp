@@ -75,8 +75,10 @@ const UPPER_WORK: WorkoutTemplate["exercises"] = [
   work("Pec Deck", "Chest", 2, "10–12"),
   work("T-Bar Row", "Back", 2, "8–12"),
   work("Single-Arm Pulldown", "Lats", 2, "10–12", "Left: start from head height, not fully overhead"),
-  work("One-Arm Cable Lateral Raise", "Side Delts", 2, "12–15", "Per side · keep the left light and controlled"),
-  work("Rear Delt Fly", "Rear Delts", 2, "12–15"),
+  // Side and rear delts are the width muscles and the only ones trained
+  // directly by a single movement here, so the extra sets go where the goal is.
+  work("One-Arm Cable Lateral Raise", "Side Delts", 4, "12–15", "Per side · keep the left light and controlled"),
+  work("Rear Delt Fly", "Rear Delts", 3, "12–15"),
   work("Single Arm Tricep Pushdown", "Triceps", 2, "10–12", "Per arm"),
   work("Preacher Curl", "Biceps", 2, "10–12"),
   STAIRMASTER,

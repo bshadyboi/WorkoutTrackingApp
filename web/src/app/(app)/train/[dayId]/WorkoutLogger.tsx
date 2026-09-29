@@ -24,6 +24,7 @@ import { isUnilateral, rightSideKey } from "@/lib/unilateral";
 import { leftArmNote, leftShoulderLimited } from "@/lib/shoulderLimits";
 import { parseRepRange, suggestOverload } from "@/lib/overload";
 import { renameExerciseEverywhere } from "@/lib/exerciseRename";
+import { forgetMyExercises } from "@/lib/myExercises";
 import {
   isOfflineError,
   queuePendingSession,
@@ -1104,6 +1105,9 @@ export function WorkoutLogger({
 
       clearDraft(dayId, logDate);
       clearActiveRest();
+      // Anything typed in by hand this session is now a movement the swap list
+      // should offer next time.
+      forgetMyExercises();
       setSaving(false);
       sessionStorage.removeItem("ft-tab:train");
       sessionStorage.removeItem("ft-tab:dashboard");
