@@ -5,9 +5,7 @@ import { useEffect, useRef, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { dateKey } from "@/lib/protocol";
 import { DailyWeightCard, type WeightPoint } from "@/components/WeeklyWeightCard";
-import { FastedBloodPressureCard, type BpReadings } from "@/components/FastedBloodPressureCard";
 import type { CheckinValues } from "@/components/MorningCheckinCard";
-import { BpWeightTrendCard } from "@/components/BpWeightTrendCard";
 import { WaterStepsCards } from "@/components/WaterStepsCards";
 import { RecompCheckinCard } from "@/components/RecompCheckinCard";
 import { KeyLiftsCard } from "@/components/KeyLiftsCard";
@@ -43,7 +41,6 @@ type DashCache = {
   steps: number;
   todayWeight: number;
   weightHistory: WeightPoint[];
-  bp: BpReadings;
   checkin: CheckinValues;
   sessionCount: number;
   protein: number;
@@ -203,12 +200,6 @@ export default function DashboardPage() {
         .filter((p) => p.weight > 0)
         .reverse();
 
-      const bp: BpReadings = {
-        bp1_systolic: Number(todayLog?.bp1_systolic) || 0,
-        bp1_diastolic: Number(todayLog?.bp1_diastolic) || 0,
-        bp2_systolic: Number(todayLog?.bp2_systolic) || 0,
-        bp2_diastolic: Number(todayLog?.bp2_diastolic) || 0,
-      };
 
       const checkin: CheckinValues = {
         checkin_sleep: Number(todayLog?.checkin_sleep) || 0,
@@ -230,7 +221,6 @@ export default function DashboardPage() {
         steps: Number(todayLog?.steps_count) || 0,
         todayWeight: Number(todayLog?.morning_weight) || 0,
         weightHistory,
-        bp,
         checkin,
         sessionCount,
         protein: Number(todayLog?.actual_protein) || 0,
@@ -312,15 +302,6 @@ export default function DashboardPage() {
         history={data.weightHistory ?? []}
         targets={data.targets ?? DEFAULT_TARGETS}
       />
-
-      <FastedBloodPressureCard
-        key={`bp-${data.todayStr}-${data.bp?.bp1_systolic ?? 0}-${data.bp?.bp2_systolic ?? 0}`}
-        date={data.todayStr}
-        initial={data.bp}
-        targets={data.targets ?? DEFAULT_TARGETS}
-      />
-
-      <BpWeightTrendCard />
 
       <LiftProgressCard />
 

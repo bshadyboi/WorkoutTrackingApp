@@ -3,7 +3,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { WaterStepsCards } from "@/components/WaterStepsCards";
-import { FastedBloodPressureCard } from "@/components/FastedBloodPressureCard";
 import { MorningCheckinCard } from "@/components/MorningCheckinCard";
 import { FoodSearchModal, type MealItem } from "@/components/FoodSearchModal";
 import { OrderAdviceSheet } from "@/components/OrderAdviceSheet";
@@ -927,18 +926,6 @@ export default function NutritionPage() {
               key={`checkin-${selected}-${log.checkin_sleep}-${log.checkin_energy}-${log.checkin_pump}`}
               date={selected}
               initial={{ checkin_sleep: log.checkin_sleep, checkin_energy: log.checkin_energy, checkin_pump: log.checkin_pump }}
-              targets={targets}
-            />
-            <FastedBloodPressureCard
-              key={`bp-${selected}-${log.bp1_systolic}-${log.bp2_systolic}`}
-              date={selected}
-              initial={{
-                bp1_systolic: log.bp1_systolic,
-                bp1_diastolic: log.bp1_diastolic,
-                bp2_systolic: log.bp2_systolic,
-                bp2_diastolic: log.bp2_diastolic,
-                bp_logged_at: log.bp_logged_at,
-              }}
               targets={targets}
             />
           </section>
