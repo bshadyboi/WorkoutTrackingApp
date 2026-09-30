@@ -917,7 +917,10 @@ export function WorkoutLogger({
               reps: Number(side === "L" ? set.reps : set.repsR) || 0,
               is_completed: true,
               is_warmup: false,
-              rir: typeof set.rir === "number" ? set.rir : null,
+              rir: (() => {
+                const answer = side === "R" ? set.rirR : set.rir;
+                return typeof answer === "number" ? answer : null;
+              })(),
               side,
             });
           }
@@ -1763,36 +1766,49 @@ export function WorkoutLogger({
                               Left in tank
                               <Explain term="rir" />
                             </span>
-                            <div className="flex gap-1">
-                              {[0, 1, 2, 3].map((n) => {
-                                const on = set.rir === n;
-                                return (
-                                  <button
-                                    key={n}
-                                    type="button"
-                                    aria-pressed={on}
-                                    onClick={() => {
-                                      updateSet(ex.id, i, { rir: on ? undefined : n });
-                                      if (!rirExplained) {
-                                        setRirExplained(true);
-                                        try {
-                                          localStorage.setItem("ft-rir-explained", "1");
-                                        } catch {
-                                          /* ignore */
+                            {/* One arm at a time is two different sets: the left
+                                can be at failure while the right has three left,
+                                and that gap is the thing being tracked. */}
+                            {(sided ? (["L", "R"] as const) : ([null] as const)).map((arm) => (
+                              <div key={arm ?? "both"} className="flex items-center gap-1">
+                                {arm ? (
+                                  <span className="w-3 font-mono text-[11px] font-bold text-[var(--dim)]">
+                                    {arm}
+                                  </span>
+                                ) : null}
+                                {[0, 1, 2, 3].map((n) => {
+                                  const current = arm === "R" ? set.rirR : set.rir;
+                                  const on = current === n;
+                                  return (
+                                    <button
+                                      key={n}
+                                      type="button"
+                                      aria-label={`${arm === "R" ? "Right" : arm === "L" ? "Left" : ""} ${n === 3 ? "3 or more" : n} reps left`}
+                                      aria-pressed={on}
+                                      onClick={() => {
+                                        const value = on ? undefined : n;
+                                        updateSet(ex.id, i, arm === "R" ? { rirR: value } : { rir: value });
+                                        if (!rirExplained) {
+                                          setRirExplained(true);
+                                          try {
+                                            localStorage.setItem("ft-rir-explained", "1");
+                                          } catch {
+                                            /* ignore */
+                                          }
                                         }
-                                      }
-                                    }}
-                                    className={`h-9 min-w-[40px] rounded-[4px] px-2 text-[13px] font-bold tabular-nums ${
-                                      on
-                                        ? "bg-[var(--blue)] text-[var(--on-blue)]"
-                                        : "bg-[var(--raised)] text-[var(--muted)]"
-                                    }`}
-                                  >
-                                    {n === 3 ? "3+" : n}
-                                  </button>
-                                );
-                              })}
-                            </div>
+                                      }}
+                                      className={`h-9 min-w-[40px] rounded-[4px] px-2 text-[13px] font-bold tabular-nums ${
+                                        on
+                                          ? "bg-[var(--blue)] text-[var(--on-blue)]"
+                                          : "bg-[var(--raised)] text-[var(--muted)]"
+                                      }`}
+                                    >
+                                      {n === 3 ? "3+" : n}
+                                    </button>
+                                  );
+                                })}
+                              </div>
+                            ))}
                             {typeof set.rir === "number" && rirTarget != null && !ntDay && set.rir < rirTarget - 1 ? (
                               <span className="basis-full text-[11.5px] text-[var(--yellow)]">
                                 Plan wants about {rirTarget} left this week — that set was close to failure.
