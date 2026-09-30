@@ -25,6 +25,7 @@ import { leftArmNote, leftShoulderLimited } from "@/lib/shoulderLimits";
 import { parseRepRange, suggestOverload } from "@/lib/overload";
 import { renameExerciseEverywhere } from "@/lib/exerciseRename";
 import { forgetMyExercises } from "@/lib/myExercises";
+import { exercisePhoto } from "@/lib/exercisePhotos";
 import {
   isOfflineError,
   queuePendingSession,
@@ -1396,6 +1397,7 @@ export function WorkoutLogger({
           const sets = setsByExercise[ex.id] ?? [];
           const name = displayName(ex);
           const cat = catalogEntry(name) ?? catalogEntry(ex.name);
+          const photo = exercisePhoto(name) ?? exercisePhoto(ex.name);
           const isCardio = ex.muscle === "Cardio";
           const showPlates = !isCardio && isBarbellLoadable(name);
           // Sets × reps is drawn as a dimension line; the prescription text
@@ -1422,7 +1424,17 @@ export function WorkoutLogger({
               className="space-y-3 rounded-md border border-[var(--border-solid)] bg-[var(--card)] p-4"
             >
               <div className="flex items-start justify-between gap-2.5">
-                <div className="min-w-0">
+                <div className="flex min-w-0 gap-3">
+                  {photo ? (
+                    /* eslint-disable-next-line @next/next/no-img-element */
+                    <img
+                      src={photo}
+                      alt=""
+                      loading="lazy"
+                      className="h-[52px] w-[52px] shrink-0 rounded-[4px] border border-[var(--border)] object-cover"
+                    />
+                  ) : null}
+                  <div className="min-w-0">
                   <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
                     <h2 className="text-[17px] font-bold leading-snug">{name}</h2>
                     <span className="rounded-[4px] bg-[var(--card-2)] px-2 py-0.5 text-[11px] font-bold text-[var(--muted)]">
@@ -1465,6 +1477,7 @@ export function WorkoutLogger({
                   {cat?.notes ? (
                     <p className="mt-1 text-[12px] text-[var(--yellow)]">{cat.notes}</p>
                   ) : null}
+                  </div>
                 </div>
                 <div className="flex shrink-0 gap-1.5">
                   <a
