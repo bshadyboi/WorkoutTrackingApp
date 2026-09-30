@@ -102,7 +102,9 @@ export function MuscleMapCard({
         </div>
 
         <div className="mt-3 space-y-1">
-          {ranked.slice(0, 6).map(([muscle, count]) => (
+          {/* Every muscle trained, not a top six — the point of the card is
+              seeing what got little as much as what got a lot. */}
+          {ranked.map(([muscle, count]) => (
             <div key={muscle} className="flex items-center gap-2.5">
               <span className="w-[92px] shrink-0 truncate text-[12px] text-[var(--muted)]">
                 {muscle}
