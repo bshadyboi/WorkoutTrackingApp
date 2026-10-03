@@ -381,6 +381,42 @@ export default function NutritionPage() {
     addItems(toLogItems(meal), `Logged ${meal.name} to ${meal.meal}`);
   }
 
+  /**
+   * The whole of yesterday, in one tap.
+   *
+   * Days repeat: the same oats, the same beef and rice, the same two shakes.
+   * Logging that food by hand is fifteen taps, which is why the food log goes
+   * quiet while the training log never does.
+   */
+  async function repeatYesterday() {
+    const d = parseKey(selected);
+    d.setDate(d.getDate() - 1);
+    const {
+      data: { session },
+    } = await supabaseRef.current.auth.getSession();
+    const user = session?.user;
+    if (!user) return;
+
+    const { data } = await supabaseRef.current
+      .from("daily_logs")
+      .select("meals")
+      .eq("user_id", user.id)
+      .eq("date", dateKey(d))
+      .maybeSingle();
+
+    const prior = Array.isArray(data?.meals) ? (data.meals as MealItem[]) : [];
+    if (!prior.length) {
+      showToast("Nothing logged yesterday to copy");
+      return;
+    }
+
+    const stamp = Date.now();
+    addItems(
+      prior.map((m, i) => ({ ...m, id: `${stamp}-${i}-day` })),
+      `Copied yesterday · ${prior.length} ${prior.length === 1 ? "food" : "foods"}`
+    );
+  }
+
   async function copyYesterday(slot: MealSlot) {
     const d = parseKey(selected);
     d.setDate(d.getDate() - 1);
@@ -570,6 +606,14 @@ export default function NutritionPage() {
               <MacroBar label="Fat" value={totals.fat} target={targets.target_fats} unit="g" compact />
             </div>
           </section>
+
+          <button
+            type="button"
+            onClick={() => void repeatYesterday()}
+            className="flex h-11 w-full items-center justify-center gap-2 rounded-md border border-dashed border-[var(--border-solid)] text-[13.5px] font-bold text-[var(--blue)] active:bg-white/5"
+          >
+            <IconHistory size={15} /> Same as yesterday
+          </button>
 
           <section className="space-y-2.5">
             <div className="flex items-baseline justify-between gap-2">
