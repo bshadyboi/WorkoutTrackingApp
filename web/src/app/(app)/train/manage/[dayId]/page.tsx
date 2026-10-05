@@ -262,6 +262,10 @@ export default function EditWorkoutDayPage() {
               className="field !py-2.5"
               placeholder="Exercise name"
               value={ex.name}
+              autoCapitalize="words"
+              autoCorrect="off"
+              autoComplete="off"
+              spellCheck={false}
               onChange={(e) => updateEx(ex.key, { name: e.target.value })}
             />
             {ex.name.trim() && !catalogEntry(ex.name.trim()) ? (

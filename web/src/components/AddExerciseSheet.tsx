@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { catalogEntry, searchExerciseCatalog } from "@/lib/exerciseCatalog";
 import { isContraindicated } from "@/lib/contraindicated";
 import { nameLooksUnilateral } from "@/lib/unilateral";
@@ -40,9 +40,17 @@ export function AddExerciseSheet({
   const [sided, setSided] = useState<boolean | null>(null);
   const [keep, setKeep] = useState(false);
 
+  // The box updates immediately; the list catches up a beat later, so typing
+  // never waits on a search through 800-odd exercises.
+  const [deferred, setDeferred] = useState("");
+  useEffect(() => {
+    const t = setTimeout(() => setDeferred(query), 120);
+    return () => clearTimeout(t);
+  }, [query]);
+
   const hits = useMemo(
-    () => searchExerciseCatalog(query).filter((h) => !isContraindicated(h.name)),
-    [query]
+    () => searchExerciseCatalog(deferred).filter((h) => !isContraindicated(h.name)),
+    [deferred]
   );
   const custom = picked ? !catalogEntry(picked.name) : false;
   const needsSide = custom && !nameLooksUnilateral(picked?.name ?? "");
@@ -67,6 +75,10 @@ export function AddExerciseSheet({
               placeholder="Search, e.g. skull crusher"
               value={query}
               autoFocus
+              autoCapitalize="words"
+              autoCorrect="off"
+              autoComplete="off"
+              spellCheck={false}
               onChange={(e) => setQuery(e.target.value)}
             />
             <div className="mt-2 min-h-0 flex-1 space-y-1 overflow-y-auto">

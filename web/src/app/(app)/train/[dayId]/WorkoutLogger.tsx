@@ -2078,6 +2078,10 @@ export function WorkoutLogger({
             <input
               className="field !py-2.5"
               value={editNameDraft}
+              autoCapitalize="words"
+              autoCorrect="off"
+              autoComplete="off"
+              spellCheck={false}
               onChange={(e) => setEditNameDraft(e.target.value)}
               placeholder="Custom exercise name"
             />

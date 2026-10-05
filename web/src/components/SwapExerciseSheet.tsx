@@ -202,6 +202,10 @@ export function SwapExerciseSheet({
             className="field min-w-0 flex-1 !py-2.5"
             placeholder="Explore our exercise database"
             value={query}
+            autoCapitalize="words"
+            autoCorrect="off"
+            autoComplete="off"
+            spellCheck={false}
             onChange={(e) => setQuery(e.target.value)}
           />
           <button
