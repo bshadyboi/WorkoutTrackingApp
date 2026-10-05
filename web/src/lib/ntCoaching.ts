@@ -1,5 +1,4 @@
 import type { WorkoutTemplate } from "@/lib/workouts";
-import { UPPER_PREHAB } from "@/lib/derrickRecomp";
 
 /**
  * NT Coaching Split — six days, from Brandon's coach, starting Mon Sep 21 2026.
@@ -78,7 +77,7 @@ const UPPER_WORK: WorkoutTemplate["exercises"] = [
   // Side and rear delts are the width muscles and the only ones trained
   // directly by a single movement here, so the extra sets go where the goal is.
   work("One-Arm Cable Lateral Raise", "Side Delts", 4, "12–15", "Per side · keep the left light and controlled"),
-  work("Rear Delt Fly", "Rear Delts", 3, "12–15"),
+  work("One-Arm Cable Rear Delt Fly", "Rear Delts", 3, "12–15", "Per side"),
   work("Single Arm Tricep Pushdown", "Triceps", 2, "10–12", "Per arm"),
   work("Preacher Curl", "Biceps", 2, "10–12"),
   STAIRMASTER,
@@ -96,11 +95,10 @@ const LOWER_WORK: WorkoutTemplate["exercises"] = [
 ];
 
 function upper(name: string): WorkoutTemplate {
-  return {
-    name,
-    subtitle: "Chest, back, delts & arms",
-    exercises: [...UPPER_PREHAB, ...UPPER_WORK],
-  };
+  // The cuff prehab used to open these days. It left the session with seven
+  // movements before the first working set, so it has moved out of the workout;
+  // the physical therapist still wants it done, just not here.
+  return { name, subtitle: "Chest, back, delts & arms", exercises: [...UPPER_WORK] };
 }
 
 function lower(name: string): WorkoutTemplate {
