@@ -1241,14 +1241,22 @@ function ProgressionTab({ history }: { history: Hist[] }) {
   const shoulderLog = useMemo(() => {
     const answered = history.filter((h) => h.shoulder);
     const recent = answered.slice(0, 8).reverse();
-    // Two consecutive non-fine answers on the same lift is the signal the plan
-    // says to act on: keep that lift where it is and get it looked at.
+    // Two consecutive non-fine answers naming the same lift is the signal the
+    // plan says to act on: keep that lift where it is and get it looked at. A
+    // session can name several lifts, so the flag is what they have in common.
+    const lifts = (value?: string | null) =>
+      (value ?? "")
+        .split(",")
+        .map((part) => part.trim())
+        .filter(Boolean);
+
     const last = answered[0];
     const prev = answered[1];
-    const flag =
-      last && prev && last.shoulder !== "fine" && prev.shoulder !== "fine" && last.shoulderLift && last.shoulderLift === prev.shoulderLift
-        ? last.shoulderLift
-        : null;
+    const shared =
+      last && prev && last.shoulder !== "fine" && prev.shoulder !== "fine"
+        ? lifts(last.shoulderLift).filter((lift) => lifts(prev.shoulderLift).includes(lift))
+        : [];
+    const flag = shared.length ? shared.join(", ") : null;
     return { recent, flag, total: answered.length };
   }, [history]);
 

@@ -296,7 +296,8 @@ export function WorkoutLogger({
     setLeftLimited(leftShoulderLimited());
   }, []);
   const [shoulder, setShoulder] = useState<"fine" | "pinchy" | "painful" | null>(null);
-  const [shoulderLift, setShoulderLift] = useState<string>("");
+  /** More than one lift can bother the shoulder in a session; all of them count. */
+  const [shoulderLifts, setShoulderLifts] = useState<string[]>([]);
   const [prToast, setPrToast] = useState<{
     title: string;
     detail: string;
@@ -2351,17 +2352,23 @@ export function WorkoutLogger({
             </div>
             {shoulder && shoulder !== "fine" ? (
               <div className="mt-3 space-y-2">
-                <p className="text-[12px] font-semibold uppercase tracking-[0.1em] text-[var(--muted)]">On which lift?</p>
+                <p className="text-[12px] font-semibold uppercase tracking-[0.1em] text-[var(--muted)]">
+                  Which lifts? Pick as many as you need
+                </p>
                 <div className="flex flex-wrap gap-1.5">
                   {main.map((ex) => {
                     const n = displayName(ex);
-                    const on = shoulderLift === n;
+                    const on = shoulderLifts.includes(n);
                     return (
                       <button
                         key={ex.id}
                         type="button"
                         aria-pressed={on}
-                        onClick={() => setShoulderLift(on ? "" : n)}
+                        onClick={() =>
+                          setShoulderLifts((cur) =>
+                            cur.includes(n) ? cur.filter((x) => x !== n) : [...cur, n]
+                          )
+                        }
                         className={`rounded-[4px] px-2.5 py-1.5 text-[12px] font-semibold ${
                           on ? "bg-[var(--blue)] text-[var(--on-blue)]" : "bg-[var(--raised)] text-[var(--muted)]"
                         }`}
@@ -2375,7 +2382,7 @@ export function WorkoutLogger({
                   type="button"
                   className="btn-accent w-full"
                   disabled={ratingSaving}
-                  onClick={() => void submitShoulder(shoulder, shoulderLift)}
+                  onClick={() => void submitShoulder(shoulder, shoulderLifts.join(", "))}
                 >
                   {ratingSaving ? "Saving…" : "Save"}
                 </button>
