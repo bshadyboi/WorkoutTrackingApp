@@ -74,9 +74,9 @@ const UPPER_WORK: WorkoutTemplate["exercises"] = [
   work("Pec Deck", "Chest", 2, "10–12"),
   work("T-Bar Row", "Back", 2, "8–12"),
   work("Single-Arm Pulldown", "Lats", 2, "10–12", "Left: start from head height, not fully overhead"),
-  // Side and rear delts are the width muscles and the only ones trained
-  // directly by a single movement here, so the extra sets go where the goal is.
-  work("One-Arm Cable Lateral Raise", "Side Delts", 4, "12–15", "Per side · keep the left light and controlled"),
+  // Four sets was tried and the shoulder complained three sessions running, so
+  // this is back to the two the coach wrote. Volume is not worth a cuff.
+  work("One-Arm Cable Lateral Raise", "Side Delts", 2, "12–15", "Per side · keep the left light and controlled"),
   work("One-Arm Cable Rear Delt Fly", "Rear Delts", 3, "12–15", "Per side"),
   work("Single Arm Tricep Pushdown", "Triceps", 2, "10–12", "Per arm"),
   work("Preacher Curl", "Biceps", 2, "10–12"),
@@ -85,13 +85,13 @@ const UPPER_WORK: WorkoutTemplate["exercises"] = [
 
 /** Lower A and B are the same session. */
 const LOWER_WORK: WorkoutTemplate["exercises"] = [
+
   work("Hack Squat", "Quads", 2, "8–12"),
   work("Leg Extension", "Quads", 2, "10–12"),
   work("Lying Leg Curl", "Hamstrings", 2, "10–12"),
   work("Romanian Deadlift", "Hamstrings", 3, "8–12", "Dumbbell or barbell"),
   work("Seated Calf Raise", "Calves", 2, "12–20"),
   work("Hip Abductor Machine", "Glutes", 2, "12–15"),
-  work("Cable Crunch", "Core", 2, "12–20", "Finisher · swap for hanging leg raises"),
 ];
 
 function upper(name: string): WorkoutTemplate {
