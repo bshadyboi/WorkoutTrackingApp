@@ -130,9 +130,28 @@ export async function getPreviousSetsByExercise(userId: string) {
       const warmName = /warm[\s-]?up/i.test(name);
       const working = sets.filter((s) => !s.is_warmup);
       const use = warmName ? sets : working.length ? working : sets;
-      map[name] = use
-        .sort((a, b) => a.set_number - b.set_number)
-        .map((s) => ({ weight: s.weight, reps: s.reps, rir: typeof s.rir === "number" ? s.rir : null }));
+      // Heaviest set first, whatever order it happened in.
+      //
+      // The next session is seeded from these, set for set. Logged in the order
+      // performed, a session that ramped up — 70 then 80 — would seed 70 into
+      // set one again and the top set would stay stuck at the end, where it is
+      // done tired. Sorting by load puts the best set where it belongs: first,
+      // while fresh, as the one to beat.
+      const warmups = use.filter((x) => x.is_warmup);
+      const ordered = warmName
+        ? use.sort((a, b) => a.set_number - b.set_number)
+        : [
+            ...use
+              .filter((x) => !x.is_warmup)
+              .sort((a, b) => b.weight * 1000 + b.reps - (a.weight * 1000 + a.reps)),
+            ...warmups,
+          ];
+
+      map[name] = ordered.map((s) => ({
+        weight: s.weight,
+        reps: s.reps,
+        rir: typeof s.rir === "number" ? s.rir : null,
+      }));
     }
   }
   return map;
