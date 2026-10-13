@@ -47,6 +47,10 @@ export const NT_START = "2026-09-21";
  */
 export const NT_RIR_TARGET = 1;
 
+/** The core finisher that closes every lifting day. */
+const AB_CRUNCH = work("Cable Ab Crunch", "Core", 2, "20", "V-bar handle on the pulldown machine");
+const HANGING_LEG_RAISE = work("Hanging Leg Raise", "Core", 2, "15", "Bodyweight");
+
 const STAIRMASTER = work(
   "Stairmaster (Level 6)",
   "Cardio",
@@ -80,6 +84,8 @@ const UPPER_WORK: WorkoutTemplate["exercises"] = [
   work("One-Arm Cable Rear Delt Fly", "Rear Delts", 3, "12–15", "Per side"),
   work("Single Arm Tricep Pushdown", "Triceps", 2, "10–12", "Per arm"),
   work("Preacher Curl", "Biceps", 2, "10–12"),
+  AB_CRUNCH,
+  HANGING_LEG_RAISE,
   STAIRMASTER,
 ];
 
@@ -92,6 +98,8 @@ const LOWER_WORK: WorkoutTemplate["exercises"] = [
   work("Romanian Deadlift", "Hamstrings", 3, "8–12", "Dumbbell or barbell"),
   work("Seated Calf Raise", "Calves", 2, "12–20"),
   work("Hip Abductor Machine", "Glutes", 2, "12–15"),
+  AB_CRUNCH,
+  HANGING_LEG_RAISE,
 ];
 
 function upper(name: string): WorkoutTemplate {

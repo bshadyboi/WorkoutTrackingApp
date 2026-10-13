@@ -46,6 +46,7 @@ const PHOTOS: Record<string, string> = {
   "hip abductor machine": "thigh-abductor",
   "abductor": "thigh-abductor",
   "cable crunch": "cable-crunch",
+  "cable ab crunch": "cable-crunch",
   "hanging leg raise": "hanging-leg-raise",
   "chest supported db row": "incline-bench-pull",
   "chest supported rows neutral grip": "incline-bench-pull",
