@@ -410,19 +410,62 @@ export const EXERCISE_CATALOG: ExerciseCatalogEntry[] = [
       "Dead Hang",
     ],
   },
+  // —— Steady-state cardio ——
+  // Swaps for the program's stairmaster block. The cue on each one is there so
+  // a swap keeps the same effort: the machine is easy to change, the 25 minutes
+  // of work is not supposed to be.
   {
-    name: "Incline Walk Cardio",
+    name: "Stairmaster",
     muscle: "Cardio",
-    notes: "30 minutes. Pick a challenging speed + incline and hold it.",
-    youtubeUrl: "https://www.youtube.com/watch?v=C-IwH2Z06IU",
+    notes:
+      "Level 6, 25 minutes. Stand tall, hands off the rails — leaning on them cuts the work roughly in half.",
+    youtubeUrl: "https://www.youtube.com/watch?v=01H1FkKiQMI",
     alternatives: [
-      "Stair Climber",
-      "Bike",
+      "Incline Treadmill Walk",
       "Elliptical",
+      "Stationary Bike",
       "Rowing Machine",
       "Outdoor Walk (hills)",
-      "Jacob's Ladder",
     ],
+  },
+  {
+    name: "Incline Treadmill Walk",
+    muscle: "Cardio",
+    notes:
+      "12% incline at 3.0 mph is the closest match to the stairmaster. Hands off the rails, let the hips do the climbing.",
+    youtubeUrl: "https://www.youtube.com/watch?v=C-IwH2Z06IU",
+    alternatives: ["Stairmaster", "Elliptical", "Outdoor Walk (hills)", "Stationary Bike"],
+  },
+  {
+    name: "Elliptical",
+    muscle: "Cardio",
+    notes:
+      "Easiest of the bunch to coast on. Put the resistance high enough that talking is hard, and don't lean on the handles.",
+    youtubeUrl: "https://www.youtube.com/watch?v=tbChqvQ4LHQ",
+    alternatives: ["Stairmaster", "Incline Treadmill Walk", "Stationary Bike", "Rowing Machine"],
+  },
+  {
+    name: "Stationary Bike",
+    muscle: "Cardio",
+    notes:
+      "Seat so the knee stays slightly bent at the bottom. Conversational-hard pace the whole 25 — spinning with no resistance doesn't count.",
+    youtubeUrl: "https://www.youtube.com/watch?v=rlOOqDgDU3U",
+    alternatives: ["Stairmaster", "Elliptical", "Incline Treadmill Walk", "Rowing Machine"],
+  },
+  {
+    name: "Rowing Machine",
+    muscle: "Cardio",
+    notes:
+      "Legs, then back, then arms. Keep it steady, not sprint intervals — and go easy if the left shoulder is talking, the pull loads the cuff.",
+    youtubeUrl: "https://www.youtube.com/watch?v=H0r_ZPXJLtg",
+    alternatives: ["Stairmaster", "Elliptical", "Stationary Bike", "Incline Treadmill Walk"],
+  },
+  {
+    name: "Outdoor Walk (hills)",
+    muscle: "Cardio",
+    notes:
+      "Find a real grade and keep moving for the full 25. Counts toward the daily step target too.",
+    alternatives: ["Incline Treadmill Walk", "Stairmaster", "Stationary Bike"],
   },
 
   // —— Modified bro split (exact program names) ——
@@ -1740,6 +1783,18 @@ export const EXERCISE_CATALOG: ExerciseCatalogEntry[] = [
 /** Map alternate names → catalog entry name (lowercase keys). */
 const ALIASES: Record<string, string> = {
   "incline db curl": "Incline Dumbbell Curl",
+  "incline walk cardio": "Incline Treadmill Walk",
+  "stairmaster (level 6)": "Stairmaster",
+  "stair climber": "Stairmaster",
+  "stepmill": "Stairmaster",
+  "incline treadmill": "Incline Treadmill Walk",
+  "treadmill incline walk": "Incline Treadmill Walk",
+  "incline walk": "Incline Treadmill Walk",
+  "bike": "Stationary Bike",
+  "exercise bike": "Stationary Bike",
+  "upright bike": "Stationary Bike",
+  "rower": "Rowing Machine",
+  "elliptical machine": "Elliptical",
   "incline curl": "Incline Dumbbell Curl",
   "cable lateral raise": "Cable Lateral Raise",
   "lateral raise (cable)": "Cable Lateral Raise",
@@ -2067,8 +2122,11 @@ export function getSwapRecommendations(
     if (!key || key === currentKey || seen.has(key)) return;
     // Never propose a movement the active program rules out.
     if (isContraindicated(name)) return;
-    seen.add(key);
     const altEntry = catalogEntry(name);
+    // The program may name a lift differently from the catalog ("Stairmaster
+    // (Level 6)" → "Stairmaster"); don't offer it a swap to itself.
+    if (entry && altEntry && altEntry.name === entry.name) return;
+    seen.add(key);
     out.push({
       name,
       recommended: Boolean(flags.recommended),
