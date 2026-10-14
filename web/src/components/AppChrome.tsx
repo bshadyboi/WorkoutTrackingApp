@@ -24,14 +24,20 @@ const links = [
 
 /** Title-block label for the sheet the current route is on. */
 function sheetFor(pathname: string) {
-  if (pathname.startsWith("/settings")) return { name: "SETTINGS", no: null as string | null };
+  if (pathname.startsWith("/settings"))
+    return { name: "SETTINGS", no: null as string | null };
   const i = links.findIndex((l) => isActive(pathname, l.href));
   if (i < 0) return { name: "FITTRACK", no: null };
-  return { name: links[i].label.toUpperCase(), no: String(i + 1).padStart(2, "0") };
+  return {
+    name: links[i].label.toUpperCase(),
+    no: String(i + 1).padStart(2, "0"),
+  };
 }
 
 function isActive(pathname: string, href: string) {
-  return pathname === href || (href !== "/dashboard" && pathname.startsWith(href));
+  return (
+    pathname === href || (href !== "/dashboard" && pathname.startsWith(href))
+  );
 }
 
 function Nav({ pathname }: { pathname: string }) {
@@ -60,7 +66,7 @@ function Nav({ pathname }: { pathname: string }) {
 
   return (
     <nav
-      className="pointer-events-none fixed inset-x-0 bottom-0 z-40 px-3"
+      className="mobile-nav pointer-events-none fixed inset-x-0 bottom-0 z-40 px-3 lg:hidden"
       style={{
         paddingBottom: "max(12px, env(safe-area-inset-bottom, 0px))",
       }}
@@ -77,6 +83,7 @@ function Nav({ pathname }: { pathname: string }) {
               key={l.href}
               type="button"
               onClick={() => go(l.href)}
+              aria-current={active ? "page" : undefined}
               className={`relative flex min-h-[56px] flex-1 flex-col items-center justify-center gap-1 rounded-md px-1 active:bg-white/5 ${
                 active ? "text-[var(--accent)]" : "text-[var(--dim)]"
               }`}
@@ -112,21 +119,66 @@ export function AppChrome({
   const sheet = sheetFor(pathname);
 
   return (
-    <div className="mx-auto min-h-dvh max-w-lg">
+    <div className={`app-shell ${isSession ? "app-shell-session" : ""}`}>
+      <aside className="desktop-sidebar" aria-label="Desktop navigation">
+        <Link href="/dashboard" className="brand">
+          <span className="brand-mark" aria-hidden>
+            <i />
+            <i />
+            <i />
+          </span>
+          FitTrack
+        </Link>
+        <p className="eyebrow mt-10 mb-4">Your blueprint</p>
+        <nav className="space-y-2" aria-label="Desktop primary">
+          {links.map(({ href, label, Icon }) => (
+            <Link
+              key={href}
+              href={href}
+              aria-current={isActive(pathname, href) ? "page" : undefined}
+              className={`sidebar-link ${isActive(pathname, href) ? "active" : ""}`}
+            >
+              <Icon size={21} />
+              {label}
+            </Link>
+          ))}
+        </nav>
+        <div className="mt-auto border-t border-[var(--border)] pt-5">
+          <Link
+            href="/settings"
+            className={`sidebar-link ${pathname.startsWith("/settings") ? "active" : ""}`}
+            aria-current={pathname.startsWith("/settings") ? "page" : undefined}
+          >
+            <IconGear size={20} />
+            Settings
+          </Link>
+          <p className="mt-5 truncate text-xs text-[var(--muted)]">
+            {displayName}
+          </p>
+        </div>
+      </aside>
       {!isSession && !isDayPreview ? (
         <header
-          className="sticky top-0 z-20 border-b border-[var(--border-solid)] bg-[var(--bg)]/95 px-4 py-2.5 backdrop-blur-sm"
+          className="app-header sticky top-0 z-20 border-b border-[var(--border-solid)] bg-[var(--bg)]/95 px-4 py-2.5 backdrop-blur-sm"
           style={{ paddingTop: "max(12px, env(safe-area-inset-top, 0px))" }}
         >
           <div className="flex items-center justify-between gap-3 font-mono text-[11px] uppercase tracking-[0.14em] text-[var(--muted)]">
-            <Link href="/dashboard" prefetch={false} className="min-w-0 truncate">
+            <Link
+              href="/dashboard"
+              prefetch={false}
+              className="min-w-0 truncate"
+            >
               <span className="font-bold text-[var(--text)]">FitTrack</span>
               <span> · {sheet.name}</span>
             </Link>
             <div className="flex shrink-0 items-center gap-3">
               {sheet.no ? (
                 <span>
-                  Sheet <span className="font-bold text-[var(--text)]">{sheet.no}</span>/{String(links.length).padStart(2, "0")}
+                  Sheet{" "}
+                  <span className="font-bold text-[var(--text)]">
+                    {sheet.no}
+                  </span>
+                  /{String(links.length).padStart(2, "0")}
                 </span>
               ) : null}
               <Link
@@ -143,7 +195,7 @@ export function AppChrome({
       ) : null}
 
       <main
-        className={isSession || isDayPreview ? "" : "px-4 pt-4"}
+        className={`app-main ${isSession || isDayPreview ? "app-main-flush" : ""}`}
         style={
           isSession
             ? undefined

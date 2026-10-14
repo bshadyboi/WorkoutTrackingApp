@@ -4,7 +4,11 @@ import { FormEvent, useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { LeftShoulderToggle } from "@/components/LeftShoulderToggle";
 import { PushEnableButton } from "@/components/PushEnableButton";
-import { DEFAULT_TARGETS, normalizeTargets, type MacroTargets } from "@/lib/targets";
+import {
+  DEFAULT_TARGETS,
+  normalizeTargets,
+  type MacroTargets,
+} from "@/lib/targets";
 
 export default function SettingsPage() {
   const [email, setEmail] = useState("");
@@ -27,7 +31,9 @@ export default function SettingsPage() {
       setEmail(user.email || "");
       const { data: profile } = await supabase
         .from("profiles")
-        .select("display_name, target_calories, target_protein, target_carbs, target_fats")
+        .select(
+          "display_name, target_calories, target_protein, target_carbs, target_fats",
+        )
         .eq("id", user.id)
         .maybeSingle();
 
@@ -36,7 +42,7 @@ export default function SettingsPage() {
         profile?.display_name ||
           (user.user_metadata?.display_name as string | undefined) ||
           user.email?.split("@")[0] ||
-          ""
+          "",
       );
       setTargets(normalizeTargets(profile));
       setLoading(false);
@@ -60,14 +66,17 @@ export default function SettingsPage() {
     const payload = {
       id: user.id,
       email: user.email,
-      display_name: displayName.trim() || user.email?.split("@")[0] || "Athlete",
+      display_name:
+        displayName.trim() || user.email?.split("@")[0] || "Athlete",
       target_calories: Math.max(0, Math.round(targets.target_calories)),
       target_protein: Math.max(0, Math.round(targets.target_protein)),
       target_carbs: Math.max(0, Math.round(targets.target_carbs)),
       target_fats: Math.max(0, Math.round(targets.target_fats)),
     };
 
-    const { error } = await supabase.from("profiles").upsert(payload, { onConflict: "id" });
+    const { error } = await supabase
+      .from("profiles")
+      .upsert(payload, { onConflict: "id" });
     setSaving(false);
     if (error) {
       if (/target_/i.test(error.message)) {
@@ -90,84 +99,94 @@ export default function SettingsPage() {
   }
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-6">
       <div>
         <p className="eyebrow">Account</p>
-        <h1 className="text-[28px] font-bold tracking-tight">Settings</h1>
-        <p className="text-sm text-[var(--muted)]">{email}</p>
+        <h1 className="page-heading">Make FitTrack yours.</h1>
+        <p className="page-subtitle">
+          Profile, targets, and training preferences · {email}
+        </p>
       </div>
 
-      <form onSubmit={saveProfile} className="card space-y-4">
-        <div>
-          <label className="label">Display name</label>
-          <input
-            className="field"
-            value={displayName}
-            onChange={(e) => setDisplayName(e.target.value)}
-            placeholder="Your name"
-          />
-        </div>
-
-        <div>
-          <p className="label !mb-2">Daily macro targets</p>
-          <div className="grid grid-cols-2 gap-2">
-            {(
-              [
-                ["target_calories", "Calories"],
-                ["target_protein", "Protein (g)"],
-                ["target_carbs", "Carbs (g)"],
-                ["target_fats", "Fat (g)"],
-              ] as const
-            ).map(([key, label]) => (
-              <div key={key}>
-                <label className="mb-1 block text-[10px] font-semibold text-[var(--muted)]">
-                  {label}
-                </label>
-                <input
-                  className="field !py-2.5 text-center"
-                  inputMode="numeric"
-                  value={targets[key] || ""}
-                  onChange={(e) =>
-                    setTargets((t) => ({
-                      ...t,
-                      [key]: Number(e.target.value) || 0,
-                    }))
-                  }
-                />
-              </div>
-            ))}
+      <div className="settings-grid">
+        <form onSubmit={saveProfile} className="card space-y-4">
+          <div>
+            <p className="eyebrow">Profile</p>
+            <h2 className="text-xl font-bold">Your account</h2>
           </div>
-          <p className="mt-2 text-[11px] text-[var(--muted)]">
-            Used on Nutrition and Home progress.
-          </p>
+          <div>
+            <label className="label">Display name</label>
+            <input
+              className="field"
+              value={displayName}
+              onChange={(e) => setDisplayName(e.target.value)}
+              placeholder="Your name"
+            />
+          </div>
+
+          <div>
+            <p className="label !mb-2">Daily macro targets</p>
+            <div className="grid grid-cols-2 gap-2">
+              {(
+                [
+                  ["target_calories", "Calories"],
+                  ["target_protein", "Protein (g)"],
+                  ["target_carbs", "Carbs (g)"],
+                  ["target_fats", "Fat (g)"],
+                ] as const
+              ).map(([key, label]) => (
+                <div key={key}>
+                  <label className="mb-1 block text-[10px] font-semibold text-[var(--muted)]">
+                    {label}
+                  </label>
+                  <input
+                    className="field !py-2.5 text-center"
+                    inputMode="numeric"
+                    value={targets[key] || ""}
+                    onChange={(e) =>
+                      setTargets((t) => ({
+                        ...t,
+                        [key]: Number(e.target.value) || 0,
+                      }))
+                    }
+                  />
+                </div>
+              ))}
+            </div>
+            <p className="mt-2 text-[11px] text-[var(--muted)]">
+              Used on Nutrition and Home progress.
+            </p>
+          </div>
+
+          <button className="btn-accent w-full" disabled={saving}>
+            {saving ? "Saving…" : "Save settings"}
+          </button>
+          {msg ? (
+            <p
+              className={`text-center text-sm ${
+                msg === "Saved" ? "text-[var(--green)]" : "text-[var(--yellow)]"
+              }`}
+            >
+              {msg}
+            </p>
+          ) : null}
+        </form>
+
+        <div className="space-y-5">
+          <LeftShoulderToggle />
+
+          <PushEnableButton />
         </div>
 
-        <button className="btn-accent w-full" disabled={saving}>
-          {saving ? "Saving…" : "Save settings"}
-        </button>
-        {msg ? (
-          <p
-            className={`text-center text-sm ${
-              msg === "Saved" ? "text-[var(--green)]" : "text-[var(--yellow)]"
-            }`}
+        <form action="/auth/signout" method="post" className="settings-wide">
+          <button
+            type="submit"
+            className="w-full rounded-md border border-[var(--border-solid)] px-4 py-3 text-sm font-bold text-[var(--red)]"
           >
-            {msg}
-          </p>
-        ) : null}
-      </form>
-
-      <LeftShoulderToggle />
-
-      <PushEnableButton />
-
-      <form action="/auth/signout" method="post">
-        <button
-          type="submit"
-          className="w-full rounded-md border border-[var(--border-solid)] px-4 py-3 text-sm font-bold text-[var(--red)]"
-        >
-          Sign out
-        </button>
-      </form>
+            Sign out
+          </button>
+        </form>
+      </div>
     </div>
   );
 }

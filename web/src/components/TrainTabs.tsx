@@ -5,7 +5,11 @@ import { useEffect, useMemo, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { dateKey } from "@/lib/protocol";
 import { clearTabCache } from "@/lib/tabCache";
-import { shortDayLabel, type DateOverrides, type ScheduleSlots } from "@/lib/schedule";
+import {
+  shortDayLabel,
+  type DateOverrides,
+  type ScheduleSlots,
+} from "@/lib/schedule";
 import { saveDateOverride } from "@/lib/scheduleClient";
 import { MakeupDayButton } from "@/components/MakeupDayButton";
 import { Explain } from "@/components/Explain";
@@ -47,6 +51,7 @@ import {
   sideBalanceLine,
   type SideSeries,
 } from "@/lib/sideBalance";
+import { workoutPhoto } from "@/lib/workoutPhotos";
 
 type Day = {
   id: string;
@@ -81,12 +86,16 @@ export function TrainTabs({
   scheduleSlots: ScheduleSlots;
   history: Hist[];
 }) {
-  const [tab, setTab] = useState<"workouts" | "calendar" | "progression">("workouts");
+  const [tab, setTab] = useState<"workouts" | "calendar" | "progression">(
+    "workouts",
+  );
   const [month, setMonth] = useState(() => {
     const d = new Date();
     return new Date(d.getFullYear(), d.getMonth(), 1);
   });
-  const [overrides, setOverrides] = useState<DateOverrides>(initialOverrides ?? {});
+  const [overrides, setOverrides] = useState<DateOverrides>(
+    initialOverrides ?? {},
+  );
   const sessionBriefs = sessionBriefsFromHistory(history);
 
   const [programLabel, setProgramLabel] = useState("");
@@ -103,7 +112,9 @@ export function TrainTabs({
   const todayKey = dateKey(new Date());
   const recompWeek = derrickRecompWeek(todayKey);
   const inRecomp =
-    isDerrick && todayKey >= DERRICK_RECOMP_START && todayKey <= DERRICK_RECOMP_END;
+    isDerrick &&
+    todayKey >= DERRICK_RECOMP_START &&
+    todayKey <= DERRICK_RECOMP_END;
   const guidance = inRecomp ? derrickRecompGuidance(recompWeek) : null;
   const programLine = inRecomp
     ? `${programLabel || "Program"} · Week ${recompWeek} of ${DERRICK_RECOMP_WEEKS}`
@@ -112,7 +123,12 @@ export function TrainTabs({
   /** Sun→Sat of the current week, each resolved against the live schedule */
   const weekInfo = useMemo(() => {
     const now = new Date();
-    const start = new Date(now.getFullYear(), now.getMonth(), now.getDate() - now.getDay(), 12);
+    const start = new Date(
+      now.getFullYear(),
+      now.getMonth(),
+      now.getDate() - now.getDay(),
+      12,
+    );
     return Array.from({ length: 7 }, (_, i) => {
       const d = new Date(start);
       d.setDate(start.getDate() + i);
@@ -149,7 +165,9 @@ export function TrainTabs({
     <div className="space-y-5">
       <div className="flex items-center justify-between gap-3">
         <div className="min-w-0">
-          <h1 className="text-[26px] font-extrabold leading-tight tracking-tight">Train</h1>
+          <h1 className="text-[26px] font-extrabold leading-tight tracking-tight">
+            Train
+          </h1>
           {programLine ? (
             <p className="mt-0.5 truncate text-[13px] font-semibold text-[var(--muted)]">
               {programLine}
@@ -181,11 +199,16 @@ export function TrainTabs({
             }`}
           >
             Week {recompWeek} · {guidance.phase}
-            <Explain term={guidance.deload ? "deload" : "phase"} className="ml-2 align-middle" />
+            <Explain
+              term={guidance.deload ? "deload" : "phase"}
+              className="ml-2 align-middle"
+            />
           </p>
           <p className="mt-1 text-[13px] leading-snug text-[var(--muted)]">
             {guidance.note}
-            {/reserve/i.test(guidance.note) ? <Explain term="rir" className="ml-1.5 align-middle" /> : null}
+            {/reserve/i.test(guidance.note) ? (
+              <Explain term="rir" className="ml-1.5 align-middle" />
+            ) : null}
           </p>
         </div>
       ) : null}
@@ -287,7 +310,9 @@ function WeekStrip({
             {done ? (
               <span
                 className={`flex h-[30px] w-[30px] items-center justify-center rounded-full bg-[var(--green)] text-[var(--on-green)] ${
-                  isToday ? "ring-2 ring-[var(--blue)]/60 ring-offset-2 ring-offset-[var(--card)]" : ""
+                  isToday
+                    ? "ring-2 ring-[var(--blue)]/60 ring-offset-2 ring-offset-[var(--card)]"
+                    : ""
                 }`}
               >
                 <IconCheck size={14} />
@@ -336,7 +361,10 @@ function WorkoutsTab({
   weekInfo: WeekDayInfo[];
 }) {
   const router = useRouter();
-  const hasOverride = Object.prototype.hasOwnProperty.call(overrides, dateKey(new Date()));
+  const hasOverride = Object.prototype.hasOwnProperty.call(
+    overrides,
+    dateKey(new Date()),
+  );
   const [restBusy, setRestBusy] = useState(false);
   const [restMsg, setRestMsg] = useState("");
 
@@ -345,12 +373,12 @@ function WorkoutsTab({
       ? new Date(
           weekInfo[0].date.getFullYear(),
           weekInfo[0].date.getMonth(),
-          weekInfo[0].date.getDate()
+          weekInfo[0].date.getDate(),
         )
       : new Date();
     const isTraining = (h: Hist) => !/rest/i.test(h.dayName.trim());
     const weekSessions = history.filter(
-      (h) => isTraining(h) && new Date(h.startedAt) >= weekStart
+      (h) => isTraining(h) && new Date(h.startedAt) >= weekStart,
     );
     const scheduled = weekInfo.filter((d) => !d.resolved.isRest).length;
     const weekVolume = weekSessions.reduce((n, h) => n + h.volume, 0);
@@ -395,7 +423,11 @@ function WorkoutsTab({
     ? Math.round(5 + todayMeta.setCount * 2.2)
     : null;
   const eyebrowDate = new Date()
-    .toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric" })
+    .toLocaleDateString(undefined, {
+      weekday: "short",
+      month: "short",
+      day: "numeric",
+    })
     .toUpperCase();
 
   return (
@@ -431,13 +463,24 @@ function WorkoutsTab({
                 {restBusy ? "Saving…" : "Mark rest complete"}
               </button>
             ) : null}
-            {restMsg ? <p className="text-[11px] text-[var(--yellow)]">{restMsg}</p> : null}
-            <Link href="/dashboard" className="text-[13px] font-bold text-[var(--blue)]">
+            {restMsg ? (
+              <p className="text-[11px] text-[var(--yellow)]">{restMsg}</p>
+            ) : null}
+            <Link
+              href="/dashboard"
+              className="text-[13px] font-bold text-[var(--blue)]"
+            >
               Log steps & water on Home →
             </Link>
           </div>
         ) : todayDay ? (
-          <div className="reg space-y-4 rounded-md border border-[var(--border-solid)] bg-[var(--card)] p-5">
+          <div className="workout-hero reg space-y-4 rounded-md border border-[var(--border-solid)] bg-[var(--card)] p-5">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              className="hero-photo"
+              src={workoutPhoto(todayDay.name)}
+              alt=""
+            />
             <div className="flex items-center justify-between">
               <p className="text-[11px] font-bold tracking-[0.12em] text-[var(--muted)]">
                 TODAY · {eyebrowDate}
@@ -470,7 +513,8 @@ function WorkoutsTab({
               {todayMeta ? (
                 <span className="flex items-center gap-1.5">
                   <IconDumbbell size={15} />
-                  {todayMeta.exerciseCount ?? 0} exercises · {todayMeta.setCount ?? 0} sets
+                  {todayMeta.exerciseCount ?? 0} exercises ·{" "}
+                  {todayMeta.setCount ?? 0} sets
                 </span>
               ) : null}
               {estMinutes ? (
@@ -479,7 +523,7 @@ function WorkoutsTab({
                 </span>
               ) : null}
             </div>
-            <div className="flex gap-2.5">
+            <div className="hero-actions flex gap-2.5">
               <Link
                 href={`/train/${todayDay.id}/session`}
                 prefetch={false}
@@ -503,7 +547,10 @@ function WorkoutsTab({
             <p className="font-semibold text-[var(--text)]">{todayName}</p>
             <p className="mt-1">
               Scheduled but not in your library yet.{" "}
-              <Link href="/train/manage" className="font-semibold text-[var(--blue)]">
+              <Link
+                href="/train/manage"
+                className="font-semibold text-[var(--blue)]"
+              >
                 Add day
               </Link>
               .
@@ -524,7 +571,9 @@ function WorkoutsTab({
           <p className="text-[17px] font-extrabold tabular-nums">
             {stats.weekSessions}/{stats.scheduled || "—"}
           </p>
-          <p className="text-[10.5px] font-semibold text-[var(--muted)]">Sessions</p>
+          <p className="text-[10.5px] font-semibold text-[var(--muted)]">
+            Sessions
+          </p>
         </div>
         <div className="rounded-md border border-white/5 bg-[var(--surface)] px-3 py-2.5">
           <p className="text-[17px] font-extrabold tabular-nums">
@@ -532,23 +581,32 @@ function WorkoutsTab({
               ? `${(stats.weekVolume / 1000).toFixed(1)}k`
               : Math.round(stats.weekVolume)}
           </p>
-          <p className="text-[10.5px] font-semibold text-[var(--muted)]">Week lb</p>
+          <p className="text-[10.5px] font-semibold text-[var(--muted)]">
+            Week lb
+          </p>
         </div>
         <div className="rounded-md border border-white/5 bg-[var(--surface)] px-3 py-2.5">
-          <p className="text-[17px] font-extrabold tabular-nums">{stats.streak} wk</p>
-          <p className="text-[10.5px] font-semibold text-[var(--muted)]">Streak</p>
+          <p className="text-[17px] font-extrabold tabular-nums">
+            {stats.streak} wk
+          </p>
+          <p className="text-[10.5px] font-semibold text-[var(--muted)]">
+            Streak
+          </p>
         </div>
       </div>
 
       <section className="space-y-2.5">
         <div className="flex items-center justify-between gap-2">
           <h2 className="text-[17px] font-bold">Your workouts</h2>
-          <Link href="/train/manage" className="text-[13px] font-bold text-[var(--blue)]">
+          <Link
+            href="/train/manage"
+            className="text-[13px] font-bold text-[var(--blue)]"
+          >
             Edit
           </Link>
         </div>
-        <div className="overflow-hidden rounded-md border border-[var(--border)] bg-[var(--card)]">
-          {days.map((d, i) => {
+        <div className="workout-library">
+          {days.map((d) => {
             const head = d.name.split("·")[0]?.trim() ?? d.name;
             const tail = d.name.split("·").slice(1).join("·").trim();
             const isToday = todayDay?.id === d.id;
@@ -557,11 +615,16 @@ function WorkoutsTab({
                 key={d.id}
                 href={`/train/${d.id}`}
                 prefetch={false}
-                className={`flex items-center gap-3 px-4 py-3.5 active:bg-white/5 ${
-                  i > 0 ? "border-t border-white/5" : ""
-                }`}
+                className="relative flex items-center gap-3 p-3 active:bg-white/5"
               >
-                <div className="min-w-0 flex-1">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  className="workout-cover"
+                  src={workoutPhoto(d.name)}
+                  alt=""
+                  loading="lazy"
+                />
+                <div className="workout-info min-w-0 flex-1">
                   <div className="flex items-baseline gap-2">
                     <p className="text-[15px] font-bold">{head}</p>
                     {tail ? (
@@ -575,11 +638,11 @@ function WorkoutsTab({
                   </p>
                 </div>
                 {isToday ? (
-                  <span className="shrink-0 rounded-[4px] bg-[var(--blue)]/15 px-2 py-0.5 text-[10.5px] font-bold text-[var(--blue)]">
+                  <span className="workout-badge shrink-0 rounded-[4px] bg-[var(--blue)]/15 px-2 py-0.5 text-[10.5px] font-bold text-[var(--blue)]">
                     Today
                   </span>
                 ) : null}
-                <span className="shrink-0 text-[var(--dim)]">
+                <span className="workout-chevron shrink-0 text-[var(--dim)]">
                   <IconChevronRight size={18} />
                 </span>
               </Link>
@@ -598,7 +661,9 @@ function WorkoutsTab({
         <h2 className="text-[17px] font-bold">History</h2>
         <div className="overflow-hidden rounded-md border border-white/5 bg-[var(--surface)]">
           {history.length === 0 ? (
-            <p className="p-4 text-sm text-[var(--muted)]">No sessions logged yet.</p>
+            <p className="p-4 text-sm text-[var(--muted)]">
+              No sessions logged yet.
+            </p>
           ) : (
             history.map((h) => {
               const mins = Math.round(h.durationSeconds / 60);
@@ -623,7 +688,8 @@ function WorkoutsTab({
                     </p>
                   </div>
                   <p className="shrink-0 text-right text-[12px] tabular-nums text-[var(--muted)]">
-                    {h.setCount} sets · {Math.round(h.volume).toLocaleString()} lb · {dur}
+                    {h.setCount} sets · {Math.round(h.volume).toLocaleString()}{" "}
+                    lb · {dur}
                   </p>
                 </Link>
               );
@@ -666,7 +732,8 @@ function CalendarTab({
       }
       const better =
         h.setCount > prev.setCount ||
-        (h.setCount === prev.setCount && h.durationSeconds > prev.durationSeconds);
+        (h.setCount === prev.setCount &&
+          h.durationSeconds > prev.durationSeconds);
       if (better) map.set(key, h);
     }
     return map;
@@ -684,7 +751,10 @@ function CalendarTab({
     sessionId: string;
   } | null>(null);
 
-  const title = month.toLocaleDateString(undefined, { month: "long", year: "numeric" });
+  const title = month.toLocaleDateString(undefined, {
+    month: "long",
+    year: "numeric",
+  });
   const todayKey = dateKey(new Date());
 
   const pickKey = pickDate ? dateKey(pickDate) : "";
@@ -728,7 +798,9 @@ function CalendarTab({
       const supabase = createClient();
       const { data } = await supabase
         .from("workout_sessions")
-        .select("day_name, duration_seconds, set_logs(exercise_name, weight, reps, set_number, is_warmup)")
+        .select(
+          "day_name, duration_seconds, set_logs(exercise_name, weight, reps, set_number, is_warmup)",
+        )
         .eq("id", session.id)
         .maybeSingle();
 
@@ -754,9 +826,10 @@ function CalendarTab({
       const logs = [...((data.set_logs as Log[] | null) ?? [])]
         .filter((l) => !l.is_warmup)
         .sort(
-        (a, b) =>
-          a.exercise_name.localeCompare(b.exercise_name) || a.set_number - b.set_number
-      );
+          (a, b) =>
+            a.exercise_name.localeCompare(b.exercise_name) ||
+            a.set_number - b.set_number,
+        );
       const byName = new Map<string, Log[]>();
       for (const s of logs) {
         const arr = byName.get(s.exercise_name) ?? [];
@@ -773,7 +846,9 @@ function CalendarTab({
           name,
           line: rows
             .map((r) => {
-              const w = Number.isInteger(r.weight) ? String(r.weight) : r.weight.toFixed(1);
+              const w = Number.isInteger(r.weight)
+                ? String(r.weight)
+                : r.weight.toFixed(1);
               return `${w} × ${r.reps}`;
             })
             .join("  ·  "),
@@ -808,7 +883,9 @@ function CalendarTab({
         <button
           type="button"
           className="px-2 text-xl text-[var(--blue)]"
-          onClick={() => setMonth(new Date(month.getFullYear(), month.getMonth() - 1, 1))}
+          onClick={() =>
+            setMonth(new Date(month.getFullYear(), month.getMonth() - 1, 1))
+          }
         >
           ‹
         </button>
@@ -816,7 +893,9 @@ function CalendarTab({
         <button
           type="button"
           className="px-2 text-xl text-[var(--blue)]"
-          onClick={() => setMonth(new Date(month.getFullYear(), month.getMonth() + 1, 1))}
+          onClick={() =>
+            setMonth(new Date(month.getFullYear(), month.getMonth() + 1, 1))
+          }
         >
           ›
         </button>
@@ -887,9 +966,12 @@ function CalendarTab({
         })}
       </div>
       <p className="text-[11px] text-[var(--muted)]">
-        <span className="text-[var(--green)]">●</span> completed · tap to view weights &amp; reps
+        <span className="text-[var(--green)]">●</span> completed · tap to view
+        weights &amp; reps
       </p>
-      {msg ? <p className="text-center text-xs text-[var(--yellow)]">{msg}</p> : null}
+      {msg ? (
+        <p className="text-center text-xs text-[var(--yellow)]">{msg}</p>
+      ) : null}
 
       {pickDate ? (
         <div
@@ -929,14 +1011,18 @@ function CalendarTab({
                       <div className="h-14 animate-pulse rounded-md bg-[var(--card-2)]" />
                     </div>
                   ) : sessionDetail.exercises.length === 0 ? (
-                    <p className="text-sm text-[var(--muted)]">No sets logged for this session.</p>
+                    <p className="text-sm text-[var(--muted)]">
+                      No sets logged for this session.
+                    </p>
                   ) : (
                     sessionDetail.exercises.map((ex) => (
                       <div
                         key={ex.name}
                         className="rounded-md border border-[var(--border)] bg-[var(--card)] px-3 py-2.5"
                       >
-                        <p className="text-sm font-semibold text-[var(--blue)]">{ex.name}</p>
+                        <p className="text-sm font-semibold text-[var(--blue)]">
+                          {ex.name}
+                        </p>
                         <p className="mt-0.5 text-xs leading-relaxed text-[var(--muted)]">
                           {ex.line}
                         </p>
@@ -963,11 +1049,17 @@ function CalendarTab({
               ) : null}
 
               {!sessionDetail || showAssign ? (
-                <div className={`space-y-2 ${sessionDetail ? "mt-3 border-t border-[var(--border)] pt-3" : ""}`}>
+                <div
+                  className={`space-y-2 ${sessionDetail ? "mt-3 border-t border-[var(--border)] pt-3" : ""}`}
+                >
                   {!sessionDetail ? (
-                    <p className="mb-1 text-xs text-[var(--muted)]">Assign this day’s workout</p>
+                    <p className="mb-1 text-xs text-[var(--muted)]">
+                      Assign this day’s workout
+                    </p>
                   ) : (
-                    <p className="mb-1 text-xs text-[var(--muted)]">Change scheduled day</p>
+                    <p className="mb-1 text-xs text-[var(--muted)]">
+                      Change scheduled day
+                    </p>
                   )}
                   <button
                     type="button"
@@ -1008,7 +1100,9 @@ function CalendarTab({
                       className="btn-accent flex w-full items-center justify-center"
                       prefetch={false}
                     >
-                      {pickKey === todayKey ? "Start workout" : "Log / backfill"}
+                      {pickKey === todayKey
+                        ? "Start workout"
+                        : "Log / backfill"}
                     </Link>
                   ) : null}
                 </div>
@@ -1048,10 +1142,20 @@ function Sparkline({ points }: { points: LiftPoint[] }) {
   });
 
   const rising = weights[weights.length - 1] > weights[0];
-  const stroke = rising ? "var(--green)" : max === min ? "var(--dim)" : "var(--blue)";
+  const stroke = rising
+    ? "var(--green)"
+    : max === min
+      ? "var(--dim)"
+      : "var(--blue)";
 
   return (
-    <svg width={w} height={h} viewBox={`0 0 ${w} ${h}`} aria-hidden className="shrink-0">
+    <svg
+      width={w}
+      height={h}
+      viewBox={`0 0 ${w} ${h}`}
+      aria-hidden
+      className="shrink-0"
+    >
       <polyline
         points={coords.join(" ")}
         fill="none"
@@ -1097,7 +1201,9 @@ function TrendStat({
                 : "text-[var(--muted)]"
           }`}
         >
-          {delta === 0 ? "same as last wk" : `${delta > 0 ? "+" : ""}${show(delta)} vs last wk`}
+          {delta === 0
+            ? "same as last wk"
+            : `${delta > 0 ? "+" : ""}${show(delta)} vs last wk`}
         </p>
       ) : null}
     </div>
@@ -1135,14 +1241,20 @@ function ProgressionTab({ history }: { history: Hist[] }) {
         .then(({ data: noteRows }) => {
           if (cancelled) return;
           const parsed = (noteRows ?? []).flatMap((r) =>
-            parseSessionNotes(r.notes, String(r.started_at).slice(0, 10), r.day_name)
+            parseSessionNotes(
+              r.notes,
+              String(r.started_at).slice(0, 10),
+              r.day_name,
+            ),
           );
           setFlagged(flagNotes(parsed).slice(0, 8));
         });
 
       const base = supabase
         .from("workout_sessions")
-        .select("started_at, set_logs(exercise_name, muscle, weight, reps, is_completed, is_warmup, side)")
+        .select(
+          "started_at, set_logs(exercise_name, muscle, weight, reps, is_completed, is_warmup, side)",
+        )
         .eq("user_id", user.id)
         .not("ended_at", "is", null)
         .order("started_at", { ascending: false })
@@ -1150,7 +1262,10 @@ function ProgressionTab({ history }: { history: Hist[] }) {
 
       // `side` arrives with schema_shoulder.sql; without it the lift charts
       // still work, there is just no left-versus-right story to tell.
-      type QueryResult = { data: SideRow[] | null; error: { message: string } | null };
+      type QueryResult = {
+        data: SideRow[] | null;
+        error: { message: string } | null;
+      };
       type SideRow = {
         started_at: string;
         set_logs:
@@ -1170,7 +1285,9 @@ function ProgressionTab({ history }: { history: Hist[] }) {
       if (error && /side/i.test(error.message)) {
         ({ data, error } = (await supabase
           .from("workout_sessions")
-          .select("started_at, set_logs(exercise_name, muscle, weight, reps, is_completed, is_warmup)")
+          .select(
+            "started_at, set_logs(exercise_name, muscle, weight, reps, is_completed, is_warmup)",
+          )
           .eq("user_id", user.id)
           .not("ended_at", "is", null)
           .order("started_at", { ascending: false })
@@ -1212,7 +1329,7 @@ function ProgressionTab({ history }: { history: Hist[] }) {
     const startOfWeek = new Date(
       now.getFullYear(),
       now.getMonth(),
-      now.getDate() - now.getDay()
+      now.getDate() - now.getDay(),
     );
     const startOfLast = new Date(startOfWeek);
     startOfLast.setDate(startOfLast.getDate() - 7);
@@ -1254,7 +1371,9 @@ function ProgressionTab({ history }: { history: Hist[] }) {
     const prev = answered[1];
     const shared =
       last && prev && last.shoulder !== "fine" && prev.shoulder !== "fine"
-        ? lifts(last.shoulderLift).filter((lift) => lifts(prev.shoulderLift).includes(lift))
+        ? lifts(last.shoulderLift).filter((lift) =>
+            lifts(prev.shoulderLift).includes(lift),
+          )
         : [];
     const flag = shared.length ? shared.join(", ") : null;
     return { recent, flag, total: answered.length };
@@ -1275,26 +1394,38 @@ function ProgressionTab({ history }: { history: Hist[] }) {
           <div className="card space-y-2 p-3.5">
             {painRepeats.length ? (
               <p className="rounded-[4px] bg-[var(--yellow)]/10 px-2.5 py-2 text-[12px] leading-snug text-[var(--yellow)]">
-                <span className="font-bold">{painRepeats.join(", ")}</span> has come up more than
-                once. Hold the weight where it is, and mention it at your next PT session.
+                <span className="font-bold">{painRepeats.join(", ")}</span> has
+                come up more than once. Hold the weight where it is, and mention
+                it at your next PT session.
               </p>
             ) : null}
             {flagged.map((f) => {
-              const when = new Date(`${f.date}T12:00:00`).toLocaleDateString(undefined, {
-                month: "short",
-                day: "numeric",
-              });
+              const when = new Date(`${f.date}T12:00:00`).toLocaleDateString(
+                undefined,
+                {
+                  month: "short",
+                  day: "numeric",
+                },
+              );
               return (
-                <div key={`${f.date}-${f.exercise}-${f.note}`} className="flex gap-2.5">
+                <div
+                  key={`${f.date}-${f.exercise}-${f.note}`}
+                  className="flex gap-2.5"
+                >
                   <span
                     className="mt-1 h-1.5 w-1.5 shrink-0 rounded-full"
                     style={{
-                      background: f.kind === "pain" ? "var(--red)" : "var(--yellow)",
+                      background:
+                        f.kind === "pain" ? "var(--red)" : "var(--yellow)",
                     }}
                   />
                   <div className="min-w-0">
-                    <p className="text-[12.5px] font-semibold leading-snug">{f.exercise}</p>
-                    <p className="text-[12px] leading-snug text-[var(--muted)]">{f.note}</p>
+                    <p className="text-[12.5px] font-semibold leading-snug">
+                      {f.exercise}
+                    </p>
+                    <p className="text-[12px] leading-snug text-[var(--muted)]">
+                      {f.note}
+                    </p>
                     <p className="text-[11px] text-[var(--dim)]">{when}</p>
                   </div>
                 </div>
@@ -1325,11 +1456,14 @@ function ProgressionTab({ history }: { history: Hist[] }) {
               return (
                 <div key={s.name}>
                   <div className="flex items-baseline justify-between gap-3">
-                    <p className="min-w-0 truncate text-[13px] font-semibold">{s.name}</p>
+                    <p className="min-w-0 truncate text-[13px] font-semibold">
+                      {s.name}
+                    </p>
                     <p
                       className="shrink-0 text-[11.5px] font-bold"
                       style={{
-                        color: even || closing ? "var(--green)" : "var(--yellow)",
+                        color:
+                          even || closing ? "var(--green)" : "var(--yellow)",
                       }}
                     >
                       {sideBalanceLine(s)}
@@ -1340,12 +1474,14 @@ function ProgressionTab({ history }: { history: Hist[] }) {
                       className="h-full rounded-full"
                       style={{
                         width: `${100 - width}%`,
-                        background: even || closing ? "var(--green)" : "var(--yellow)",
+                        background:
+                          even || closing ? "var(--green)" : "var(--yellow)",
                       }}
                     />
                   </div>
                   <p className="mt-1 font-mono text-[11px] tabular-nums text-[var(--muted)]">
-                    L {formatLiftWeight(s.latest.left)} · R {formatLiftWeight(s.latest.right)}
+                    L {formatLiftWeight(s.latest.left)} · R{" "}
+                    {formatLiftWeight(s.latest.right)}
                     {s.points.length > 1
                       ? ` · was ${s.points[0].gapPct > 0 ? "L" : "R"} ${Math.abs(s.points[0].gapPct)}% behind`
                       : ""}
@@ -1354,8 +1490,9 @@ function ProgressionTab({ history }: { history: Hist[] }) {
               );
             })}
             <p className="pt-0.5 text-[11px] text-[var(--dim)]">
-              The left stays lighter on purpose while the cuff settles — what matters is
-              the gap shrinking over weeks, not matching the right today.
+              The left stays lighter on purpose while the cuff settles — what
+              matters is the gap shrinking over weeks, not matching the right
+              today.
             </p>
           </div>
         </section>
@@ -1365,7 +1502,9 @@ function ProgressionTab({ history }: { history: Hist[] }) {
         <section className="space-y-2.5">
           <div className="flex items-baseline justify-between gap-2">
             <h2 className="text-[17px] font-bold">Shoulder</h2>
-            <p className="text-[11.5px] font-semibold text-[var(--muted)]">Last {shoulderLog.recent.length} sessions</p>
+            <p className="text-[11.5px] font-semibold text-[var(--muted)]">
+              Last {shoulderLog.recent.length} sessions
+            </p>
           </div>
           <div className="rounded-md border border-[var(--border-solid)] bg-[var(--card)] p-4">
             <div className="flex items-end gap-1.5">
@@ -1385,11 +1524,15 @@ function ProgressionTab({ history }: { history: Hist[] }) {
             </div>
             {shoulderLog.flag ? (
               <p className="mt-3 text-[13px] leading-snug text-[var(--yellow)]">
-                <span className="font-bold">{shoulderLog.flag}</span> has bothered the shoulder two sessions running. Hold its weight where it is, and if it keeps up, get it looked at — that&apos;s the plan&apos;s rule, not a suggestion.
+                <span className="font-bold">{shoulderLog.flag}</span> has
+                bothered the shoulder two sessions running. Hold its weight
+                where it is, and if it keeps up, get it looked at — that&apos;s
+                the plan&apos;s rule, not a suggestion.
               </p>
             ) : (
               <p className="mt-3 text-[12.5px] text-[var(--muted)]">
-                Green fine · amber pinchy · red painful. Answered after each session.
+                Green fine · amber pinchy · red painful. Answered after each
+                session.
               </p>
             )}
           </div>
@@ -1410,7 +1553,11 @@ function ProgressionTab({ history }: { history: Hist[] }) {
             prev={weeks.last.volume}
             format={kLb}
           />
-          <TrendStat label="Sets" value={weeks.this.sets} prev={weeks.last.sets} />
+          <TrendStat
+            label="Sets"
+            value={weeks.this.sets}
+            prev={weeks.last.sets}
+          />
         </div>
       </section>
 

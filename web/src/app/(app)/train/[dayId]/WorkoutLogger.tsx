@@ -5,7 +5,10 @@ import { useEffect, useMemo, useRef, useState, useTransition } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { catalogEntry, formVideoUrl } from "@/lib/exerciseCatalog";
 import { SwapExerciseSheet } from "@/components/SwapExerciseSheet";
-import { AddExerciseSheet, type AddExercisePick } from "@/components/AddExerciseSheet";
+import {
+  AddExerciseSheet,
+  type AddExercisePick,
+} from "@/components/AddExerciseSheet";
 import {
   clearDraft,
   loadDraft,
@@ -14,7 +17,13 @@ import {
   type DraftSet,
 } from "@/lib/sessionDraft";
 import { formatPrescription, setTargetLabel } from "@/lib/workouts";
-import { IconCheck, IconMore, IconPlayCircle, IconSwap, IconX } from "@/components/icons";
+import {
+  IconCheck,
+  IconMore,
+  IconPlayCircle,
+  IconSwap,
+  IconX,
+} from "@/components/icons";
 import { splitWarmupBlock } from "@/lib/prehab";
 import { derrickRecompGuidance, derrickRecompWeek } from "@/lib/derrickRecomp";
 import { NT_RIR_TARGET } from "@/lib/ntCoaching";
@@ -111,7 +120,9 @@ function RestRing({
           style={{ transition: "stroke-dashoffset 250ms linear" }}
         />
       </svg>
-      <div className="absolute inset-0 flex flex-col items-center justify-center">{children}</div>
+      <div className="absolute inset-0 flex flex-col items-center justify-center">
+        {children}
+      </div>
     </div>
   );
 }
@@ -154,7 +165,9 @@ function formatRest(seconds: number) {
  * the "previous" label stays visible so an edited value is still comparable.
  */
 function fmtPrev(p: { weight: number; reps: number } | undefined) {
-  return p ? `${Number.isInteger(p.weight) ? p.weight : p.weight.toFixed(1)} × ${p.reps}` : "—";
+  return p
+    ? `${Number.isInteger(p.weight) ? p.weight : p.weight.toFixed(1)} × ${p.reps}`
+    : "—";
 }
 
 function buildSet(
@@ -162,7 +175,7 @@ function buildSet(
   prev: { weight: number; reps: number } | undefined,
   isWarmup: boolean,
   /** Set for one-sided exercises: last time's right side (falls back to prev). */
-  prevR?: { weight: number; reps: number } | null
+  prevR?: { weight: number; reps: number } | null,
 ): DraftSet {
   const base: DraftSet = {
     setNumber: index + 1,
@@ -194,7 +207,10 @@ export function WorkoutLogger({
   dayId: string;
   dayName: string;
   exercises: Exercise[];
-  previousByExercise: Record<string, { weight: number; reps: number; rir?: number | null }[]>;
+  previousByExercise: Record<
+    string,
+    { weight: number; reps: number; rir?: number | null }[]
+  >;
   /** All-time best working set per exercise name */
   bestByExercise?: Record<string, BestSet>;
   /** What was written about each movement last time it was trained */
@@ -208,7 +224,7 @@ export function WorkoutLogger({
 
   const baseSorted = useMemo(
     () => [...exercises].sort((a, b) => a.sort_order - b.sort_order),
-    [exercises]
+    [exercises],
   );
   /** Movements added during this session (kept in the draft until finish). */
   const [addedExercises, setAddedExercises] = useState<Exercise[]>([]);
@@ -216,9 +232,14 @@ export function WorkoutLogger({
   const sorted = useMemo(
     () =>
       addedExercises.length
-        ? [...baseSorted, ...addedExercises.filter((a) => !baseSorted.some((b) => b.id === a.id))]
+        ? [
+            ...baseSorted,
+            ...addedExercises.filter(
+              (a) => !baseSorted.some((b) => b.id === a.id),
+            ),
+          ]
         : baseSorted,
-    [baseSorted, addedExercises]
+    [baseSorted, addedExercises],
   );
 
   const [saving, setSaving] = useState(false);
@@ -226,18 +247,24 @@ export function WorkoutLogger({
   const [startedAt, setStartedAt] = useState(() => Date.now());
   const [elapsed, setElapsed] = useState(0);
   const [notes, setNotes] = useState<Record<string, string>>({});
-  const [nameOverrides, setNameOverrides] = useState<Record<string, string>>({});
+  const [nameOverrides, setNameOverrides] = useState<Record<string, string>>(
+    {},
+  );
   const [renameBusy, setRenameBusy] = useState(false);
   /** One-sided answers given this session (custom names), keyed by exercise id. */
-  const [unilateralOverride, setUnilateralOverride] = useState<Record<string, boolean>>({});
+  const [unilateralOverride, setUnilateralOverride] = useState<
+    Record<string, boolean>
+  >({});
   const [editOneSided, setEditOneSided] = useState<boolean | null>(null);
-  const [restByExercise, setRestByExercise] = useState<Record<string, number>>(() => {
-    const init: Record<string, number> = {};
-    for (const ex of baseSorted) {
-      init[ex.id] = getRestPref(ex.name, defaultRestSeconds(ex, 0));
-    }
-    return init;
-  });
+  const [restByExercise, setRestByExercise] = useState<Record<string, number>>(
+    () => {
+      const init: Record<string, number> = {};
+      for (const ex of baseSorted) {
+        init[ex.id] = getRestPref(ex.name, defaultRestSeconds(ex, 0));
+      }
+      return init;
+    },
+  );
   const [sessionDayName, setSessionDayName] = useState(dayName);
   const [showLeaveConfirm, setShowLeaveConfirm] = useState(false);
   const [editForId, setEditForId] = useState<string | null>(null);
@@ -252,7 +279,9 @@ export function WorkoutLogger({
   } | null>(null);
   const [restTick, setRestTick] = useState(0);
   const [restFullScreen, setRestFullScreen] = useState(false);
-  const [restEditExerciseId, setRestEditExerciseId] = useState<string | null>(null);
+  const [restEditExerciseId, setRestEditExerciseId] = useState<string | null>(
+    null,
+  );
   const [ratingSessionId, setRatingSessionId] = useState<string | null>(null);
   const [ratingSaving, setRatingSaving] = useState(false);
   const [showFinishConfirm, setShowFinishConfirm] = useState(false);
@@ -280,8 +309,10 @@ export function WorkoutLogger({
     () =>
       ntDay
         ? NT_RIR_TARGET
-        : derrickRecompGuidance(derrickRecompWeek(logDate ?? dateKey(new Date())))?.rirTarget ?? null,
-    [logDate, ntDay]
+        : (derrickRecompGuidance(
+            derrickRecompWeek(logDate ?? dateKey(new Date())),
+          )?.rirTarget ?? null),
+    [logDate, ntDay],
   );
   const [rirExplained, setRirExplained] = useState(true);
   useEffect(() => {
@@ -295,7 +326,9 @@ export function WorkoutLogger({
   useEffect(() => {
     setLeftLimited(leftShoulderLimited());
   }, []);
-  const [shoulder, setShoulder] = useState<"fine" | "pinchy" | "painful" | null>(null);
+  const [shoulder, setShoulder] = useState<
+    "fine" | "pinchy" | "painful" | null
+  >(null);
   /** More than one lift can bother the shoulder in a session; all of them count. */
   const [shoulderLifts, setShoulderLifts] = useState<string[]>([]);
   const [prToast, setPrToast] = useState<{
@@ -307,20 +340,26 @@ export function WorkoutLogger({
   const sessionBestRef = useRef<Record<string, BestSet>>({ ...bestByExercise });
   const prToastTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const [setsByExercise, setSetsByExercise] = useState<Record<string, DraftSet[]>>(() => {
+  const [setsByExercise, setSetsByExercise] = useState<
+    Record<string, DraftSet[]>
+  >(() => {
     const init: Record<string, DraftSet[]> = {};
     for (const ex of baseSorted) {
       const prev = previousByExercise[ex.name] ?? [];
       const warmEx = isWarmupExerciseName(ex.name);
       const uni = isUnilateral(ex);
-      const prevRList = uni ? previousByExercise[rightSideKey(ex.name)] ?? [] : [];
+      const prevRList = uni
+        ? (previousByExercise[rightSideKey(ex.name)] ?? [])
+        : [];
       init[ex.id] = Array.from({ length: ex.default_sets }, (_, i) =>
         buildSet(
           i,
           prev[i] ?? prev[prev.length - 1],
           warmEx,
-          uni ? (prevRList[i] ?? prevRList[prevRList.length - 1] ?? null) : undefined
-        )
+          uni
+            ? (prevRList[i] ?? prevRList[prevRList.length - 1] ?? null)
+            : undefined,
+        ),
       );
     }
     return init;
@@ -333,11 +372,12 @@ export function WorkoutLogger({
       const overrides = draft.nameOverrides ?? {};
       // An added movement kept in the plan is already in the day's exercises.
       const added = (draft.addedExercises ?? []).filter(
-        (a) => !baseSorted.some((b) => b.id === a.id)
+        (a) => !baseSorted.some((b) => b.id === a.id),
       );
       const normalized: Record<string, DraftSet[]> = {};
       for (const [id, sets] of Object.entries(draft.setsByExercise)) {
-        const ex = baseSorted.find((e) => e.id === id) ?? added.find((e) => e.id === id);
+        const ex =
+          baseSorted.find((e) => e.id === id) ?? added.find((e) => e.id === id);
         const label = overrides[id] ?? ex?.name ?? "";
         const warmEx = isWarmupExerciseName(label);
         normalized[id] = sets.map((s) => ({
@@ -367,14 +407,14 @@ export function WorkoutLogger({
 
   const hasProgress = useMemo(() => {
     return Object.values(setsByExercise).some((sets) =>
-      sets.some((s) => s.completed || s.reps !== "")
+      sets.some((s) => s.completed || s.reps !== ""),
     );
   }, [setsByExercise]);
 
   const completedSetCount = useMemo(() => {
     return Object.values(setsByExercise).reduce(
       (n, sets) => n + sets.filter((s) => s.completed).length,
-      0
+      0,
     );
   }, [setsByExercise]);
 
@@ -404,17 +444,20 @@ export function WorkoutLogger({
   useEffect(() => {
     if (!draftReady) return;
     if (!hasProgress) return;
-    saveDraft({
-      dayId,
-      dayName: sessionDayName,
-      startedAt,
-      savedAt: Date.now(),
-      setsByExercise,
-      notes,
-      nameOverrides,
-      restByExercise,
-      addedExercises,
-    }, logDate);
+    saveDraft(
+      {
+        dayId,
+        dayName: sessionDayName,
+        startedAt,
+        savedAt: Date.now(),
+        setsByExercise,
+        notes,
+        nameOverrides,
+        restByExercise,
+        addedExercises,
+      },
+      logDate,
+    );
   }, [
     addedExercises,
     draftReady,
@@ -430,7 +473,10 @@ export function WorkoutLogger({
   ]);
 
   useEffect(() => {
-    const t = setInterval(() => setElapsed(Math.floor((Date.now() - startedAt) / 1000)), 1000);
+    const t = setInterval(
+      () => setElapsed(Math.floor((Date.now() - startedAt) / 1000)),
+      1000,
+    );
     return () => clearInterval(t);
   }, [startedAt]);
 
@@ -507,7 +553,9 @@ export function WorkoutLogger({
     const exIdx = sorted.findIndex((e) => e.id === ex.id);
     const nextEx = isLast && exIdx >= 0 ? sorted[exIdx + 1] : null;
     if (isLast) {
-      return nextEx ? `Up next · ${displayName(nextEx)}` : `${displayName(ex)} complete`;
+      return nextEx
+        ? `Up next · ${displayName(nextEx)}`
+        : `${displayName(ex)} complete`;
     }
     return `Next set · ${displayName(ex)}`;
   }
@@ -551,17 +599,20 @@ export function WorkoutLogger({
   }
 
   function saveAndLeave() {
-    saveDraft({
-      dayId,
-      dayName: sessionDayName,
-      startedAt,
-      savedAt: Date.now(),
-      setsByExercise,
-      notes,
-      nameOverrides,
-      restByExercise,
-      addedExercises,
-    }, logDate);
+    saveDraft(
+      {
+        dayId,
+        dayName: sessionDayName,
+        startedAt,
+        savedAt: Date.now(),
+        setsByExercise,
+        notes,
+        nameOverrides,
+        restByExercise,
+        addedExercises,
+      },
+      logDate,
+    );
     setShowLeaveConfirm(false);
     router.push(`/train/${dayId}`);
   }
@@ -594,7 +645,11 @@ export function WorkoutLogger({
     return () => window.removeEventListener("popstate", onPopState);
   }, []);
 
-  function updateSet(exerciseId: string, setIndex: number, patch: Partial<DraftSet>) {
+  function updateSet(
+    exerciseId: string,
+    setIndex: number,
+    patch: Partial<DraftSet>,
+  ) {
     setSetsByExercise((prev) => {
       const list = [...(prev[exerciseId] ?? [])];
       list[setIndex] = { ...list[setIndex], ...patch };
@@ -620,13 +675,15 @@ export function WorkoutLogger({
   }
 
   function oneSided(ex: Exercise) {
-    return unilateralOverride[ex.id] ?? isUnilateral({ name: displayName(ex), unilateral: ex.unilateral });
+    return (
+      unilateralOverride[ex.id] ??
+      isUnilateral({ name: displayName(ex), unilateral: ex.unilateral })
+    );
   }
 
   function fillFromPrevious(ex: Exercise, setIndex: number) {
     const name = displayName(ex);
-    const prev =
-      previousByExercise[name] ?? previousByExercise[ex.name] ?? [];
+    const prev = previousByExercise[name] ?? previousByExercise[ex.name] ?? [];
     const p = prev[setIndex] ?? prev[prev.length - 1];
     if (!p) return;
     updateSet(ex.id, setIndex, {
@@ -667,7 +724,8 @@ export function WorkoutLogger({
     if (next && !set.isWarmup) {
       const left = { w: Number(set.weight) || 0, r: Number(set.reps) || 0 };
       const right = { w: Number(set.weightR) || 0, r: Number(set.repsR) || 0 };
-      const useRight = oneSided(ex) && setScore(right.w, right.r) > setScore(left.w, left.r);
+      const useRight =
+        oneSided(ex) && setScore(right.w, right.r) > setScore(left.w, left.r);
       const weight = useRight ? right.w : left.w;
       const reps = useRight ? right.r : left.r;
       if (weight > 0 && reps > 0) {
@@ -675,13 +733,16 @@ export function WorkoutLogger({
         const prev =
           sessionBestRef.current[name] ?? sessionBestRef.current[ex.name];
         const cur = { weight, reps };
-        if (!prev || setScore(cur.weight, cur.reps) > setScore(prev.weight, prev.reps)) {
+        if (
+          !prev ||
+          setScore(cur.weight, cur.reps) > setScore(prev.weight, prev.reps)
+        ) {
           sessionBestRef.current[name] = cur;
           showPrToast(
             prev ? `New PR · ${name}` : `First log · ${name}`,
             prev
               ? `${fmtSet(weight, reps)} (was ${fmtSet(prev.weight, prev.reps)})`
-              : fmtSet(weight, reps)
+              : fmtSet(weight, reps),
           );
         }
       }
@@ -691,8 +752,13 @@ export function WorkoutLogger({
     const rest = set.isWarmup ? Math.min(baseRest, 90) : baseRest;
     // Rest after every completed set — including the last (before next exercise)
     if (next && rest > 0) {
-      void ensureRestNotifyPermission().then(() => startRest(ex, setIndex, rest));
-    } else if (activeRest?.exerciseId === ex.id && activeRest.afterSet === setIndex) {
+      void ensureRestNotifyPermission().then(() =>
+        startRest(ex, setIndex, rest),
+      );
+    } else if (
+      activeRest?.exerciseId === ex.id &&
+      activeRest.afterSet === setIndex
+    ) {
       clearActiveRest();
     }
   }
@@ -709,15 +775,28 @@ export function WorkoutLogger({
    * the ones belonging to the exercise it replaced. Sets already ticked off are
    * left alone — that work happened.
    */
-  function reseedFromHistory(exerciseId: string, name: string, sided?: boolean) {
+  function reseedFromHistory(
+    exerciseId: string,
+    name: string,
+    sided?: boolean,
+  ) {
     const prev = previousByExercise[name] ?? [];
     const ex = sorted.find((e) => e.id === exerciseId);
-    const uni = sided ?? (ex ? isUnilateral({ name, unilateral: unilateralOverride[exerciseId] ?? ex.unilateral }) : false);
-    const prevR = uni ? previousByExercise[rightSideKey(name)] ?? [] : [];
+    const uni =
+      sided ??
+      (ex
+        ? isUnilateral({
+            name,
+            unilateral: unilateralOverride[exerciseId] ?? ex.unilateral,
+          })
+        : false);
+    const prevR = uni ? (previousByExercise[rightSideKey(name)] ?? []) : [];
     setSetsByExercise((cur) => {
       const list = (cur[exerciseId] ?? []).map((s, i) => {
         const p = prev[i] ?? prev[prev.length - 1];
-        const pr = uni ? (prevR[i] ?? prevR[prevR.length - 1] ?? null) : undefined;
+        const pr = uni
+          ? (prevR[i] ?? prevR[prevR.length - 1] ?? null)
+          : undefined;
         const fresh = buildSet(i, p, Boolean(s.isWarmup), pr);
         if (s.completed) {
           return { ...s, previous: fresh.previous, previousR: fresh.previousR };
@@ -744,7 +823,10 @@ export function WorkoutLogger({
       setUnilateralOverride((o) => ({ ...o, [target]: sided }));
       // Stored on the exercise so the next session splits it too. The column
       // arrives with schema_unilateral.sql; without it the answer lasts this session.
-      void supabaseRef.current.from("workout_exercises").update({ unilateral: sided }).eq("id", target);
+      void supabaseRef.current
+        .from("workout_exercises")
+        .update({ unilateral: sided })
+        .eq("id", target);
     }
     reseedFromHistory(target, trimmed, sided);
 
@@ -802,15 +884,26 @@ export function WorkoutLogger({
         unilateral: pick.sided,
       };
       const supabase = supabaseRef.current;
-      let res = await supabase.from("workout_exercises").insert(row).select("id").single();
+      let res = await supabase
+        .from("workout_exercises")
+        .insert(row)
+        .select("id")
+        .single();
       if (res.error && /unilateral/i.test(res.error.message)) {
         const { unilateral, ...rest } = row;
         void unilateral;
-        res = await supabase.from("workout_exercises").insert(rest).select("id").single();
+        res = await supabase
+          .from("workout_exercises")
+          .insert(rest)
+          .select("id")
+          .single();
       }
       setAddBusy(false);
       if (res.data?.id) id = res.data.id;
-      else setError(`Added for this session only — ${res.error?.message ?? "could not save to plan"}`);
+      else
+        setError(
+          `Added for this session only — ${res.error?.message ?? "could not save to plan"}`,
+        );
     }
 
     const ex: Exercise = {
@@ -826,7 +919,7 @@ export function WorkoutLogger({
     };
     const uni = isUnilateral(ex);
     const prev = previousByExercise[ex.name] ?? [];
-    const prevR = uni ? previousByExercise[rightSideKey(ex.name)] ?? [] : [];
+    const prevR = uni ? (previousByExercise[rightSideKey(ex.name)] ?? []) : [];
     const warmEx = isWarmupExerciseName(ex.name);
 
     setSetsByExercise((cur) => ({
@@ -836,12 +929,13 @@ export function WorkoutLogger({
           i,
           prev[i] ?? prev[prev.length - 1],
           warmEx,
-          uni ? (prevR[i] ?? prevR[prevR.length - 1] ?? null) : undefined
-        )
+          uni ? (prevR[i] ?? prevR[prevR.length - 1] ?? null) : undefined,
+        ),
       ),
     }));
     setRestByExercise((r) => ({ ...r, [id]: getRestPref(ex.name, 180) }));
-    if (pick.sided !== null) setUnilateralOverride((o) => ({ ...o, [id]: pick.sided as boolean }));
+    if (pick.sided !== null)
+      setUnilateralOverride((o) => ({ ...o, [id]: pick.sided as boolean }));
     setAddedExercises((a) => [...a, ex]);
     setShowAdd(false);
   }
@@ -1050,7 +1144,10 @@ export function WorkoutLogger({
         return;
       }
 
-      const rows = buildSetRows().map((r) => ({ ...r, session_id: session.id }));
+      const rows = buildSetRows().map((r) => ({
+        ...r,
+        session_id: session.id,
+      }));
 
       if (rows.length) {
         let { error: setsErr } = await supabase.from("set_logs").insert(rows);
@@ -1067,7 +1164,10 @@ export function WorkoutLogger({
           // for a one-sided set, and keep the right side's numbers in the notes.
           const rightLines = rows
             .filter((r) => r.side === "R")
-            .map((r) => `${r.exercise_name} set ${r.set_number} right: ${r.weight} × ${r.reps}`);
+            .map(
+              (r) =>
+                `${r.exercise_name} set ${r.set_number} right: ${r.weight} × ${r.reps}`,
+            );
           const fallbackRows = rows
             .filter((r) => r.side !== "R")
             .map(({ rir, side, ...rest }) => {
@@ -1078,10 +1178,16 @@ export function WorkoutLogger({
           const retry = await supabase.from("set_logs").insert(fallbackRows);
           setsErr = retry.error;
           if (!setsErr && rightLines.length) {
-            const { data: row } = await supabase.from("workout_sessions").select("notes").eq("id", session.id).maybeSingle();
+            const { data: row } = await supabase
+              .from("workout_sessions")
+              .select("notes")
+              .eq("id", session.id)
+              .maybeSingle();
             await supabase
               .from("workout_sessions")
-              .update({ notes: [row?.notes, ...rightLines].filter(Boolean).join("\n") })
+              .update({
+                notes: [row?.notes, ...rightLines].filter(Boolean).join("\n"),
+              })
               .eq("id", session.id);
           }
         }
@@ -1125,7 +1231,10 @@ export function WorkoutLogger({
    * over time. This records the answer per session. Until schema_shoulder.sql
    * is run the columns don't exist, so the answer falls back into notes.
    */
-  async function submitShoulder(status: "fine" | "pinchy" | "painful", lift: string) {
+  async function submitShoulder(
+    status: "fine" | "pinchy" | "painful",
+    lift: string,
+  ) {
     if (!ratingSessionId) return;
     setRatingSaving(true);
     const supabase = supabaseRef.current;
@@ -1141,7 +1250,10 @@ export function WorkoutLogger({
         .eq("id", ratingSessionId)
         .maybeSingle();
       const notes = [row?.notes, line].filter(Boolean).join("\n");
-      await supabase.from("workout_sessions").update({ notes }).eq("id", ratingSessionId);
+      await supabase
+        .from("workout_sessions")
+        .update({ notes })
+        .eq("id", ratingSessionId);
     }
     const id = ratingSessionId;
     pendingFinishRef.current = null;
@@ -1179,10 +1291,13 @@ export function WorkoutLogger({
       setAddedExercises(snap.addedExercises);
       setSessionDayName(snap.dayName);
       setStartedAt(snap.startedAt);
-      saveDraft({
-        ...snap,
-        savedAt: Date.now(),
-      }, logDate);
+      saveDraft(
+        {
+          ...snap,
+          savedAt: Date.now(),
+        },
+        logDate,
+      );
       setDraftBanner(true);
     }
 
@@ -1210,9 +1325,8 @@ export function WorkoutLogger({
       exercises: sorted,
       setsByExercise,
       restByExercise,
-      defaultRest: (ex, i) =>
-        defaultRestSeconds(ex as Exercise, i),
-    })
+      defaultRest: (ex, i) => defaultRestSeconds(ex as Exercise, i),
+    }),
   );
   const dateLabel = (() => {
     const d = logDate
@@ -1281,10 +1395,14 @@ export function WorkoutLogger({
       {prToast ? (
         <div
           className="fixed left-1/2 z-40 w-[min(92vw,360px)] -translate-x-1/2 rounded-md border border-[var(--green)]/50 bg-[#14261a] px-4 py-3 shadow-lg"
-          style={{ top: "max(72px, calc(env(safe-area-inset-top, 0px) + 56px))" }}
+          style={{
+            top: "max(72px, calc(env(safe-area-inset-top, 0px) + 56px))",
+          }}
           role="status"
         >
-          <p className="text-sm font-bold text-[var(--green)]">{prToast.title}</p>
+          <p className="text-sm font-bold text-[var(--green)]">
+            {prToast.title}
+          </p>
           <p className="mt-0.5 text-xs text-white/80">{prToast.detail}</p>
         </div>
       ) : null}
@@ -1292,7 +1410,11 @@ export function WorkoutLogger({
       {draftBanner ? (
         <div className="mx-4 mt-3 rounded-md border border-[var(--blue)]/40 bg-[var(--blue)]/10 px-3 py-2 text-xs text-[var(--blue)]">
           Resumed saved session.{" "}
-          <button type="button" className="font-bold underline" onClick={() => setDraftBanner(false)}>
+          <button
+            type="button"
+            className="font-bold underline"
+            onClick={() => setDraftBanner(false)}
+          >
             OK
           </button>
         </div>
@@ -1316,7 +1438,9 @@ export function WorkoutLogger({
           <section className="space-y-3 rounded-md border border-[var(--yellow)]/20 bg-[var(--card)] p-4">
             <div className="flex items-center justify-between gap-3">
               <div className="min-w-0">
-                <h2 className="flex items-center gap-2 text-[17px] font-bold">Warm-up <Explain term="prehab" /></h2>
+                <h2 className="flex items-center gap-2 text-[17px] font-bold">
+                  Warm-up <Explain term="prehab" />
+                </h2>
                 <p className="mt-0.5 text-[12.5px] text-[var(--muted)]">
                   Shoulder prehab · {warmupsDone} of {warmups.length} done
                 </p>
@@ -1358,7 +1482,9 @@ export function WorkoutLogger({
                       <span className="min-w-0 flex-1">
                         <span
                           className={`block truncate text-[14.5px] font-semibold ${
-                            done ? "text-[var(--muted)] line-through" : "text-[var(--text)]"
+                            done
+                              ? "text-[var(--muted)] line-through"
+                              : "text-[var(--text)]"
                           }`}
                         >
                           {name}
@@ -1406,7 +1532,10 @@ export function WorkoutLogger({
           const showPlates = !isCardio && isBarbellLoadable(name);
           // Sets × reps is drawn as a dimension line; the prescription text
           // keeps only what the line can't say (effort cues, crown-set detail).
-          const range = !isCardio && !ex.has_crown_set ? parseRepRange(ex.working_rep_range) : null;
+          const range =
+            !isCardio && !ex.has_crown_set
+              ? parseRepRange(ex.working_rep_range)
+              : null;
           const dimension = range
             ? `${ex.default_sets} × ${range.low === range.high ? `${range.low}+` : `${range.low}–${range.high}`}`
             : null;
@@ -1419,71 +1548,98 @@ export function WorkoutLogger({
                 workingRepRange: ex.working_rep_range,
               })
                 .filter((line) => !dimension || !/^\d+ sets$/.test(line))
-                .map((line) => (dimension ? line.replace(/^[0-9]+[–-][0-9]+ reps(\s*·\s*)?/, "") : line))
+                .map((line) =>
+                  dimension
+                    ? line.replace(/^[0-9]+[–-][0-9]+ reps(\s*·\s*)?/, "")
+                    : line,
+                )
                 .filter(Boolean);
 
           return (
             <section
               key={ex.id}
-              className="space-y-3 rounded-md border border-[var(--border-solid)] bg-[var(--card)] p-4"
+              className="logger-card space-y-3 rounded-md border border-[var(--border-solid)] bg-[var(--card)] p-4"
             >
-              <div className="flex items-start justify-between gap-2.5">
-                <div className="flex min-w-0 gap-3">
+              <div className="logger-card-header">
+                <div className="exercise-heading">
                   {photo ? (
                     /* eslint-disable-next-line @next/next/no-img-element */
                     <img
                       src={photo}
                       alt=""
                       loading="lazy"
-                      className="h-[52px] w-[52px] shrink-0 rounded-[4px] border border-[var(--border)] object-cover"
+                      className="exercise-image shrink-0"
                     />
-                  ) : null}
-                  <div className="min-w-0">
-                  <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
-                    <h2 className="text-[17px] font-bold leading-snug">{name}</h2>
-                    <span className="rounded-[4px] bg-[var(--card-2)] px-2 py-0.5 text-[11px] font-bold text-[var(--muted)]">
-                      {ex.muscle}
-                    </span>
-                  </div>
-                  {prescriptionNotes.length ? (
-                    <div className="mt-1.5 space-y-0.5">
-                      {prescriptionNotes.map((line) => (
-                        <p key={line} className="flex items-center gap-1.5 text-[12.5px] leading-snug text-[var(--muted)]">
-                          {line}
-                          {/fail/i.test(line) ? <Explain term="failure" /> : null}
-                        </p>
-                      ))}
+                  ) : (
+                    <div
+                      className="exercise-image grid shrink-0 place-content-center bg-[var(--surface)] text-xl text-[var(--muted)]"
+                      aria-hidden
+                    >
+                      💪
                     </div>
-                  ) : null}
-                  {(() => {
-                    // What he told himself last time, in front of him before
-                    // the first set rather than filed in an old session.
-                    const past = lastNotes[name] ?? lastNotes[ex.name];
-                    if (!past) return null;
-                    const when = new Date(`${past.date}T12:00:00`).toLocaleDateString(undefined, {
-                      month: "short",
-                      day: "numeric",
-                    });
-                    return (
-                      <p className="mt-1.5 rounded-[4px] border-l-2 border-[var(--blue)] bg-[var(--surface)] px-2 py-1.5 text-[12px] leading-snug text-[var(--muted)]">
-                        <span className="font-bold text-[var(--blue)]">{when}:</span> {past.note}
+                  )}
+                  <div className="min-w-0">
+                    <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+                      <h2 className="text-[17px] font-bold leading-snug">
+                        {name}
+                      </h2>
+                      <span className="rounded-[4px] bg-[var(--card-2)] px-2 py-0.5 text-[11px] font-bold text-[var(--muted)]">
+                        {ex.muscle}
+                      </span>
+                    </div>
+                    {prescriptionNotes.length ? (
+                      <div className="mt-1.5 space-y-0.5">
+                        {prescriptionNotes.map((line) => (
+                          <p
+                            key={line}
+                            className="flex items-center gap-1.5 text-[12.5px] leading-snug text-[var(--muted)]"
+                          >
+                            {line}
+                            {/fail/i.test(line) ? (
+                              <Explain term="failure" />
+                            ) : null}
+                          </p>
+                        ))}
+                      </div>
+                    ) : null}
+                    {(() => {
+                      // What he told himself last time, in front of him before
+                      // the first set rather than filed in an old session.
+                      const past = lastNotes[name] ?? lastNotes[ex.name];
+                      if (!past) return null;
+                      const when = new Date(
+                        `${past.date}T12:00:00`,
+                      ).toLocaleDateString(undefined, {
+                        month: "short",
+                        day: "numeric",
+                      });
+                      return (
+                        <p className="mt-1.5 rounded-[4px] border-l-2 border-[var(--blue)] bg-[var(--surface)] px-2 py-1.5 text-[12px] leading-snug text-[var(--muted)]">
+                          <span className="font-bold text-[var(--blue)]">
+                            {when}:
+                          </span>{" "}
+                          {past.note}
+                        </p>
+                      );
+                    })()}
+                    {isCardio ? (
+                      <p className="mt-1.5 text-[13px] font-semibold text-[var(--blue)]">
+                        30 min incline walk
                       </p>
-                    );
-                  })()}
-                  {isCardio ? (
-                    <p className="mt-1.5 text-[13px] font-semibold text-[var(--blue)]">
-                      30 min incline walk
-                    </p>
-                  ) : null}
-                  {leftLimited && leftArmNote(name) ? (
-                    <p className="mt-1 text-[12px] font-semibold text-[var(--yellow)]">{leftArmNote(name)}</p>
-                  ) : null}
-                  {cat?.notes ? (
-                    <p className="mt-1 text-[12px] text-[var(--yellow)]">{cat.notes}</p>
-                  ) : null}
+                    ) : null}
+                    {leftLimited && leftArmNote(name) ? (
+                      <p className="mt-1 text-[12px] font-semibold text-[var(--yellow)]">
+                        {leftArmNote(name)}
+                      </p>
+                    ) : null}
+                    {cat?.notes ? (
+                      <p className="mt-1 text-[12px] text-[var(--yellow)]">
+                        {cat.notes}
+                      </p>
+                    ) : null}
                   </div>
                 </div>
-                <div className="flex shrink-0 gap-1.5">
+                <div className="exercise-actions">
                   <a
                     href={formVideoUrl(name)}
                     target="_blank"
@@ -1496,10 +1652,11 @@ export function WorkoutLogger({
                   <button
                     type="button"
                     aria-label="Swap exercise"
-                    className="flex h-[34px] w-[34px] items-center justify-center rounded-[4px] bg-[var(--card-2)] text-[var(--muted)] active:text-[var(--text)]"
+                    className="flex items-center justify-center rounded-[4px] bg-[var(--card-2)] px-3 text-[var(--blue)] active:text-[var(--text)]"
                     onClick={() => setSwapForId(ex.id)}
                   >
                     <IconSwap size={17} />
+                    <span className="swap-label">Swap</span>
                   </button>
                   <button
                     type="button"
@@ -1528,13 +1685,17 @@ export function WorkoutLogger({
                       className="field !py-2 text-center"
                       placeholder="Speed"
                       value={sets[0]?.weight ?? ""}
-                      onChange={(e) => updateSet(ex.id, 0, { weight: e.target.value })}
+                      onChange={(e) =>
+                        updateSet(ex.id, 0, { weight: e.target.value })
+                      }
                     />
                     <input
                       className="field !py-2 text-center"
                       placeholder="Incline %"
                       value={sets[0]?.reps ?? ""}
-                      onChange={(e) => updateSet(ex.id, 0, { reps: e.target.value })}
+                      onChange={(e) =>
+                        updateSet(ex.id, 0, { reps: e.target.value })
+                      }
                     />
                   </div>
                   <button
@@ -1565,13 +1726,22 @@ export function WorkoutLogger({
                       activeRest.afterSet === i &&
                       activeRestLeft > 0;
                     const prevList =
-                      previousByExercise[name] ?? previousByExercise[ex.name] ?? [];
-                    const prevRaw = prevList[i] ?? prevList[prevList.length - 1];
+                      previousByExercise[name] ??
+                      previousByExercise[ex.name] ??
+                      [];
+                    const prevRaw =
+                      prevList[i] ?? prevList[prevList.length - 1];
                     const sided = oneSided(ex) && !set.isWarmup && !isCardio;
                     const prevRList = sided
-                      ? previousByExercise[rightSideKey(name)] ?? previousByExercise[rightSideKey(ex.name)] ?? []
+                      ? (previousByExercise[rightSideKey(name)] ??
+                        previousByExercise[rightSideKey(ex.name)] ??
+                        [])
                       : [];
-                    const prevRawR = sided ? (prevRList[i] ?? prevRList[prevRList.length - 1] ?? prevRaw) : undefined;
+                    const prevRawR = sided
+                      ? (prevRList[i] ??
+                        prevRList[prevRList.length - 1] ??
+                        prevRaw)
+                      : undefined;
                     // Crown sets carry their own range; everything else uses the
                     // working range for the movement.
                     const suggestion =
@@ -1589,14 +1759,21 @@ export function WorkoutLogger({
                       ? suggestOverload({
                           previous: prevRawR,
                           repRange:
-                            ex.has_crown_set && i === 0 ? ex.crown_rep_range : ex.working_rep_range,
+                            ex.has_crown_set && i === 0
+                              ? ex.crown_rep_range
+                              : ex.working_rep_range,
                         })
                       : null;
                     const shortTarget = (x: typeof suggestion) =>
-                      x ? x.label.replace(/^(Try|Hold|Repeat|Aim)\s+/i, "") : "";
+                      x
+                        ? x.label.replace(/^(Try|Hold|Repeat|Aim)\s+/i, "")
+                        : "";
                     const targetLabel = set.isWarmup
                       ? "Warm-up"
-                      : sided && suggestion && suggestionR && suggestion.kind !== "open"
+                      : sided &&
+                          suggestion &&
+                          suggestionR &&
+                          suggestion.kind !== "open"
                         ? `L ${shortTarget(suggestion)} · R ${shortTarget(suggestionR)}`
                         : (suggestion?.label ?? setTargetLabel(ex, i));
                     const canApply =
@@ -1641,7 +1818,8 @@ export function WorkoutLogger({
                           <div className="min-w-0">
                             {sided ? (
                               <p className="truncate text-[12px] font-semibold tabular-nums text-[var(--muted)]">
-                                L {set.previous ?? "—"} · R {set.previousR ?? "—"}
+                                L {set.previous ?? "—"} · R{" "}
+                                {set.previousR ?? "—"}
                               </p>
                             ) : set.previous && set.previous !== "—" ? (
                               <button
@@ -1653,7 +1831,9 @@ export function WorkoutLogger({
                                 {set.previous.replace("×", " × ")}
                               </button>
                             ) : (
-                              <p className="truncate text-[13px] text-[var(--muted)]">—</p>
+                              <p className="truncate text-[13px] text-[var(--muted)]">
+                                —
+                              </p>
                             )}
                             {canApply ? (
                               <button
@@ -1705,9 +1885,19 @@ export function WorkoutLogger({
                                       aria-label={`${side === "L" ? "Left" : "Right"} weight`}
                                       className="h-9 w-full rounded-md border border-[var(--border-solid)] bg-[var(--field)] pl-4 pr-1 text-center text-[14px] font-bold text-[var(--text)] outline-none focus:border-[var(--blue)]"
                                       inputMode="decimal"
-                                      value={side === "L" ? set.weight : (set.weightR ?? "")}
+                                      value={
+                                        side === "L"
+                                          ? set.weight
+                                          : (set.weightR ?? "")
+                                      }
                                       onChange={(e) =>
-                                        updateSet(ex.id, i, side === "L" ? { weight: e.target.value } : { weightR: e.target.value })
+                                        updateSet(
+                                          ex.id,
+                                          i,
+                                          side === "L"
+                                            ? { weight: e.target.value }
+                                            : { weightR: e.target.value },
+                                        )
                                       }
                                     />
                                   </label>
@@ -1720,9 +1910,19 @@ export function WorkoutLogger({
                                     aria-label={`${side === "L" ? "Left" : "Right"} reps`}
                                     className="h-9 w-full rounded-md border border-[var(--border-solid)] bg-[var(--field)] px-1 text-center text-[14px] font-bold text-[var(--text)] outline-none focus:border-[var(--blue)]"
                                     inputMode="numeric"
-                                    value={side === "L" ? set.reps : (set.repsR ?? "")}
+                                    value={
+                                      side === "L"
+                                        ? set.reps
+                                        : (set.repsR ?? "")
+                                    }
                                     onChange={(e) =>
-                                      updateSet(ex.id, i, side === "L" ? { reps: e.target.value } : { repsR: e.target.value })
+                                      updateSet(
+                                        ex.id,
+                                        i,
+                                        side === "L"
+                                          ? { reps: e.target.value }
+                                          : { repsR: e.target.value },
+                                      )
                                     }
                                   />
                                 ))}
@@ -1730,27 +1930,31 @@ export function WorkoutLogger({
                             </>
                           ) : (
                             <>
-                          <input
-                              className="h-11 w-full rounded-md border border-[var(--border-solid)] bg-[var(--field)] px-1 text-center text-[15px] font-bold text-[var(--text)] outline-none focus:border-[var(--blue)]"
-                              inputMode="decimal"
-                              value={set.weight}
-                              onChange={(e) =>
-                                updateSet(ex.id, i, { weight: e.target.value })
-                              }
-                            />
-                            <input
-                              className="h-11 w-full rounded-md border border-[var(--border-solid)] bg-[var(--field)] px-1 text-center text-[15px] font-bold text-[var(--text)] outline-none focus:border-[var(--blue)]"
-                              inputMode="numeric"
-                              value={set.reps}
-                              onChange={(e) =>
-                                updateSet(ex.id, i, { reps: e.target.value })
-                              }
-                            />
+                              <input
+                                className="h-11 w-full rounded-md border border-[var(--border-solid)] bg-[var(--field)] px-1 text-center text-[15px] font-bold text-[var(--text)] outline-none focus:border-[var(--blue)]"
+                                inputMode="decimal"
+                                value={set.weight}
+                                onChange={(e) =>
+                                  updateSet(ex.id, i, {
+                                    weight: e.target.value,
+                                  })
+                                }
+                              />
+                              <input
+                                className="h-11 w-full rounded-md border border-[var(--border-solid)] bg-[var(--field)] px-1 text-center text-[15px] font-bold text-[var(--text)] outline-none focus:border-[var(--blue)]"
+                                inputMode="numeric"
+                                value={set.reps}
+                                onChange={(e) =>
+                                  updateSet(ex.id, i, { reps: e.target.value })
+                                }
+                              />
                             </>
                           )}
                           <button
                             type="button"
-                            aria-label={set.completed ? "Set done" : "Mark set done"}
+                            aria-label={
+                              set.completed ? "Set done" : "Mark set done"
+                            }
                             onClick={() => toggleComplete(ex, i)}
                             className={`mx-auto flex h-10 w-10 items-center justify-center rounded-md ${
                               set.completed
@@ -1770,15 +1974,22 @@ export function WorkoutLogger({
                             {/* One arm at a time is two different sets: the left
                                 can be at failure while the right has three left,
                                 and that gap is the thing being tracked. */}
-                            {(sided ? (["L", "R"] as const) : ([null] as const)).map((arm) => (
-                              <div key={arm ?? "both"} className="flex items-center gap-1">
+                            {(sided
+                              ? (["L", "R"] as const)
+                              : ([null] as const)
+                            ).map((arm) => (
+                              <div
+                                key={arm ?? "both"}
+                                className="flex items-center gap-1"
+                              >
                                 {arm ? (
                                   <span className="w-3 font-mono text-[11px] font-bold text-[var(--dim)]">
                                     {arm}
                                   </span>
                                 ) : null}
                                 {[0, 1, 2, 3].map((n) => {
-                                  const current = arm === "R" ? set.rirR : set.rir;
+                                  const current =
+                                    arm === "R" ? set.rirR : set.rir;
                                   const on = current === n;
                                   return (
                                     <button
@@ -1788,11 +1999,20 @@ export function WorkoutLogger({
                                       aria-pressed={on}
                                       onClick={() => {
                                         const value = on ? undefined : n;
-                                        updateSet(ex.id, i, arm === "R" ? { rirR: value } : { rir: value });
+                                        updateSet(
+                                          ex.id,
+                                          i,
+                                          arm === "R"
+                                            ? { rirR: value }
+                                            : { rir: value },
+                                        );
                                         if (!rirExplained) {
                                           setRirExplained(true);
                                           try {
-                                            localStorage.setItem("ft-rir-explained", "1");
+                                            localStorage.setItem(
+                                              "ft-rir-explained",
+                                              "1",
+                                            );
                                           } catch {
                                             /* ignore */
                                           }
@@ -1810,9 +2030,13 @@ export function WorkoutLogger({
                                 })}
                               </div>
                             ))}
-                            {typeof set.rir === "number" && rirTarget != null && !ntDay && set.rir < rirTarget - 1 ? (
+                            {typeof set.rir === "number" &&
+                            rirTarget != null &&
+                            !ntDay &&
+                            set.rir < rirTarget - 1 ? (
                               <span className="basis-full text-[11.5px] text-[var(--yellow)]">
-                                Plan wants about {rirTarget} left this week — that set was close to failure.
+                                Plan wants about {rirTarget} left this week —
+                                that set was close to failure.
                               </span>
                             ) : !rirExplained ? (
                               <span className="basis-full text-[11.5px] text-[var(--muted)]">
@@ -1829,9 +2053,10 @@ export function WorkoutLogger({
                               const exerciseBar = barForExercise(name, ex.id);
                               const load = plateLoadForWeight(
                                 set.weight,
-                                exerciseBar
+                                exerciseBar,
                               );
-                              if (!load && !(Number(set.weight) > 0)) return null;
+                              if (!load && !(Number(set.weight) > 0))
+                                return null;
                               return (
                                 <div className="flex flex-wrap items-center gap-2 px-1 py-1">
                                   <div className="flex gap-1">
@@ -1868,7 +2093,19 @@ export function WorkoutLogger({
                           : null}
                         {showRest ? (
                           <div className="my-1.5 flex items-center gap-2.5 rounded-md border border-[var(--blue)]/25 bg-[var(--blue)]/10 px-3.5 py-2.5">
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--blue)" strokeWidth="2" strokeLinecap="round" aria-hidden><circle cx="12" cy="12" r="9" /><path d="M12 7v5l3 2" /></svg>
+                            <svg
+                              width="16"
+                              height="16"
+                              viewBox="0 0 24 24"
+                              fill="none"
+                              stroke="var(--blue)"
+                              strokeWidth="2"
+                              strokeLinecap="round"
+                              aria-hidden
+                            >
+                              <circle cx="12" cy="12" r="9" />
+                              <path d="M12 7v5l3 2" />
+                            </svg>
                             <span className="flex-1 font-mono text-[13.5px] font-bold tabular-nums text-[var(--blue)]">
                               Rest · {formatRest(activeRestLeft)}
                             </span>
@@ -1900,7 +2137,8 @@ export function WorkoutLogger({
                               <div className="flex flex-wrap items-center justify-center gap-1.5 px-1">
                                 {REST_PRESETS.map((s) => {
                                   const cur =
-                                    restByExercise[ex.id] ?? defaultRestSeconds(ex, i);
+                                    restByExercise[ex.id] ??
+                                    defaultRestSeconds(ex, i);
                                   const on = cur === s;
                                   return (
                                     <button
@@ -1935,7 +2173,8 @@ export function WorkoutLogger({
                                 <span className="font-mono">
                                   rest{" "}
                                   {formatRest(
-                                    restByExercise[ex.id] ?? defaultRestSeconds(ex, i)
+                                    restByExercise[ex.id] ??
+                                      defaultRestSeconds(ex, i),
                                   )}{" "}
                                   · presets
                                 </span>
@@ -2031,11 +2270,15 @@ export function WorkoutLogger({
               Leave workout?
             </p>
             <p className="mt-2 text-sm text-[var(--muted)]">
-              Your sets can be saved on this device so you can resume later. Discarding
-              clears the in-progress session.
+              Your sets can be saved on this device so you can resume later.
+              Discarding clears the in-progress session.
             </p>
             <div className="mt-5 space-y-2.5">
-              <button type="button" className="btn-accent w-full" onClick={saveAndLeave}>
+              <button
+                type="button"
+                className="btn-accent w-full"
+                onClick={saveAndLeave}
+              >
                 Save & resume later
               </button>
               <button
@@ -2092,7 +2335,9 @@ export function WorkoutLogger({
             </p>
             {editNameDraft.trim() && !catalogEntry(editNameDraft.trim()) ? (
               <div className="mt-3 space-y-2 rounded-md border border-[var(--border-solid)] bg-[var(--surface)] p-3">
-                <p className="text-[13px] font-semibold">Not in the exercise list — is it one arm or one leg at a time?</p>
+                <p className="text-[13px] font-semibold">
+                  Not in the exercise list — is it one arm or one leg at a time?
+                </p>
                 <div className="grid grid-cols-2 gap-2">
                   {(
                     [
@@ -2115,7 +2360,9 @@ export function WorkoutLogger({
                     </button>
                   ))}
                 </div>
-                <p className="text-[11px] text-[var(--muted)]">One side at a time logs a left and right weight for every set.</p>
+                <p className="text-[11px] text-[var(--muted)]">
+                  One side at a time logs a left and right weight for every set.
+                </p>
               </div>
             ) : null}
             <button
@@ -2139,7 +2386,10 @@ export function WorkoutLogger({
                     −15s
                   </button>
                   <span className="flex-1 text-center font-mono text-lg font-bold">
-                    {formatRest(restByExercise[editEx.id] ?? defaultRestSeconds(editEx, 0))}
+                    {formatRest(
+                      restByExercise[editEx.id] ??
+                        defaultRestSeconds(editEx, 0),
+                    )}
                   </span>
                   <button
                     type="button"
@@ -2152,7 +2402,8 @@ export function WorkoutLogger({
                 <div className="mt-2 grid grid-cols-5 gap-1.5">
                   {REST_PRESETS.map((s) => {
                     const cur =
-                      restByExercise[editEx.id] ?? defaultRestSeconds(editEx, 0);
+                      restByExercise[editEx.id] ??
+                      defaultRestSeconds(editEx, 0);
                     const on = cur === s;
                     return (
                       <button
@@ -2175,8 +2426,8 @@ export function WorkoutLogger({
 
             <p className="label mt-4">Rest / name only</p>
             <p className="mb-2 text-[11px] text-[var(--muted)]">
-              Use <span className="text-[var(--blue)]">Swap</span> on the exercise for
-              recommendations and similar lifts.
+              Use <span className="text-[var(--blue)]">Swap</span> on the
+              exercise for recommendations and similar lifts.
             </p>
             <button
               type="button"
@@ -2196,7 +2447,12 @@ export function WorkoutLogger({
           aria-label="Rest clock"
           onClick={() => setRestFullScreen(false)}
         >
-          <RestRing left={activeRestLeft} total={activeRestTotal} size={280} stroke={12}>
+          <RestRing
+            left={activeRestLeft}
+            total={activeRestTotal}
+            size={280}
+            stroke={12}
+          >
             <p className="font-mono text-[64px] font-extrabold leading-none tabular-nums text-[var(--green)]">
               {formatRest(activeRestLeft)}
             </p>
@@ -2209,7 +2465,10 @@ export function WorkoutLogger({
             {restLabel()}
           </p>
 
-          <div className="mt-7 flex gap-2.5" onClick={(e) => e.stopPropagation()}>
+          <div
+            className="mt-7 flex gap-2.5"
+            onClick={(e) => e.stopPropagation()}
+          >
             <button
               type="button"
               className="rounded-full bg-[var(--card-2)] px-5 py-3 text-sm font-bold text-[var(--text)]"
@@ -2233,14 +2492,18 @@ export function WorkoutLogger({
             </button>
           </div>
 
-          <p className="mt-8 text-[12px] text-[var(--dim)]">Tap anywhere to go back to your sets</p>
+          <p className="mt-8 text-[12px] text-[var(--dim)]">
+            Tap anywhere to go back to your sets
+          </p>
         </div>
       ) : null}
 
       {activeRest && activeRestLeft > 0 ? (
         <div
-          className="fixed inset-x-0 bottom-0 z-40 border-t border-[var(--border)] bg-[var(--surface)]/95 px-4 pt-3 backdrop-blur"
-          style={{ paddingBottom: "max(16px, env(safe-area-inset-bottom, 0px))" }}
+          className="logger-footer fixed inset-x-0 bottom-0 z-40 border-t border-[var(--border)] bg-[var(--surface)]/95 px-4 pt-3 backdrop-blur"
+          style={{
+            paddingBottom: "max(16px, env(safe-area-inset-bottom, 0px))",
+          }}
         >
           <div className="mx-auto max-w-lg space-y-2.5">
             <div className="flex items-center gap-3">
@@ -2250,21 +2513,28 @@ export function WorkoutLogger({
                 aria-label="Open the rest clock"
                 onClick={() => setRestFullScreen(true)}
               >
-                <RestRing left={activeRestLeft} total={activeRestTotal} size={46} stroke={4} />
+                <RestRing
+                  left={activeRestLeft}
+                  total={activeRestTotal}
+                  size={46}
+                  stroke={4}
+                />
                 <span className="min-w-0 flex-1">
-                <p className="text-[11px] font-bold uppercase tracking-wide text-[var(--muted)]">
-                  Rest timer · tap for clock
-                </p>
-                <p className="font-mono text-3xl font-bold tabular-nums text-[var(--green)]">
-                  {formatRest(activeRestLeft)}
-                </p>
-                <p className="truncate text-xs text-[var(--muted)]">{restLabel()}</p>
-                {typeof Notification !== "undefined" &&
-                Notification.permission !== "granted" ? (
-                  <p className="mt-0.5 text-[10px] text-[var(--yellow)]">
-                    Allow notifications for alerts when the app is locked
+                  <p className="text-[11px] font-bold uppercase tracking-wide text-[var(--muted)]">
+                    Rest timer · tap for clock
                   </p>
-                ) : null}
+                  <p className="font-mono text-3xl font-bold tabular-nums text-[var(--green)]">
+                    {formatRest(activeRestLeft)}
+                  </p>
+                  <p className="truncate text-xs text-[var(--muted)]">
+                    {restLabel()}
+                  </p>
+                  {typeof Notification !== "undefined" &&
+                  Notification.permission !== "granted" ? (
+                    <p className="mt-0.5 text-[10px] text-[var(--yellow)]">
+                      Allow notifications for alerts when the app is locked
+                    </p>
+                  ) : null}
                 </span>
               </button>
               <button
@@ -2287,7 +2557,9 @@ export function WorkoutLogger({
                 const cur =
                   restByExercise[activeRest.exerciseId] ??
                   (() => {
-                    const ex = sorted.find((e) => e.id === activeRest.exerciseId);
+                    const ex = sorted.find(
+                      (e) => e.id === activeRest.exerciseId,
+                    );
                     return ex ? defaultRestSeconds(ex, 0) : 180;
                   })();
                 const on = cur === s;
@@ -2323,14 +2595,23 @@ export function WorkoutLogger({
               How did the shoulder feel?
             </p>
             <p className="mt-1 text-sm text-[var(--muted)]">
-              Your plan&apos;s rule: stop any lift that pinches. This keeps the trend.
+              Your plan&apos;s rule: stop any lift that pinches. This keeps the
+              trend.
             </p>
             <div className="mt-4 grid grid-cols-3 gap-2">
               {(
                 [
                   ["fine", "Fine", "text-[var(--green)] border-[var(--green)]"],
-                  ["pinchy", "Pinchy", "text-[var(--yellow)] border-[var(--yellow)]"],
-                  ["painful", "Painful", "text-[var(--red)] border-[var(--red)]"],
+                  [
+                    "pinchy",
+                    "Pinchy",
+                    "text-[var(--yellow)] border-[var(--yellow)]",
+                  ],
+                  [
+                    "painful",
+                    "Painful",
+                    "text-[var(--red)] border-[var(--red)]",
+                  ],
                 ] as const
               ).map(([key, label, tone]) => (
                 <button
@@ -2343,7 +2624,9 @@ export function WorkoutLogger({
                     if (key === "fine") void submitShoulder("fine", "");
                   }}
                   className={`flex h-12 items-center justify-center rounded-md border text-[15px] font-bold ${
-                    shoulder === key ? `${tone} bg-[var(--raised)]` : "border-[var(--border-solid)] text-[var(--text)]"
+                    shoulder === key
+                      ? `${tone} bg-[var(--raised)]`
+                      : "border-[var(--border-solid)] text-[var(--text)]"
                   } disabled:opacity-50`}
                 >
                   {label}
@@ -2366,11 +2649,15 @@ export function WorkoutLogger({
                         aria-pressed={on}
                         onClick={() =>
                           setShoulderLifts((cur) =>
-                            cur.includes(n) ? cur.filter((x) => x !== n) : [...cur, n]
+                            cur.includes(n)
+                              ? cur.filter((x) => x !== n)
+                              : [...cur, n],
                           )
                         }
                         className={`rounded-[4px] px-2.5 py-1.5 text-[12px] font-semibold ${
-                          on ? "bg-[var(--blue)] text-[var(--on-blue)]" : "bg-[var(--raised)] text-[var(--muted)]"
+                          on
+                            ? "bg-[var(--blue)] text-[var(--on-blue)]"
+                            : "bg-[var(--raised)] text-[var(--muted)]"
                         }`}
                       >
                         {n}
@@ -2382,7 +2669,9 @@ export function WorkoutLogger({
                   type="button"
                   className="btn-accent w-full"
                   disabled={ratingSaving}
-                  onClick={() => void submitShoulder(shoulder, shoulderLifts.join(", "))}
+                  onClick={() =>
+                    void submitShoulder(shoulder, shoulderLifts.join(", "))
+                  }
                 >
                   {ratingSaving ? "Saving…" : "Save"}
                 </button>
