@@ -25,6 +25,7 @@ struct HomeView: View {
     @State private var showSummary = true
     @State private var recompWindow = 90
     @State private var showCoachDetail = false
+    @State private var showDailyLog = false
     @State private var weightMonth: Date = Calendar.current.date(
         from: Calendar.current.dateComponents([.year, .month], from: .now)
     ) ?? .now
@@ -136,6 +137,9 @@ struct HomeView: View {
             checkLevelUp()
         }
         .sheet(isPresented: $showCustomWater) { customWaterSheet }
+        .sheet(isPresented: $showDailyLog) {
+            DailyLogView(settings: settings, stepsFromHealth: health.stepsToday)
+        }
         .sheet(isPresented: $showCoachDetail) {
             NavigationStack {
                 CoachView(
@@ -616,6 +620,7 @@ struct HomeView: View {
         LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible()), GridItem(.flexible())], spacing: 10) {
             FeatureTile(emoji: "🏋️", title: "Training", subtitle: "Log session") { selectedTab = .train }
             FeatureTile(emoji: "🥩", title: "Nutrition", subtitle: "Meals & macros") { selectedTab = .nutrition }
+            FeatureTile(emoji: "📝", title: "Daily Log", subtitle: "Sleep & steps") { showDailyLog = true }
             FeatureTile(emoji: "🧬", title: "Protocol", subtitle: "Today's stack") { selectedTab = .protocolTab }
         }
     }

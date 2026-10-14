@@ -30,43 +30,104 @@ struct WorkoutTemplate {
 }
 
 enum WorkoutLibrary {
-    static let programSubtitle = "5-Day Upper/Lower — Lean Bulk"
+    static let programSubtitle = "Coach Upper/Lower — Max intensity"
 
-    /// Brandon's EA 5-day split matching the coaching preview screens.
+    /// Coach plan (Jul 22, 2026): Upper for Brandon + existing lowers.
     static let builtIn: [WorkoutTemplate] = [
         WorkoutTemplate(
             name: "Upper A",
-            subtitle: programSubtitle,
+            subtitle: "Upper for Brandon · to failure · finish with cardio",
             exercises: [
                 ExerciseTemplate(
-                    name: "Chest Press", muscle: "Chest", hasCrownSet: true,
-                    crownRepRange: "6–8", workingSets: 3, workingRepRange: "8–10", weight: 98,
-                    instructions: "Machine or DB chest press. Control the stretch, drive up without locking hard.",
-                    tips: ["Crown set first", "Keep scapulae set"]
+                    name: "Pull-Ups", muscle: "Lats", hasCrownSet: false,
+                    crownRepRange: "", workingSets: 2, workingRepRange: "2× Failure",
+                    weight: 0,
+                    instructions: "Strict pull-ups. Every set to failure. No kipping.",
+                    tips: ["Max intensity", "Full hang + chin over bar"]
                 ),
                 ExerciseTemplate(
-                    name: "Triceps Pushdown", muscle: "Triceps", hasCrownSet: false,
-                    crownRepRange: "", workingSets: 3, workingRepRange: "12–15", weight: 65,
-                    instructions: "Elbows pinned. Full extension, controlled return.",
-                    tips: ["No elbow flare", "Squeeze at bottom"]
+                    name: "Incline DB Bench", muscle: "Upper Chest", hasCrownSet: false,
+                    crownRepRange: "", workingSets: 3, workingRepRange: "2×4–8 + 1×8–12 backoff",
+                    weight: 0,
+                    instructions: "2 hard sets 4–8 to failure, then drop weight for 1 backoff 8–12 also to failure.",
+                    tips: ["Max intensity", "Backoff = lighter, still to failure"]
                 ),
                 ExerciseTemplate(
-                    name: "Wide Grip Lat Pulldown", muscle: "Lats", hasCrownSet: false,
-                    crownRepRange: "", workingSets: 3, workingRepRange: "8–12", weight: 118,
-                    instructions: "Wide grip, pull to upper chest, squeeze lats.",
-                    tips: ["Lean slightly back", "Full stretch at top"]
+                    name: "Pec Deck", muscle: "Chest", hasCrownSet: false,
+                    crownRepRange: "", workingSets: 3, workingRepRange: "2×8–10 + 1×12 backoff",
+                    weight: 0,
+                    instructions: "2 sets 8–10 to failure, then lighter backoff to failure around 12 reps.",
+                    tips: ["Squeeze at peak", "Control the stretch"]
                 ),
                 ExerciseTemplate(
-                    name: "Lateral Raise (Cable)", muscle: "Side Delts", hasCrownSet: false,
-                    crownRepRange: "", workingSets: 3, workingRepRange: "12–15", weight: 17,
-                    instructions: "Cable at low position. Raise to just below shoulder height.",
-                    tips: ["Lead with elbows", "Soft elbows"]
+                    name: "Lat Pulldown", muscle: "Lats", hasCrownSet: false,
+                    crownRepRange: "", workingSets: 2, workingRepRange: "2×8–10",
+                    weight: 0,
+                    instructions: "Shoulder-width grip. No momentum — strict form to target lats. Drop weight if needed to stay strict.",
+                    tips: ["Shoulder-width grip", "No momentum", "Strict > heavy"]
                 ),
                 ExerciseTemplate(
-                    name: "Preacher Curl", muscle: "Biceps", hasCrownSet: false,
-                    crownRepRange: "", workingSets: 3, workingRepRange: "12–15", weight: 113,
-                    instructions: "Full stretch at bottom, squeeze at top. No swinging.",
-                    tips: ["Control the negative", "Keep upper arms planted"]
+                    name: "Mid-Back Rows", muscle: "Back", hasCrownSet: false,
+                    crownRepRange: "", workingSets: 3, workingRepRange: "2×6–8 + 1×8–12 backoff",
+                    weight: 0,
+                    instructions: "2 heavy sets 6–8 to failure, then lighter backoff 8–12 to failure.",
+                    tips: ["Squeeze mid-back", "No shrug"]
+                ),
+                ExerciseTemplate(
+                    name: "DB Seated OHP", muscle: "Shoulders", hasCrownSet: false,
+                    crownRepRange: "", workingSets: 1, workingRepRange: "1×8",
+                    weight: 0,
+                    instructions: "Dumbbell, Smith, or barbell. Seat ~75–80° (not 90°) for shoulders + slight back arch. Skip if it hurts.",
+                    tips: ["Seat 75–80°", "Skip if shoulder pain"]
+                ),
+                ExerciseTemplate(
+                    name: "SA Cable Lateral Raise", muscle: "Side Delts", hasCrownSet: false,
+                    crownRepRange: "", workingSets: 2, workingRepRange: "2×8–12",
+                    weight: 0,
+                    instructions: "Single-arm cable raises. Controlled to failure in the 8–12 range.",
+                    tips: ["SA = single arm", "Lead with elbow"]
+                ),
+                ExerciseTemplate(
+                    name: "Rear Delt Raise", muscle: "Rear Delts", hasCrownSet: false,
+                    crownRepRange: "", workingSets: 2, workingRepRange: "2×8–12",
+                    weight: 0,
+                    instructions: "Rear delt raises to failure. Soft elbows, no momentum.",
+                    tips: ["Max intensity", "Squeeze rear delts"]
+                ),
+                ExerciseTemplate(
+                    name: "Hammer Curl", muscle: "Biceps", hasCrownSet: false,
+                    crownRepRange: "", workingSets: 2, workingRepRange: "2× Failure",
+                    weight: 0,
+                    instructions: "Neutral-grip curls. Both sets to failure.",
+                    tips: ["Max intensity", "No swinging"]
+                ),
+                ExerciseTemplate(
+                    name: "SA Preacher Curl", muscle: "Biceps", hasCrownSet: false,
+                    crownRepRange: "", workingSets: 2, workingRepRange: "2× Failure",
+                    weight: 0,
+                    instructions: "Single-arm preacher curls to failure. Full stretch at bottom.",
+                    tips: ["SA = single arm", "Control the negative"]
+                ),
+                ExerciseTemplate(
+                    name: "SA Pushdown", muscle: "Triceps", hasCrownSet: false,
+                    crownRepRange: "", workingSets: 2, workingRepRange: "2× Failure",
+                    weight: 0,
+                    instructions: "Single-arm cable pushdowns to failure. Elbow pinned.",
+                    tips: ["SA = single arm", "Full lockout squeeze"]
+                ),
+                ExerciseTemplate(
+                    name: "Overhead Extension", muscle: "Triceps", hasCrownSet: false,
+                    crownRepRange: "", workingSets: 2, workingRepRange: "2× Failure",
+                    weight: 0,
+                    instructions: "Cable overhead extension — single-arm or both. Lower weight if needed; stay strict.",
+                    tips: ["Use cable", "SA or both arms OK"]
+                ),
+                ExerciseTemplate(
+                    name: "Forearm Reverse Curl", muscle: "Forearms", hasCrownSet: false,
+                    crownRepRange: "", workingSets: 3, workingRepRange: "3× Failure",
+                    weight: 0,
+                    instructions: "Coach add-on: 3 reverse curls to failure at the end, then cardio.",
+                    tips: ["End of session", "Then cardio"]
                 ),
             ]
         ),
@@ -108,7 +169,7 @@ enum WorkoutLibrary {
         ),
         WorkoutTemplate(
             name: "Upper B",
-            subtitle: programSubtitle,
+            subtitle: "Legacy upper — prefer Upper A (coach plan)",
             exercises: [
                 ExerciseTemplate(
                     name: "Incline Chest Press", muscle: "Upper Chest", hasCrownSet: true,
@@ -144,7 +205,7 @@ enum WorkoutLibrary {
         ),
         WorkoutTemplate(
             name: "Upper C",
-            subtitle: programSubtitle,
+            subtitle: "Legacy upper — prefer Upper A (coach plan)",
             exercises: [
                 ExerciseTemplate(
                     name: "Lat Pulldown", muscle: "Lats", hasCrownSet: true,
@@ -317,15 +378,16 @@ enum DataSeeder {
         try? context.save()
     }
 
-    /// Bring existing Upper/Lower days in line with EA preview screens (names, crown sets, ranges).
+    /// Bring workout days in line with current coach prescriptions.
     static func syncEAPrescriptionsIfNeeded(context: ModelContext) {
         let days = (try? context.fetch(FetchDescriptor<WorkoutDay>())) ?? []
         guard days.contains(where: { $0.name == "Upper A" }) else { return }
 
         var needsSync = false
-        if let upperA = days.first(where: { $0.name == "Upper A" }),
-           let chest = upperA.exercises.first(where: { $0.name == "Chest Press" }) {
-            if !chest.hasCrownSet || chest.workingRepRange != "8–10" || !upperA.subtitle.contains("Lean Bulk") {
+        if let upperA = days.first(where: { $0.name == "Upper A" }) {
+            let hasCoachPlan = upperA.exercises.contains { $0.name == "Pull-Ups" }
+                && upperA.exercises.contains { $0.name == "Forearm Reverse Curl" }
+            if !hasCoachPlan || !upperA.subtitle.contains("Upper for Brandon") {
                 needsSync = true
             }
         } else {
@@ -346,8 +408,10 @@ enum DataSeeder {
 
         if let settings = try? context.fetch(FetchDescriptor<AppSettings>()).first {
             settings.programSubtitle = WorkoutLibrary.programSubtitle
-            if settings.programName.isEmpty || settings.programName == "Hypertrophy Block A" {
-                settings.programName = "FitTrack Split"
+            if settings.programName.isEmpty
+                || settings.programName == "Hypertrophy Block A"
+                || settings.programName == "FitTrack Split" {
+                settings.programName = "Coach Split"
             }
         }
 

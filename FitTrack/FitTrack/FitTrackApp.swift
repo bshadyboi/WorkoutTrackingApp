@@ -26,6 +26,7 @@ struct FitTrackApp: App {
             CoachingCheckIn.self,
             DexaScanLog.self,
             ProgressPhotoLog.self,
+            DailyLog.self,
         ])
 
         let localConfig = ModelConfiguration(

@@ -352,6 +352,6 @@ struct ContentView: View {
             WorkoutSession.self, ExerciseLog.self, SetLog.self, BodyWeightLog.self,
             EarnedBadge.self, CustomExercise.self, DailyWaterLog.self,
             NutritionEntry.self, ProtocolItem.self, CoachingCheckIn.self,
-            DexaScanLog.self, ProgressPhotoLog.self,
+            DexaScanLog.self, ProgressPhotoLog.self, DailyLog.self,
         ], inMemory: true)
 }

@@ -357,7 +357,12 @@ final class StoredExercise {
         if hasCrownSet {
             return "\(defaultSets) × \(displayCrownRepRange) / \(displayWorkingRepRange) · rest 4m"
         }
-        return "\(defaultSets) × \(displayWorkingRepRange) · rest 3m"
+        let range = displayWorkingRepRange
+        // Coach-style lines already include set counts (e.g. "2×4–8 + 1×8–12").
+        if range.contains("×") || range.localizedCaseInsensitiveContains("failure") {
+            return range
+        }
+        return "\(defaultSets) × \(range) · rest 3m"
     }
 
     func targetReps(forSetNumber setNumber: Int) -> Int {
@@ -431,6 +436,10 @@ final class WorkoutSession {
     var estimatedCalories: Int {
         max(completedSetsCount * 8, durationSeconds / 10)
     }
+
+    /// Optional link to the day's nutrition/sleep log.
+    @Relationship(deleteRule: .nullify, inverse: \DailyLog.workoutSession)
+    var linkedDailyLog: DailyLog?
 }
 
 @Model
@@ -626,6 +635,99 @@ final class NutritionEntry {
         self.notes = notes
         self.barcode = barcode
         self.servingDescription = servingDescription
+    }
+}
+
+/// One nutrition + sleep + steps snapshot per calendar day.
+@Model
+final class DailyLog {
+    var id: UUID
+    /// Start-of-day timestamp for uniqueness.
+    var date: Date
+    var targetCalories: Int
+    var targetProtein: Int
+    var targetCarbs: Int
+    var targetFats: Int
+    var actualCalories: Int
+    var actualProtein: Int
+    var actualCarbsPreWorkout: Int
+    var actualCarbsPostWorkout: Int
+    var actualFats: Int
+    var sleepHours: Double
+    var sleepQualityNotes: String
+    var stepsCount: Int
+    var inclineWalkMinutes: Int
+    var inclineWalkIncline: Int
+    var inclineWalkSpeed: Double
+    var notes: String
+    /// Optional session completed on this day.
+    var workoutSession: WorkoutSession?
+
+    init(
+        id: UUID = UUID(),
+        date: Date = Calendar.current.startOfDay(for: .now),
+        targetCalories: Int = 2100,
+        targetProtein: Int = 190,
+        targetCarbs: Int = 100,
+        targetFats: Int = 70,
+        actualCalories: Int = 0,
+        actualProtein: Int = 0,
+        actualCarbsPreWorkout: Int = 0,
+        actualCarbsPostWorkout: Int = 0,
+        actualFats: Int = 0,
+        sleepHours: Double = 0,
+        sleepQualityNotes: String = "",
+        stepsCount: Int = 0,
+        inclineWalkMinutes: Int = 0,
+        inclineWalkIncline: Int = 0,
+        inclineWalkSpeed: Double = 0,
+        notes: String = "",
+        workoutSession: WorkoutSession? = nil
+    ) {
+        self.id = id
+        self.date = Calendar.current.startOfDay(for: date)
+        self.targetCalories = targetCalories
+        self.targetProtein = targetProtein
+        self.targetCarbs = targetCarbs
+        self.targetFats = targetFats
+        self.actualCalories = actualCalories
+        self.actualProtein = actualProtein
+        self.actualCarbsPreWorkout = actualCarbsPreWorkout
+        self.actualCarbsPostWorkout = actualCarbsPostWorkout
+        self.actualFats = actualFats
+        self.sleepHours = sleepHours
+        self.sleepQualityNotes = sleepQualityNotes
+        self.stepsCount = stepsCount
+        self.inclineWalkMinutes = inclineWalkMinutes
+        self.inclineWalkIncline = inclineWalkIncline
+        self.inclineWalkSpeed = inclineWalkSpeed
+        self.notes = notes
+        self.workoutSession = workoutSession
+    }
+
+    var actualCarbs: Int {
+        actualCarbsPreWorkout + actualCarbsPostWorkout
+    }
+
+    var proteinPercentToTarget: Double {
+        guard targetProtein > 0 else { return 0 }
+        return Double(actualProtein) / Double(targetProtein)
+    }
+
+    var caloriesRemaining: Int {
+        targetCalories - actualCalories
+    }
+
+    var metStepGoal: Bool {
+        stepsCount >= 10_000
+    }
+
+    var metStretchGoal: Bool {
+        stepsCount >= 15_000
+    }
+
+    var hitSleepMinimum: Bool {
+        sleepHours >= 7.0
     }
 }
 

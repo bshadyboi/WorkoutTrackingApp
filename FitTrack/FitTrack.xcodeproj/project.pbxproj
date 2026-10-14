@@ -87,6 +87,7 @@
 		B10000000000000000000051 /* MissedDayRecovery.swift in Sources */ = {isa = PBXBuildFile; fileRef = B20000000000000000000053 /* MissedDayRecovery.swift */; };
 		B10000000000000000000052 /* WeeklyRecap.swift in Sources */ = {isa = PBXBuildFile; fileRef = B20000000000000000000054 /* WeeklyRecap.swift */; };
 		B10000000000000000000053 /* WeeklyRecapCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = B20000000000000000000055 /* WeeklyRecapCard.swift */; };
+		B10000000000000000000054 /* DailyLogView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B20000000000000000000056 /* DailyLogView.swift */; };
 		BB1000000000000000000001 /* MuscleMap in Frameworks */ = {isa = PBXBuildFile; productRef = BB0000000000000000000002 /* MuscleMap */; };
 /* End PBXBuildFile section */
 
@@ -173,6 +174,7 @@
 		B20000000000000000000053 /* MissedDayRecovery.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MissedDayRecovery.swift; sourceTree = "<group>"; };
 		B20000000000000000000054 /* WeeklyRecap.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WeeklyRecap.swift; sourceTree = "<group>"; };
 		B20000000000000000000055 /* WeeklyRecapCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WeeklyRecapCard.swift; sourceTree = "<group>"; };
+		B20000000000000000000056 /* DailyLogView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DailyLogView.swift; sourceTree = "<group>"; };
 		B30000000000000000000001 /* FitTrack.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = FitTrack.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		B30000000000000000000002 /* FitTrackWidget.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = FitTrackWidget.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
@@ -349,6 +351,7 @@
 				B2000000000000000000002B /* AddCustomExerciseView.swift */,
 				B2000000000000000000002C /* SessionShareCardView.swift */,
 				B20000000000000000000031 /* NutritionView.swift */,
+				B20000000000000000000056 /* DailyLogView.swift */,
 				B20000000000000000000032 /* ProtocolView.swift */,
 				B20000000000000000000033 /* CoachingView.swift */,
 				B20000000000000000000034 /* CoachView.swift */,
@@ -553,6 +556,7 @@
 				B10000000000000000000051 /* MissedDayRecovery.swift in Sources */,
 				B10000000000000000000052 /* WeeklyRecap.swift in Sources */,
 				B10000000000000000000053 /* WeeklyRecapCard.swift in Sources */,
+				B10000000000000000000054 /* DailyLogView.swift in Sources */,
 				B1000000000000000000003F /* PhysiqueAnalysisService.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
