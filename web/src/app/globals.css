@@ -614,7 +614,8 @@ a {
 .home-workout-stats span {
   display: grid;
   gap: 1px;
-  min-width: 86px;
+  min-width: 0;
+  flex: 1;
   padding-right: 18px;
   margin-right: 18px;
   border-right: 1px solid var(--border-solid);
@@ -653,7 +654,17 @@ a {
 }
 .home-overview-grid {
   display: grid;
+  grid-template-columns: minmax(0, 1fr);
   gap: 20px;
+}
+.home-overview-grid > *,
+.home-overview-grid .card {
+  min-width: 0;
+  max-width: 100%;
+}
+.home-dashboard {
+  min-width: 0;
+  width: 100%;
 }
 .home-card-title {
   display: flex;

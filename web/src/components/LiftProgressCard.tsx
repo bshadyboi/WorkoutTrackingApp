@@ -115,7 +115,7 @@ export function LiftProgressCard() {
       : `${delta > 0 ? "+" : ""}${formatLiftWeight(delta)} lb`;
 
   return (
-    <div className="card space-y-3">
+    <div className="card min-w-0 max-w-full space-y-3">
       <div className="flex items-start justify-between gap-2">
         <div>
           <p className="text-sm font-semibold">Lift progress</p>
@@ -134,7 +134,7 @@ export function LiftProgressCard() {
         </span>
       </div>
 
-      <div className="flex gap-1.5 overflow-x-auto pb-0.5 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+      <div className="flex min-w-0 max-w-full gap-1.5 overflow-x-auto pb-0.5 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
         {series.map((s) => {
           const on = s.name === active.name;
           return (
