@@ -566,6 +566,186 @@ a {
   border: 1px solid var(--border);
   background: var(--card);
 }
+.home-workout-hero {
+  position: relative;
+  min-height: 430px;
+  overflow: hidden;
+  border: 1px solid var(--blue);
+  border-radius: 12px;
+  background: var(--card);
+}
+.home-workout-hero > img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 58%;
+  object-fit: cover;
+  object-position: center;
+  opacity: 0.82;
+}
+.home-workout-hero::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    0deg,
+    #071725 43%,
+    #071725dd 58%,
+    transparent 84%
+  );
+}
+.home-workout-copy {
+  position: absolute;
+  z-index: 1;
+  inset: auto 20px 20px;
+}
+.home-workout-copy h2 {
+  margin-top: 4px;
+  font-size: 36px;
+  line-height: 1;
+  font-weight: 850;
+  letter-spacing: -0.035em;
+}
+.home-workout-stats {
+  display: flex;
+  gap: 0;
+  margin: 22px 0 18px;
+}
+.home-workout-stats span {
+  display: grid;
+  gap: 1px;
+  min-width: 86px;
+  padding-right: 18px;
+  margin-right: 18px;
+  border-right: 1px solid var(--border-solid);
+  color: var(--muted);
+  font-size: 12px;
+}
+.home-workout-stats span:last-child {
+  border: 0;
+  margin: 0;
+  padding: 0;
+}
+.home-workout-stats strong {
+  color: var(--text);
+  font-size: 24px;
+  line-height: 1;
+}
+.home-workout-actions {
+  display: grid;
+  gap: 10px;
+}
+.home-workout-actions .btn-accent {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+.home-view-link {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  min-height: 40px;
+  color: var(--blue);
+  font-size: 13px;
+  font-weight: 700;
+}
+.home-overview-grid {
+  display: grid;
+  gap: 20px;
+}
+.home-card-title {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 15px;
+}
+.home-card-title h2 {
+  font-size: 18px;
+  font-weight: 800;
+}
+.home-card-title > span {
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+.home-metric-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+.home-metric {
+  min-width: 0;
+  padding: 12px 10px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface);
+}
+.home-metric .metric-icon {
+  color: var(--blue);
+  font-size: 18px;
+}
+.home-metric p {
+  margin-top: 6px;
+  color: var(--muted);
+  font-size: 11px;
+}
+.home-metric strong {
+  display: block;
+  overflow: hidden;
+  margin: 3px 0 10px;
+  font-size: clamp(13px, 4vw, 19px);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.home-macro-line {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 8px;
+  padding: 13px 0;
+  border-top: 1px solid var(--border);
+}
+.home-macro-line:first-of-type {
+  border-top: 0;
+}
+.home-macro-line p {
+  color: var(--muted);
+  font-size: 11px;
+}
+.home-macro-line strong {
+  font-size: 18px;
+}
+.home-macro-line strong span,
+.home-macro-line > span {
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 500;
+}
+.home-next-card {
+  display: flex;
+  align-items: center;
+  gap: 13px;
+  padding: 12px !important;
+}
+.home-next-card img {
+  width: 96px;
+  height: 72px;
+  border-radius: 6px;
+  object-fit: cover;
+}
+.home-details {
+  border-top: 1px solid var(--border);
+  padding-top: 12px;
+}
+.home-details > summary {
+  cursor: pointer;
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 700;
+}
 @media (min-width: 640px) {
   .nutrition-overview {
     grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
@@ -624,6 +804,36 @@ a {
   .dashboard-grid {
     grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr);
     align-items: start;
+  }
+  .home-overview-grid {
+    grid-template-columns: minmax(0, 1.4fr) minmax(330px, 0.8fr);
+    align-items: start;
+  }
+  .home-workout-hero {
+    min-height: 305px;
+  }
+  .home-workout-hero > img {
+    left: 40%;
+    width: 60%;
+    height: 100%;
+  }
+  .home-workout-hero::after {
+    background:
+      linear-gradient(90deg, #071725 12%, #071725f5 43%, #07172522 78%),
+      linear-gradient(0deg, #071725aa, transparent 70%);
+  }
+  .home-workout-copy {
+    top: 35px;
+    right: auto;
+    bottom: 28px;
+    width: 52%;
+  }
+  .home-workout-copy h2 {
+    font-size: 46px;
+  }
+  .home-workout-actions {
+    grid-template-columns: minmax(220px, 310px) auto;
+    align-items: center;
   }
   .dashboard-span {
     grid-column: 1 / -1;
