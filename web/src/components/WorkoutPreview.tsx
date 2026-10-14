@@ -2,7 +2,12 @@
 
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
-import { catalogEntry, formVideoUrl, youtubeThumb } from "@/lib/exerciseCatalog";
+import {
+  catalogEntry,
+  formVideoUrl,
+  youtubeThumb,
+} from "@/lib/exerciseCatalog";
+import { exercisePhoto } from "@/lib/exercisePhotos";
 import { clearDraft, loadDraft } from "@/lib/sessionDraft";
 import { splitWarmupBlock } from "@/lib/prehab";
 import {
@@ -29,29 +34,31 @@ type Exercise = {
 
 function splitDayTitle(name: string) {
   const m = name.match(/^Day\s+(\d+)\s*·\s*(.+)$/i);
-  if (m) return { kicker: `Day ${m[1]}`, title: m[2].replace(/\s+B$/i, "").trim() };
+  if (m)
+    return { kicker: `Day ${m[1]}`, title: m[2].replace(/\s+B$/i, "").trim() };
   return { kicker: null as string | null, title: name };
 }
 
 /** Reps: 10 10 10 10  ·  Tempo: 4/0/X/0 */
 export function parseRepsAndTempo(
   workingRepRange: string,
-  defaultSets: number
+  defaultSets: number,
 ): { repsLine: string; tempo: string | null } {
   const raw = workingRepRange || "";
   const tempoMatch = raw.match(/Tempo\s+([0-9X](?:\/[0-9X]){3})/i);
   const tempo = tempoMatch?.[1] ?? null;
 
-  if (/∞|amrap/i.test(raw) && !/\d+\s*[x×]\s*\d+/.test(raw.split("·")[0] || "")) {
+  if (
+    /∞|amrap/i.test(raw) &&
+    !/\d+\s*[x×]\s*\d+/.test(raw.split("·")[0] || "")
+  ) {
     const first = (raw.split("·")[0] || "").trim();
     if (/amrap/i.test(first) || first.includes("∞")) {
       return { repsLine: "∞", tempo };
     }
   }
 
-  const listed = raw.match(
-    /(\d+\s*(?:,\s*(?:\d+|∞|AMRAP)){2,})/i
-  );
+  const listed = raw.match(/(\d+\s*(?:,\s*(?:\d+|∞|AMRAP)){2,})/i);
   if (listed) {
     const repsLine = listed[1]
       .replace(/AMRAP/gi, "∞")
@@ -95,7 +102,11 @@ function equipmentFromName(name: string): string | null {
   if (n.includes("leg press")) return "Leg press";
   if (n.includes("pendulum")) return "Pendulum squat";
   if (n.includes("pec deck")) return "Pec deck";
-  if (n.includes("cable") || n.includes("lat pulldown") || n.includes("pushdown"))
+  if (
+    n.includes("cable") ||
+    n.includes("lat pulldown") ||
+    n.includes("pushdown")
+  )
     return "Cable stack";
   if (n.includes("ez-bar") || n.includes("ez bar")) return "EZ-bar";
   if (n.includes("barbell") || n.includes("rdl") || n.includes("military"))
@@ -105,7 +116,8 @@ function equipmentFromName(name: string): string | null {
   if (n.includes("machine")) return "Machine";
   if (n.includes("chin") || n.includes("pull-up") || n.includes("pull up"))
     return "Pull-up bar";
-  if (n.includes("extension") && n.includes("back")) return "Back extension bench";
+  if (n.includes("extension") && n.includes("back"))
+    return "Back extension bench";
   return null;
 }
 
@@ -176,8 +188,11 @@ export function WorkoutPreview({
     return out;
   }, [sorted]);
 
-  const heroCat = sorted.map((ex) => catalogEntry(ex.name)).find((c) => c?.youtubeUrl);
-  const heroImg = youtubeThumb(heroCat?.youtubeUrl);
+  const heroCat = sorted
+    .map((ex) => catalogEntry(ex.name))
+    .find((c) => c?.youtubeUrl);
+  const heroImg =
+    exercisePhoto(sorted[0]?.name ?? "") ?? youtubeThumb(heroCat?.youtubeUrl);
 
   const startHref = `/train/${dayId}/session`;
 
@@ -254,13 +269,17 @@ export function WorkoutPreview({
             <p className="text-[20px] font-extrabold leading-none tabular-nums">
               {totalSets}
             </p>
-            <p className="mt-1 text-[10.5px] font-semibold text-[var(--muted)]">Sets</p>
+            <p className="mt-1 text-[10.5px] font-semibold text-[var(--muted)]">
+              Sets
+            </p>
           </div>
           <div className="rounded-md border border-white/5 bg-[var(--surface)] px-3 py-2.5">
             <p className="text-[20px] font-extrabold leading-none tabular-nums">
               {minutes}
             </p>
-            <p className="mt-1 text-[10.5px] font-semibold text-[var(--muted)]">Min</p>
+            <p className="mt-1 text-[10.5px] font-semibold text-[var(--muted)]">
+              Min
+            </p>
           </div>
         </div>
 
@@ -271,7 +290,9 @@ export function WorkoutPreview({
             className="flex flex-col items-center gap-1.5 rounded-md border border-[var(--border)] bg-[var(--card)] py-3 text-[var(--muted)] active:bg-white/5"
           >
             <IconCalendar size={19} />
-            <span className="text-[11.5px] font-semibold text-[var(--text)]">Schedule</span>
+            <span className="text-[11.5px] font-semibold text-[var(--text)]">
+              Schedule
+            </span>
           </Link>
           <Link
             href="/train"
@@ -279,7 +300,9 @@ export function WorkoutPreview({
             className="flex flex-col items-center gap-1.5 rounded-md border border-[var(--border)] bg-[var(--card)] py-3 text-[var(--muted)] active:bg-white/5"
           >
             <IconHistory size={19} />
-            <span className="text-[11.5px] font-semibold text-[var(--text)]">History</span>
+            <span className="text-[11.5px] font-semibold text-[var(--text)]">
+              History
+            </span>
           </Link>
           <Link
             href={`/train/manage/${dayId}`}
@@ -287,13 +310,17 @@ export function WorkoutPreview({
             className="flex flex-col items-center gap-1.5 rounded-md border border-[var(--border)] bg-[var(--card)] py-3 text-[var(--muted)] active:bg-white/5"
           >
             <IconPencil size={19} />
-            <span className="text-[11.5px] font-semibold text-[var(--text)]">Edit</span>
+            <span className="text-[11.5px] font-semibold text-[var(--text)]">
+              Edit
+            </span>
           </Link>
         </div>
 
         {hasDraft ? (
           <div className="mb-5 rounded-md border border-[var(--blue)]/30 bg-[var(--blue)]/10 p-3.5">
-            <p className="text-[14px] font-bold">Saved session on this device</p>
+            <p className="text-[14px] font-bold">
+              Saved session on this device
+            </p>
             <div className="mt-2.5 flex gap-2">
               <Link
                 href={startHref}
@@ -359,14 +386,18 @@ export function WorkoutPreview({
         <div className="overflow-hidden rounded-md border border-[var(--border)] bg-[var(--card)]">
           {main.map((ex, i) => {
             const cat = catalogEntry(ex.name);
-            const thumb = youtubeThumb(cat?.youtubeUrl);
+            const thumb =
+              exercisePhoto(ex.name) ?? youtubeThumb(cat?.youtubeUrl);
             const { repsLine, tempo } = parseRepsAndTempo(
               ex.working_rep_range,
-              ex.default_sets
+              ex.default_sets,
             );
             const prev = previousByExercise[ex.name] ?? [];
             return (
-              <div key={ex.id} className={i > 0 ? "border-t border-white/5" : ""}>
+              <div
+                key={ex.id}
+                className={i > 0 ? "border-t border-white/5" : ""}
+              >
                 <div className="flex items-start gap-3 px-4 py-3.5">
                   <span className="mt-0.5 w-4 shrink-0 text-[13px] font-bold tabular-nums text-[var(--dim)]">
                     {i + 1}
@@ -402,7 +433,9 @@ export function WorkoutPreview({
                       {repsLine}
                     </p>
                     {tempo ? (
-                      <p className="text-[12px] text-[var(--muted)]">Tempo {tempo}</p>
+                      <p className="text-[12px] text-[var(--muted)]">
+                        Tempo {tempo}
+                      </p>
                     ) : null}
                     {prev.length ? (
                       <p className="mt-0.5 text-[11.5px] text-[var(--muted)]">
@@ -411,7 +444,7 @@ export function WorkoutPreview({
                           .slice(0, 4)
                           .map(
                             (s) =>
-                              `${Number.isInteger(s.weight) ? s.weight : s.weight.toFixed(1)}×${s.reps}`
+                              `${Number.isInteger(s.weight) ? s.weight : s.weight.toFixed(1)}×${s.reps}`,
                           )
                           .join("  ")}
                       </p>
@@ -421,7 +454,9 @@ export function WorkoutPreview({
                     type="button"
                     className="shrink-0 text-[var(--dim)]"
                     aria-label={`Options for ${ex.name}`}
-                    onClick={() => setOpenMenuId((id) => (id === ex.id ? null : ex.id))}
+                    onClick={() =>
+                      setOpenMenuId((id) => (id === ex.id ? null : ex.id))
+                    }
                   >
                     <IconChevronRight
                       size={18}
@@ -437,7 +472,9 @@ export function WorkoutPreview({
                       rel="noreferrer"
                       className="block font-bold text-[var(--text)]"
                     >
-                      {cat?.youtubeUrl ? "Watch form video" : "Find a form video"}
+                      {cat?.youtubeUrl
+                        ? "Watch form video"
+                        : "Find a form video"}
                     </a>
                     <Link
                       href={startHref}

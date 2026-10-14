@@ -16,8 +16,20 @@ import {
 import { MealBuilderSheet } from "@/components/MealBuilderSheet";
 import { MacroTargetsSheet } from "@/components/MacroTargetsSheet";
 import { NutritionTrend } from "@/components/NutritionTrend";
-import { IconChevronLeft, IconChevronRight, IconGear, IconHistory, IconPlus, IconStar, IconX } from "@/components/icons";
-import { DEFAULT_TARGETS, normalizeTargets, type MacroTargets } from "@/lib/targets";
+import {
+  IconChevronLeft,
+  IconChevronRight,
+  IconGear,
+  IconHistory,
+  IconPlus,
+  IconStar,
+  IconX,
+} from "@/components/icons";
+import {
+  DEFAULT_TARGETS,
+  normalizeTargets,
+  type MacroTargets,
+} from "@/lib/targets";
 import { STAPLE_FOODS, type FoodHit } from "@/lib/foods";
 import {
   MEAL_SLOTS,
@@ -107,7 +119,15 @@ function slotForNow(): MealSlot {
  */
 function groupItems(items: MealItem[]) {
   const key = (m: MealItem) =>
-    [m.name, m.brand ?? "", m.servingLabel, m.calories, m.protein, m.carbs, m.fat].join("|");
+    [
+      m.name,
+      m.brand ?? "",
+      m.servingLabel,
+      m.calories,
+      m.protein,
+      m.carbs,
+      m.fat,
+    ].join("|");
   const groups: { key: string; first: MealItem; ids: string[] }[] = [];
   for (const m of items) {
     const k = key(m);
@@ -146,14 +166,24 @@ export default function NutritionPage() {
    * looks logged until the app is opened on another device — the whole point
    * of logging it — so a failed write has to say so and offer another go.
    */
-  const [unsaved, setUnsaved] = useState<{ items: MealItem[]; reason: string } | null>(null);
-  const [toast, setToast] = useState<{ text: string; undoIds?: string[] } | null>(null);
+  const [unsaved, setUnsaved] = useState<{
+    items: MealItem[];
+    reason: string;
+  } | null>(null);
+  const [toast, setToast] = useState<{
+    text: string;
+    undoIds?: string[];
+  } | null>(null);
   const [quickSlot, setQuickSlot] = useState<MealSlot>(slotForNow);
   const [searchSlot, setSearchSlot] = useState<MealSlot | null>(null);
   const [saved, setSaved] = useState<SavedMeal[]>([]);
   const [deviceOnly, setDeviceOnly] = useState(false);
   const [editingSaved, setEditingSaved] = useState(false);
-  const [builder, setBuilder] = useState<{ name: string; slot: MealSlot; items: SavedMealItem[] } | null>(null);
+  const [builder, setBuilder] = useState<{
+    name: string;
+    slot: MealSlot;
+    items: SavedMealItem[];
+  } | null>(null);
   const [orderSlot, setOrderSlot] = useState<MealSlot | null>(null);
   /** Which plan meal is open, and any swap chosen inside it. */
   const [openPlanMeal, setOpenPlanMeal] = useState<string | null>(null);
@@ -185,9 +215,12 @@ export default function NutritionPage() {
 
       const current = normalizeTargets(profile);
       const untouchedBaseline =
-        Number(profile?.target_calories) === DERRICK_RECOMP_BASELINE.target_calories &&
-        Number(profile?.target_protein) === DERRICK_RECOMP_BASELINE.target_protein &&
-        Number(profile?.target_carbs) === DERRICK_RECOMP_BASELINE.target_carbs &&
+        Number(profile?.target_calories) ===
+          DERRICK_RECOMP_BASELINE.target_calories &&
+        Number(profile?.target_protein) ===
+          DERRICK_RECOMP_BASELINE.target_protein &&
+        Number(profile?.target_carbs) ===
+          DERRICK_RECOMP_BASELINE.target_carbs &&
         Number(profile?.target_fats) === DERRICK_RECOMP_BASELINE.target_fats;
 
       if (untouchedBaseline) {
@@ -231,7 +264,12 @@ export default function NutritionPage() {
       if (!user) return;
 
       const [{ data }, { data: weekLogs }] = await Promise.all([
-        supabaseRef.current.from("daily_logs").select("*").eq("user_id", user.id).eq("date", date).maybeSingle(),
+        supabaseRef.current
+          .from("daily_logs")
+          .select("*")
+          .eq("user_id", user.id)
+          .eq("date", date)
+          .maybeSingle(),
         supabaseRef.current
           .from("daily_logs")
           .select("date, actual_calories, meals")
@@ -243,19 +281,29 @@ export default function NutritionPage() {
 
       setLog(
         data
-          ? { ...emptyLog(date), ...data, meals: Array.isArray(data.meals) ? (data.meals as MealItem[]) : [] }
-          : emptyLog(date)
+          ? {
+              ...emptyLog(date),
+              ...data,
+              meals: Array.isArray(data.meals)
+                ? (data.meals as MealItem[])
+                : [],
+            }
+          : emptyLog(date),
       );
       setLoggedDays(
         new Set(
           (weekLogs ?? [])
-            .filter((r) => r.actual_calories > 0 || (Array.isArray(r.meals) && r.meals.length > 0))
-            .map((r) => String(r.date))
-        )
+            .filter(
+              (r) =>
+                r.actual_calories > 0 ||
+                (Array.isArray(r.meals) && r.meals.length > 0),
+            )
+            .map((r) => String(r.date)),
+        ),
       );
       setLoading(false);
     },
-    [week]
+    [week],
   );
 
   useEffect(() => {
@@ -311,7 +359,10 @@ export default function NutritionPage() {
     const { error: err } = await supabaseRef.current
       .from("daily_logs")
       .upsert(payload, { onConflict: "user_id,date" })
-      .then((r) => r, (e: Error) => ({ error: e }));
+      .then(
+        (r) => r,
+        (e: Error) => ({ error: e }),
+      );
     if (err) {
       setUnsaved({ items: next, reason: err.message });
       setError("");
@@ -331,7 +382,10 @@ export default function NutritionPage() {
   function addItems(items: MealItem[], label: string) {
     const next = [...mealsRef.current, ...items];
     void persistMeals(next);
-    showToast(label, items.map((i) => i.id));
+    showToast(
+      label,
+      items.map((i) => i.id),
+    );
   }
 
   function removeItems(ids: string[]) {
@@ -339,7 +393,10 @@ export default function NutritionPage() {
   }
 
   function logStaple(f: FoodHit) {
-    addItems([stapleToItem(f, quickSlot, Date.now())], `Added ${f.name} to ${quickSlot}`);
+    addItems(
+      [stapleToItem(f, quickSlot, Date.now())],
+      `Added ${f.name} to ${quickSlot}`,
+    );
   }
 
   /** A plan meal's foods, with whatever swap has been chosen for each slot. */
@@ -372,7 +429,7 @@ export default function NutritionPage() {
         fat: f.fat,
         servingLabel: f.servingLabel,
       })),
-      `Logged ${meal.name} to ${meal.slot}`
+      `Logged ${meal.name} to ${meal.slot}`,
     );
     setOpenPlanMeal(null);
   }
@@ -413,7 +470,7 @@ export default function NutritionPage() {
     const stamp = Date.now();
     addItems(
       prior.map((m, i) => ({ ...m, id: `${stamp}-${i}-day` })),
-      `Copied yesterday · ${prior.length} ${prior.length === 1 ? "food" : "foods"}`
+      `Copied yesterday · ${prior.length} ${prior.length === 1 ? "food" : "foods"}`,
     );
   }
 
@@ -431,7 +488,9 @@ export default function NutritionPage() {
       .eq("user_id", user.id)
       .eq("date", dateKey(d))
       .maybeSingle();
-    const prior = (Array.isArray(data?.meals) ? (data.meals as MealItem[]) : []).filter((m) => m.meal === slot);
+    const prior = (
+      Array.isArray(data?.meals) ? (data.meals as MealItem[]) : []
+    ).filter((m) => m.meal === slot);
     if (!prior.length) {
       showToast(`Nothing logged for ${slot} yesterday`);
       return;
@@ -439,7 +498,7 @@ export default function NutritionPage() {
     const stamp = Date.now();
     addItems(
       prior.map((m, i) => ({ ...m, id: `${stamp}-${i}-copy` })),
-      `Copied yesterday's ${slot}`
+      `Copied yesterday's ${slot}`,
     );
   }
 
@@ -478,18 +537,28 @@ export default function NutritionPage() {
   }
 
   const isToday = selected === todayKey;
-  const dateLabel = parseKey(selected).toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric" });
+  const dateLabel = parseKey(selected).toLocaleDateString(undefined, {
+    weekday: "short",
+    month: "short",
+    day: "numeric",
+  });
   const calsLeft = Math.round(targets.target_calories - totals.calories);
 
   return (
-    <div className="space-y-5">
+    <div className="nutrition-page space-y-5">
       <div className="flex items-center justify-between gap-3">
         <div className="min-w-0">
-          <h1 className="text-[26px] font-extrabold leading-tight tracking-tight">Fuel</h1>
+          <h1 className="text-[26px] font-extrabold leading-tight tracking-tight">
+            Fuel
+          </h1>
           <p className="mt-0.5 text-[13px] font-semibold text-[var(--muted)]">
             {isToday ? `Today · ${dateLabel}` : dateLabel}
             {!isToday ? (
-              <button type="button" className="ml-2 font-bold text-[var(--blue)]" onClick={() => setSelected(todayKey)}>
+              <button
+                type="button"
+                className="ml-2 font-bold text-[var(--blue)]"
+                onClick={() => setSelected(todayKey)}
+              >
                 Jump to today
               </button>
             ) : null}
@@ -506,7 +575,12 @@ export default function NutritionPage() {
       </div>
 
       <div className="flex items-center gap-1">
-        <button type="button" aria-label="Previous day" className="flex h-11 w-7 items-center justify-center text-[var(--muted)]" onClick={() => shiftDay(-1)}>
+        <button
+          type="button"
+          aria-label="Previous day"
+          className="flex h-11 w-7 items-center justify-center text-[var(--muted)]"
+          onClick={() => shiftDay(-1)}
+        >
           <IconChevronLeft size={18} />
         </button>
         <div className="flex flex-1 justify-between gap-1">
@@ -521,17 +595,35 @@ export default function NutritionPage() {
                 disabled={future}
                 onClick={() => setSelected(key)}
                 className={`flex h-[54px] flex-1 flex-col items-center justify-center gap-0.5 rounded-md border ${
-                  isSel ? "border-[var(--blue)] bg-[var(--blue)]/10" : future ? "border-transparent opacity-30" : "border-[var(--border-solid)]"
+                  isSel
+                    ? "border-[var(--blue)] bg-[var(--blue)]/10"
+                    : future
+                      ? "border-transparent opacity-30"
+                      : "border-[var(--border-solid)]"
                 }`}
               >
-                <span className="text-[10.5px] font-semibold text-[var(--muted)]">{d.toLocaleDateString(undefined, { weekday: "narrow" })}</span>
-                <span className={`text-[13px] font-bold tabular-nums ${isSel ? "text-[var(--blue)]" : ""}`}>{d.getDate()}</span>
-                <span className={`h-[4px] w-[4px] rounded-full ${loggedDays.has(key) ? "bg-[var(--green)]" : "bg-transparent"}`} />
+                <span className="text-[10.5px] font-semibold text-[var(--muted)]">
+                  {d.toLocaleDateString(undefined, { weekday: "narrow" })}
+                </span>
+                <span
+                  className={`text-[13px] font-bold tabular-nums ${isSel ? "text-[var(--blue)]" : ""}`}
+                >
+                  {d.getDate()}
+                </span>
+                <span
+                  className={`h-[4px] w-[4px] rounded-full ${loggedDays.has(key) ? "bg-[var(--green)]" : "bg-transparent"}`}
+                />
               </button>
             );
           })}
         </div>
-        <button type="button" aria-label="Next day" disabled={isToday} className="flex h-11 w-7 items-center justify-center text-[var(--muted)] disabled:opacity-30" onClick={() => shiftDay(1)}>
+        <button
+          type="button"
+          aria-label="Next day"
+          disabled={isToday}
+          className="flex h-11 w-7 items-center justify-center text-[var(--muted)] disabled:opacity-30"
+          onClick={() => shiftDay(1)}
+        >
           <IconChevronRight size={18} />
         </button>
       </div>
@@ -560,7 +652,8 @@ export default function NutritionPage() {
             Not saved — this food is only on this device
           </p>
           <p className="mt-1 text-[12px] text-[var(--muted)]">
-            It won&apos;t show on your phone, and it&apos;ll be gone when this page closes.
+            It won&apos;t show on your phone, and it&apos;ll be gone when this
+            page closes.
             {unsaved.reason ? ` (${unsaved.reason})` : ""}
           </p>
           <button
@@ -573,10 +666,16 @@ export default function NutritionPage() {
         </div>
       ) : null}
 
-      {error ? <p className="text-[13px] text-[var(--yellow)]">{error}</p> : null}
+      {error ? (
+        <p className="text-[13px] text-[var(--yellow)]">{error}</p>
+      ) : null}
 
       {view === "trends" ? (
-        <NutritionTrend endDate={selected} targets={targets} refreshKey={trendKey} />
+        <NutritionTrend
+          endDate={selected}
+          targets={targets}
+          refreshKey={trendKey}
+        />
       ) : loading ? (
         <div className="space-y-3">
           <div className="h-40 animate-pulse rounded-md bg-[var(--card-2)]" />
@@ -595,15 +694,40 @@ export default function NutritionPage() {
                 </p>
               </div>
               <p className="pb-1 text-right text-[13px] tabular-nums text-[var(--muted)]">
-                <span className="font-bold text-[var(--text)]">{Math.round(totals.calories).toLocaleString()}</span> of{" "}
-                {targets.target_calories.toLocaleString()} cal
+                <span className="font-bold text-[var(--text)]">
+                  {Math.round(totals.calories).toLocaleString()}
+                </span>{" "}
+                of {targets.target_calories.toLocaleString()} cal
               </p>
             </div>
-            <MacroBar label="Calories" value={totals.calories} target={targets.target_calories} unit="" />
+            <MacroBar
+              label="Calories"
+              value={totals.calories}
+              target={targets.target_calories}
+              unit=""
+            />
             <div className="grid grid-cols-3 gap-3">
-              <MacroBar label="Protein" value={totals.protein} target={targets.target_protein} unit="g" compact />
-              <MacroBar label="Carbs" value={totals.carbs} target={targets.target_carbs} unit="g" compact />
-              <MacroBar label="Fat" value={totals.fat} target={targets.target_fats} unit="g" compact />
+              <MacroBar
+                label="Protein"
+                value={totals.protein}
+                target={targets.target_protein}
+                unit="g"
+                compact
+              />
+              <MacroBar
+                label="Carbs"
+                value={totals.carbs}
+                target={targets.target_carbs}
+                unit="g"
+                compact
+              />
+              <MacroBar
+                label="Fat"
+                value={totals.fat}
+                target={targets.target_fats}
+                unit="g"
+                compact
+              />
             </div>
           </section>
 
@@ -618,7 +742,9 @@ export default function NutritionPage() {
           <section className="space-y-2.5">
             <div className="flex items-baseline justify-between gap-2">
               <h2 className="text-[17px] font-bold">NT plan</h2>
-              <p className="text-[12px] font-semibold text-[var(--muted)]">Tap to see inside</p>
+              <p className="text-[12px] font-semibold text-[var(--muted)]">
+                Tap to see inside
+              </p>
             </div>
             <div className="overflow-hidden rounded-md border border-[var(--border)] bg-[var(--card)]">
               {NT_MEALS.map((meal, i) => {
@@ -626,7 +752,10 @@ export default function NutritionPage() {
                 const t = planMealTotals(items);
                 const open = openPlanMeal === meal.id;
                 return (
-                  <div key={meal.id} className={i > 0 ? "border-t border-white/5" : ""}>
+                  <div
+                    key={meal.id}
+                    className={i > 0 ? "border-t border-white/5" : ""}
+                  >
                     <div className="flex items-center gap-3 px-4 py-3">
                       <button
                         type="button"
@@ -640,8 +769,9 @@ export default function NutritionPage() {
                           </span>
                         </p>
                         <p className="truncate text-[12.5px] tabular-nums text-[var(--muted)]">
-                          {meal.slot} · {roundMacro(t.calories)} cal · {roundMacro(t.protein)}p ·{" "}
-                          {roundMacro(t.carbs)}c · {roundMacro(t.fat)}f
+                          {meal.slot} · {roundMacro(t.calories)} cal ·{" "}
+                          {roundMacro(t.protein)}p · {roundMacro(t.carbs)}c ·{" "}
+                          {roundMacro(t.fat)}f
                         </p>
                       </button>
                       <button
@@ -655,10 +785,12 @@ export default function NutritionPage() {
 
                     {open ? (
                       <div className="space-y-2.5 px-4 pb-3.5">
-                        <p className="text-[11.5px] text-[var(--dim)]">{meal.note}</p>
+                        <p className="text-[11.5px] text-[var(--dim)]">
+                          {meal.note}
+                        </p>
                         {items.map((item, n) => {
                           const swap = meal.swaps?.find(
-                            (sw) => sw.itemId === meal.items[n].id
+                            (sw) => sw.itemId === meal.items[n].id,
                           );
                           const pool =
                             swap?.kind === "protein"
@@ -668,11 +800,18 @@ export default function NutritionPage() {
                                 : null;
                           const key = `${meal.id}:${meal.items[n].id}`;
                           return (
-                            <div key={item.id} className="rounded-md bg-[var(--surface)] p-2.5">
-                              <p className="truncate text-[13px] font-semibold">{item.name}</p>
+                            <div
+                              key={item.id}
+                              className="rounded-md bg-[var(--surface)] p-2.5"
+                            >
+                              <p className="truncate text-[13px] font-semibold">
+                                {item.name}
+                              </p>
                               <p className="truncate font-mono text-[11.5px] tabular-nums text-[var(--muted)]">
-                                {item.servingLabel} · {roundMacro(item.calories)} cal ·{" "}
-                                {roundMacro(item.protein)}p · {roundMacro(item.carbs)}c ·{" "}
+                                {item.servingLabel} ·{" "}
+                                {roundMacro(item.calories)} cal ·{" "}
+                                {roundMacro(item.protein)}p ·{" "}
+                                {roundMacro(item.carbs)}c ·{" "}
                                 {roundMacro(item.fat)}f
                               </p>
                               {pool ? (
@@ -689,7 +828,10 @@ export default function NutritionPage() {
                                         key={alt.id}
                                         type="button"
                                         onClick={() =>
-                                          setPlanSwaps((cur) => ({ ...cur, [key]: alt.id }))
+                                          setPlanSwaps((cur) => ({
+                                            ...cur,
+                                            [key]: alt.id,
+                                          }))
                                         }
                                         className={`rounded-[4px] px-2 py-1 text-[11px] font-bold ${
                                           on
@@ -719,7 +861,11 @@ export default function NutritionPage() {
               <h2 className="text-[17px] font-bold">Saved meals</h2>
               <div className="flex items-center gap-3">
                 {saved.length ? (
-                  <button type="button" className="text-[13px] font-bold text-[var(--muted)]" onClick={() => setEditingSaved((v) => !v)}>
+                  <button
+                    type="button"
+                    className="text-[13px] font-bold text-[var(--muted)]"
+                    onClick={() => setEditingSaved((v) => !v)}
+                  >
                     {editingSaved ? "Done" : "Edit"}
                   </button>
                 ) : null}
@@ -740,11 +886,16 @@ export default function NutritionPage() {
                 {saved.map((m, i) => {
                   const t = mealTotals(m.items);
                   return (
-                    <div key={m.id} className={`flex items-center gap-3 px-4 py-3 ${i > 0 ? "border-t border-white/5" : ""}`}>
+                    <div
+                      key={m.id}
+                      className={`flex items-center gap-3 px-4 py-3 ${i > 0 ? "border-t border-white/5" : ""}`}
+                    >
                       <button
                         type="button"
                         className="min-w-0 flex-1 text-left"
-                        onClick={() => setOpenSaved((cur) => (cur === m.id ? null : m.id))}
+                        onClick={() =>
+                          setOpenSaved((cur) => (cur === m.id ? null : m.id))
+                        }
                       >
                         <p className="truncate text-[15px] font-bold">
                           {m.name}
@@ -755,14 +906,23 @@ export default function NutritionPage() {
                           ) : null}
                         </p>
                         <p className="truncate text-[12.5px] tabular-nums text-[var(--muted)]">
-                          {m.meal} · {m.items.length} {m.items.length === 1 ? "food" : "foods"} · {roundMacro(t.calories)} cal · {roundMacro(t.protein)}p
+                          {m.meal} · {m.items.length}{" "}
+                          {m.items.length === 1 ? "food" : "foods"} ·{" "}
+                          {roundMacro(t.calories)} cal · {roundMacro(t.protein)}
+                          p
                         </p>
                         {openSaved === m.id ? (
                           <div className="mt-1.5 space-y-0.5">
                             {m.items.map((it, n) => (
-                              <p key={`${it.name}-${n}`} className="truncate text-[11.5px] text-[var(--dim)]">
+                              <p
+                                key={`${it.name}-${n}`}
+                                className="truncate text-[11.5px] text-[var(--dim)]"
+                              >
                                 {it.name}
-                                {it.servingLabel ? ` · ${it.servingLabel}` : ""} · {roundMacro(it.calories)} cal ·{" "}
+                                {it.servingLabel
+                                  ? ` · ${it.servingLabel}`
+                                  : ""}{" "}
+                                · {roundMacro(it.calories)} cal ·{" "}
                                 {roundMacro(it.protein)}p
                               </p>
                             ))}
@@ -798,7 +958,8 @@ export default function NutritionPage() {
             )}
             {deviceOnly ? (
               <p className="text-[11.5px] text-[var(--dim)]">
-                Saved on this phone only until schema_saved_meals.sql is run in Supabase.
+                Saved on this phone only until schema_saved_meals.sql is run in
+                Supabase.
               </p>
             ) : null}
           </section>
@@ -806,7 +967,9 @@ export default function NutritionPage() {
           <section className="space-y-2.5">
             <div className="flex items-baseline justify-between gap-2">
               <h2 className="text-[17px] font-bold">Staples</h2>
-              <p className="text-[12px] font-semibold text-[var(--muted)]">Tap to add to</p>
+              <p className="text-[12px] font-semibold text-[var(--muted)]">
+                Tap to add to
+              </p>
             </div>
             <div className="grid grid-cols-4 gap-1.5">
               {MEAL_SLOTS.map((s) => (
@@ -828,7 +991,9 @@ export default function NutritionPage() {
                   onClick={() => logStaple(f)}
                   className="flex min-h-[64px] flex-col items-start justify-center rounded-md border border-[var(--border)] bg-[var(--card)] px-3 py-2.5 text-left active:bg-white/5"
                 >
-                  <span className="w-full truncate text-[13.5px] font-bold">{f.name}</span>
+                  <span className="w-full truncate text-[13.5px] font-bold">
+                    {f.name}
+                  </span>
                   <span className="w-full truncate text-[11.5px] tabular-nums text-[var(--muted)]">
                     {f.servingLabel} · {f.calories} cal · {f.protein}p
                   </span>
@@ -844,12 +1009,16 @@ export default function NutritionPage() {
                 const items = log.meals.filter((m) => m.meal === slot);
                 const t = mealTotals(items);
                 return (
-                  <div key={slot} className={`px-4 py-3.5 ${idx > 0 ? "border-t border-white/5" : ""}`}>
+                  <div
+                    key={slot}
+                    className={`px-4 py-3.5 ${idx > 0 ? "border-t border-white/5" : ""}`}
+                  >
                     <div className="flex items-center justify-between gap-2">
                       <p className="text-[15px] font-bold">{slot}</p>
                       {items.length ? (
                         <p className="text-[12.5px] tabular-nums text-[var(--muted)]">
-                          {roundMacro(t.calories)} cal · {roundMacro(t.protein)}p
+                          {roundMacro(t.calories)} cal · {roundMacro(t.protein)}
+                          p
                         </p>
                       ) : null}
                     </div>
@@ -859,24 +1028,35 @@ export default function NutritionPage() {
                           const it = g.first;
                           const n = g.ids.length;
                           return (
-                            <div key={g.key} className="flex items-center gap-2 rounded-md bg-[var(--surface)] py-2 pl-3 pr-1">
+                            <div
+                              key={g.key}
+                              className="flex items-center gap-2 rounded-md bg-[var(--surface)] py-2 pl-3 pr-1"
+                            >
                               <div className="min-w-0 flex-1">
                                 <p className="truncate text-[13.5px] font-semibold">
                                   {it.name}
                                   {n > 1 ? (
-                                    <span className="ml-1.5 text-[12px] font-extrabold text-[var(--blue)]">×{n}</span>
+                                    <span className="ml-1.5 text-[12px] font-extrabold text-[var(--blue)]">
+                                      ×{n}
+                                    </span>
                                   ) : null}
                                 </p>
                                 <p className="truncate text-[11.5px] tabular-nums text-[var(--muted)]">
-                                  {it.servingLabel ? `${n > 1 ? `${n} × ` : ""}${it.servingLabel} · ` : ""}
-                                  {roundMacro(it.calories * n)} cal · {roundMacro(it.protein * n)}p ·{" "}
-                                  {roundMacro(it.carbs * n)}c · {roundMacro(it.fat * n)}f
+                                  {it.servingLabel
+                                    ? `${n > 1 ? `${n} × ` : ""}${it.servingLabel} · `
+                                    : ""}
+                                  {roundMacro(it.calories * n)} cal ·{" "}
+                                  {roundMacro(it.protein * n)}p ·{" "}
+                                  {roundMacro(it.carbs * n)}c ·{" "}
+                                  {roundMacro(it.fat * n)}f
                                 </p>
                               </div>
                               <button
                                 type="button"
                                 aria-label={`One fewer ${it.name}`}
-                                onClick={() => removeItems([g.ids[g.ids.length - 1]])}
+                                onClick={() =>
+                                  removeItems([g.ids[g.ids.length - 1]])
+                                }
                                 className="flex h-10 w-8 shrink-0 items-center justify-center rounded-[4px] text-[15px] font-bold text-[var(--muted)] active:text-[var(--text)]"
                               >
                                 −
@@ -886,8 +1066,13 @@ export default function NutritionPage() {
                                 aria-label={`One more ${it.name}`}
                                 onClick={() =>
                                   addItems(
-                                    [{ ...it, id: `${Date.now()}-${Math.random().toString(36).slice(2, 7)}` }],
-                                    `Added ${it.name} to ${slot}`
+                                    [
+                                      {
+                                        ...it,
+                                        id: `${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+                                      },
+                                    ],
+                                    `Added ${it.name} to ${slot}`,
                                   )
                                 }
                                 className="flex h-10 w-8 shrink-0 items-center justify-center rounded-[4px] text-[15px] font-bold text-[var(--blue)] active:text-[var(--text)]"
@@ -896,7 +1081,11 @@ export default function NutritionPage() {
                               </button>
                               <button
                                 type="button"
-                                aria-label={n > 1 ? `Remove all ${n} ${it.name}` : `Remove ${it.name}`}
+                                aria-label={
+                                  n > 1
+                                    ? `Remove all ${n} ${it.name}`
+                                    : `Remove ${it.name}`
+                                }
                                 onClick={() => removeItems(g.ids)}
                                 className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[4px] text-[var(--muted)] active:text-[var(--text)]"
                               >
@@ -965,11 +1154,21 @@ export default function NutritionPage() {
 
           <section className="space-y-3">
             <h2 className="text-[17px] font-bold">Daily check-ins</h2>
-            <WaterStepsCards date={selected} waterOz={log.water_oz} steps={log.steps_count} waterGoal={128} targets={targets} />
+            <WaterStepsCards
+              date={selected}
+              waterOz={log.water_oz}
+              steps={log.steps_count}
+              waterGoal={128}
+              targets={targets}
+            />
             <MorningCheckinCard
               key={`checkin-${selected}-${log.checkin_sleep}-${log.checkin_energy}-${log.checkin_pump}`}
               date={selected}
-              initial={{ checkin_sleep: log.checkin_sleep, checkin_energy: log.checkin_energy, checkin_pump: log.checkin_pump }}
+              initial={{
+                checkin_sleep: log.checkin_sleep,
+                checkin_energy: log.checkin_energy,
+                checkin_pump: log.checkin_pump,
+              }}
               targets={targets}
             />
           </section>
@@ -983,7 +1182,9 @@ export default function NutritionPage() {
           role="status"
         >
           <div className="flex w-full items-center gap-3 rounded-md border border-[var(--border)] bg-[var(--card-2)] px-4 py-3 shadow-lg shadow-black/40">
-            <p className="min-w-0 flex-1 truncate text-[13.5px] font-semibold">{toast.text}</p>
+            <p className="min-w-0 flex-1 truncate text-[13.5px] font-semibold">
+              {toast.text}
+            </p>
             {toast.undoIds?.length ? (
               <button
                 type="button"
@@ -1018,7 +1219,9 @@ export default function NutritionPage() {
         <FoodSearchModal
           meal={searchSlot}
           onClose={() => setSearchSlot(null)}
-          onAdd={(item) => addItems([item], `Added ${item.name} to ${item.meal}`)}
+          onAdd={(item) =>
+            addItems([item], `Added ${item.name} to ${item.meal}`)
+          }
         />
       ) : null}
 
@@ -1069,9 +1272,15 @@ function MacroBar({
   return (
     <div className="min-w-0">
       <div className="flex items-baseline justify-between gap-1">
-        <span className={`font-bold text-[var(--muted)] ${compact ? "text-[11.5px]" : "text-[12.5px]"}`}>{label}</span>
+        <span
+          className={`font-bold text-[var(--muted)] ${compact ? "text-[11.5px]" : "text-[12.5px]"}`}
+        >
+          {label}
+        </span>
         {!compact ? (
-          <span className="text-[12px] tabular-nums text-[var(--muted)]">{Math.round(pct)}%</span>
+          <span className="text-[12px] tabular-nums text-[var(--muted)]">
+            {Math.round(pct)}%
+          </span>
         ) : null}
       </div>
       {compact ? (
@@ -1084,7 +1293,10 @@ function MacroBar({
         </p>
       ) : null}
       <div className="mt-1.5 h-1.5 overflow-hidden rounded-full bg-[var(--border-solid)]">
-        <div className="h-full rounded-full bg-[var(--blue)]" style={{ width: `${pct}%` }} />
+        <div
+          className="h-full rounded-full bg-[var(--blue)]"
+          style={{ width: `${pct}%` }}
+        />
       </div>
       {over ? (
         <p className="mt-1 text-[11px] font-semibold tabular-nums text-[var(--yellow)]">

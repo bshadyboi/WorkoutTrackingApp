@@ -53,14 +53,14 @@ export default function ProtocolPage() {
 
     if (err) {
       setError(
-        "Protocol table missing — run web/supabase/schema_ea.sql in Supabase SQL Editor."
+        "Protocol table missing — run web/supabase/schema_ea.sql in Supabase SQL Editor.",
       );
       setLoading(false);
       return;
     }
 
     // Only seed when empty — never wipe existing items (that cleared checkmarks)
-    if (!(data?.length)) {
+    if (!data?.length) {
       await supabase.from("protocol_items").insert(
         DEFAULT_PROTOCOL.map((item, i) => ({
           user_id: user.id,
@@ -70,7 +70,7 @@ export default function ProtocolPage() {
           frequency_label: item.frequency_label,
           sort_order: i,
           taken_dates: "",
-        }))
+        })),
       );
       const refetch = await supabase
         .from("protocol_items")
@@ -92,9 +92,11 @@ export default function ProtocolPage() {
   const weekday = selected.getDay();
   const due = useMemo(
     () => items.filter((i) => isDueOnWeekday(i.frequency_label, weekday)),
-    [items, weekday]
+    [items, weekday],
   );
-  const takenCount = due.filter((i) => parseTakenDates(i.taken_dates).has(key)).length;
+  const takenCount = due.filter((i) =>
+    parseTakenDates(i.taken_dates).has(key),
+  ).length;
 
   async function toggleTaken(item: Item) {
     const set = parseTakenDates(item.taken_dates);
@@ -102,7 +104,7 @@ export default function ProtocolPage() {
     else set.add(key);
     const next = serializeTakenDates(set);
     setItems((prev) =>
-      prev.map((p) => (p.id === item.id ? { ...p, taken_dates: next } : p))
+      prev.map((p) => (p.id === item.id ? { ...p, taken_dates: next } : p)),
     );
     const supabase = createClient();
     const { error: upErr } = await supabase
@@ -114,8 +116,8 @@ export default function ProtocolPage() {
       // revert
       setItems((prev) =>
         prev.map((p) =>
-          p.id === item.id ? { ...p, taken_dates: item.taken_dates } : p
-        )
+          p.id === item.id ? { ...p, taken_dates: item.taken_dates } : p,
+        ),
       );
     }
   }
@@ -127,10 +129,13 @@ export default function ProtocolPage() {
   }
 
   async function addItem(kind: "compound" | "supplement") {
-    const name = prompt(kind === "compound" ? "Compound name" : "Supplement name");
+    const name = prompt(
+      kind === "compound" ? "Compound name" : "Supplement name",
+    );
     if (!name) return;
     const dosage = prompt("Dosage / notes", "") ?? "";
-    const frequency = prompt("Frequency (Daily, Sun, Mon Thu…)", "Daily") ?? "Daily";
+    const frequency =
+      prompt("Frequency (Daily, Sun, Mon Thu…)", "Daily") ?? "Daily";
     const supabase = createClient();
     const {
       data: { user },
@@ -159,14 +164,33 @@ export default function ProtocolPage() {
 
   return (
     <div className="space-y-5">
-      <div className="flex gap-2 overflow-x-auto pb-1">
-        <button type="button" className={mode === "today" ? "chip-active" : "chip"} onClick={() => setMode("today")}>
+      <div>
+        <p className="eyebrow">Stack</p>
+        <h1 className="page-heading">Your daily routine.</h1>
+        <p className="page-subtitle">
+          Track today, plan ahead, and manage the full schedule.
+        </p>
+      </div>
+      <div className="section-tabs overflow-x-auto">
+        <button
+          type="button"
+          className={mode === "today" ? "chip-active" : "chip"}
+          onClick={() => setMode("today")}
+        >
           ✓ Today
         </button>
-        <button type="button" className={mode === "calendar" ? "chip-active" : "chip"} onClick={() => setMode("calendar")}>
+        <button
+          type="button"
+          className={mode === "calendar" ? "chip-active" : "chip"}
+          onClick={() => setMode("calendar")}
+        >
           📅 Calendar
         </button>
-        <button type="button" className={mode === "manage" ? "chip-active" : "chip"} onClick={() => setMode("manage")}>
+        <button
+          type="button"
+          className={mode === "manage" ? "chip-active" : "chip"}
+          onClick={() => setMode("manage")}
+        >
           ✏️ Manage
         </button>
       </div>
@@ -183,7 +207,9 @@ export default function ProtocolPage() {
               <button
                 type="button"
                 className="text-[var(--blue)]"
-                onClick={() => setSelected(new Date(selected.getTime() - 86400000))}
+                onClick={() =>
+                  setSelected(new Date(selected.getTime() - 86400000))
+                }
               >
                 ‹
               </button>
@@ -191,7 +217,9 @@ export default function ProtocolPage() {
                 type="button"
                 className="text-[var(--blue)]"
                 disabled={isToday}
-                onClick={() => setSelected(new Date(selected.getTime() + 86400000))}
+                onClick={() =>
+                  setSelected(new Date(selected.getTime() + 86400000))
+                }
               >
                 ›
               </button>
@@ -206,7 +234,9 @@ export default function ProtocolPage() {
               </span>
             </div>
             {due.length === 0 ? (
-              <p className="p-4 text-sm text-[var(--muted)]">Nothing due this day.</p>
+              <p className="p-4 text-sm text-[var(--muted)]">
+                Nothing due this day.
+              </p>
             ) : (
               due.map((item) => {
                 const on = parseTakenDates(item.taken_dates).has(key);
@@ -217,12 +247,17 @@ export default function ProtocolPage() {
                     onClick={() => toggleTaken(item)}
                     className="flex w-full items-start gap-3 border-b border-[var(--border)] px-4 py-3 text-left last:border-0"
                   >
-                    <span className={on ? "check-box-on" : "check-box"} aria-hidden>
+                    <span
+                      className={on ? "check-box-on" : "check-box"}
+                      aria-hidden
+                    >
                       {on ? "✓" : ""}
                     </span>
                     <span className="min-w-0">
                       <span className="block font-semibold">{item.name}</span>
-                      <span className="block text-xs text-[var(--muted)]">{item.dosage}</span>
+                      <span className="block text-xs text-[var(--muted)]">
+                        {item.dosage}
+                      </span>
                     </span>
                   </button>
                 );
@@ -239,7 +274,9 @@ export default function ProtocolPage() {
               >
                 <div className="min-w-0">
                   <p className="font-semibold">{item.name}</p>
-                  <p className="truncate text-xs text-[var(--muted)]">{item.dosage}</p>
+                  <p className="truncate text-xs text-[var(--muted)]">
+                    {item.dosage}
+                  </p>
                 </div>
                 <p className="shrink-0 text-xs font-semibold text-[var(--muted)]">
                   {item.frequency_label}
@@ -276,10 +313,18 @@ export default function ProtocolPage() {
               </div>
             ))}
             <div className="grid grid-cols-2 gap-2 p-3">
-              <button type="button" className="btn-accent !py-2.5 text-xs" onClick={() => addItem("compound")}>
+              <button
+                type="button"
+                className="btn-accent !py-2.5 text-xs"
+                onClick={() => addItem("compound")}
+              >
                 + Add compound
               </button>
-              <button type="button" className="btn-accent !py-2.5 text-xs" onClick={() => addItem("supplement")}>
+              <button
+                type="button"
+                className="btn-accent !py-2.5 text-xs"
+                onClick={() => addItem("supplement")}
+              >
                 + Add supplement
               </button>
             </div>
@@ -330,16 +375,31 @@ function ProtocolCalendar({
 
   const todayKey = dateKey(new Date());
   const selectedKey = dateKey(selected);
-  const title = month.toLocaleDateString(undefined, { month: "long", year: "numeric" });
+  const title = month.toLocaleDateString(undefined, {
+    month: "long",
+    year: "numeric",
+  });
 
   return (
     <div className="space-y-3">
       <div className="flex items-center justify-between">
-        <button type="button" className="text-[var(--blue)]" onClick={() => setMonth(new Date(month.getFullYear(), month.getMonth() - 1, 1))}>
+        <button
+          type="button"
+          className="text-[var(--blue)]"
+          onClick={() =>
+            setMonth(new Date(month.getFullYear(), month.getMonth() - 1, 1))
+          }
+        >
           ‹
         </button>
         <h2 className="text-lg font-bold">{title}</h2>
-        <button type="button" className="text-[var(--blue)]" onClick={() => setMonth(new Date(month.getFullYear(), month.getMonth() + 1, 1))}>
+        <button
+          type="button"
+          className="text-[var(--blue)]"
+          onClick={() =>
+            setMonth(new Date(month.getFullYear(), month.getMonth() + 1, 1))
+          }
+        >
           ›
         </button>
       </div>
@@ -347,8 +407,12 @@ function ProtocolCalendar({
         {cells.map((c, i) => {
           if (!c) return <div key={`e${i}`} />;
           const key = dateKey(c);
-          const due = items.filter((it) => isDueOnWeekday(it.frequency_label, c.getDay()));
-          const taken = due.filter((it) => parseTakenDates(it.taken_dates).has(key)).length;
+          const due = items.filter((it) =>
+            isDueOnWeekday(it.frequency_label, c.getDay()),
+          );
+          const taken = due.filter((it) =>
+            parseTakenDates(it.taken_dates).has(key),
+          ).length;
           const all = due.length > 0 && taken === due.length;
           const none = due.length > 0 && taken === 0 && key < todayKey;
           const partial = due.length > 0 && taken > 0 && taken < due.length;
@@ -371,7 +435,9 @@ function ProtocolCalendar({
                         : "border-[var(--border-solid)] text-[var(--muted)]"
               }`}
             >
-              <span className="font-bold text-[11px] text-[var(--text)]">{c.getDate()}</span>
+              <span className="font-bold text-[11px] text-[var(--text)]">
+                {c.getDate()}
+              </span>
               {all ? (
                 <span>✓</span>
               ) : due.length ? (
@@ -380,7 +446,10 @@ function ProtocolCalendar({
                 </span>
               ) : (
                 <span className="opacity-40">
-                  {due.slice(0, 1).map((d) => calendarInitials(d.name)).join("")}
+                  {due
+                    .slice(0, 1)
+                    .map((d) => calendarInitials(d.name))
+                    .join("")}
                 </span>
               )}
             </button>

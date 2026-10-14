@@ -4,7 +4,10 @@ import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { dateKey } from "@/lib/protocol";
-import { DailyWeightCard, type WeightPoint } from "@/components/WeeklyWeightCard";
+import {
+  DailyWeightCard,
+  type WeightPoint,
+} from "@/components/WeeklyWeightCard";
 import type { CheckinValues } from "@/components/MorningCheckinCard";
 import { WaterStepsCards } from "@/components/WaterStepsCards";
 import { RecompCheckinCard } from "@/components/RecompCheckinCard";
@@ -17,10 +20,7 @@ import {
   targetsLabel,
   type MacroTargets,
 } from "@/lib/targets";
-import {
-  parseOverrides,
-  parseSlots,
-} from "@/lib/schedule";
+import { parseOverrides, parseSlots } from "@/lib/schedule";
 import { resolveWeekdayTodayAndTomorrow } from "@/lib/weekdaySchedule";
 import { syncWorkoutLibraryOnce } from "@/lib/workoutsClient";
 import {
@@ -74,43 +74,45 @@ export default function DashboardPage() {
         { data: sessions },
         { data: sched },
       ] = await Promise.all([
-          supabase
-            .from("profiles")
-            .select("display_name, target_calories, target_protein, target_carbs, target_fats")
-            .eq("id", user.id)
-            .maybeSingle(),
-          supabase
-            .from("workout_days")
-            .select("id, name, subtitle, workout_exercises(id)")
-            .eq("user_id", user.id),
-          supabase
-            .from("daily_logs")
-            .select(
-              "water_oz, steps_count, actual_protein, morning_weight, bp1_systolic, bp1_diastolic, bp2_systolic, bp2_diastolic, bp_logged_at, checkin_sleep, checkin_energy, checkin_pump"
-            )
-            .eq("user_id", user.id)
-            .eq("date", todayStr)
-            .maybeSingle(),
-          supabase
-            .from("daily_logs")
-            .select("date, morning_weight")
-            .eq("user_id", user.id)
-            .gt("morning_weight", 0)
-            .order("date", { ascending: false })
-            .limit(14),
-          supabase
-            .from("workout_sessions")
-            .select("id, day_name, started_at")
-            .eq("user_id", user.id)
-            .not("ended_at", "is", null)
-            .order("started_at", { ascending: false })
-            .limit(40),
-          supabase
-            .from("training_schedules")
-            .select("day_ids, date_overrides")
-            .eq("user_id", user.id)
-            .maybeSingle(),
-        ]);
+        supabase
+          .from("profiles")
+          .select(
+            "display_name, target_calories, target_protein, target_carbs, target_fats",
+          )
+          .eq("id", user.id)
+          .maybeSingle(),
+        supabase
+          .from("workout_days")
+          .select("id, name, subtitle, workout_exercises(id)")
+          .eq("user_id", user.id),
+        supabase
+          .from("daily_logs")
+          .select(
+            "water_oz, steps_count, actual_protein, morning_weight, bp1_systolic, bp1_diastolic, bp2_systolic, bp2_diastolic, bp_logged_at, checkin_sleep, checkin_energy, checkin_pump",
+          )
+          .eq("user_id", user.id)
+          .eq("date", todayStr)
+          .maybeSingle(),
+        supabase
+          .from("daily_logs")
+          .select("date, morning_weight")
+          .eq("user_id", user.id)
+          .gt("morning_weight", 0)
+          .order("date", { ascending: false })
+          .limit(14),
+        supabase
+          .from("workout_sessions")
+          .select("id, day_name, started_at")
+          .eq("user_id", user.id)
+          .not("ended_at", "is", null)
+          .order("started_at", { ascending: false })
+          .limit(40),
+        supabase
+          .from("training_schedules")
+          .select("day_ids, date_overrides")
+          .eq("user_id", user.id)
+          .maybeSingle(),
+      ]);
 
       let todayLog = todayLogRes.data as {
         water_oz?: number;
@@ -181,13 +183,15 @@ export default function DashboardPage() {
                 ?.exerciseCount ?? 0,
           }
         : null;
-      const tomorrowName = weekdayTomorrow.isRest ? null : weekdayTomorrow.label;
+      const tomorrowName = weekdayTomorrow.isRest
+        ? null
+        : weekdayTomorrow.label;
 
       const weekAgo = Date.now() - 7 * 86400000;
       const sessionCount = (sessions ?? []).filter(
         (s) =>
           new Date(s.started_at).getTime() >= weekAgo &&
-          (s.day_name ?? "").toLowerCase() !== "rest"
+          (s.day_name ?? "").toLowerCase() !== "rest",
       ).length;
 
       const targets = normalizeTargets(profile);
@@ -200,7 +204,6 @@ export default function DashboardPage() {
         .filter((p) => p.weight > 0)
         .reverse();
 
-
       const checkin: CheckinValues = {
         checkin_sleep: Number(todayLog?.checkin_sleep) || 0,
         checkin_energy: Number(todayLog?.checkin_energy) || 0,
@@ -208,13 +211,12 @@ export default function DashboardPage() {
       };
 
       const next: DashCache = {
-        name:
-          profile?.display_name ||
-          user.email?.split("@")[0] ||
-          "Athlete",
+        name: profile?.display_name || user.email?.split("@")[0] || "Athlete",
         todayStr,
         todayName,
-        libraryDay: libraryDay ? { id: libraryDay.id, name: libraryDay.name } : null,
+        libraryDay: libraryDay
+          ? { id: libraryDay.id, name: libraryDay.name }
+          : null,
         tomorrowName,
         tomorrowDay,
         waterOz: Number(todayLog?.water_oz) || 0,
@@ -246,97 +248,113 @@ export default function DashboardPage() {
   }
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-5">
       <div className="flex items-baseline justify-between gap-2">
-        <h1 className="text-[28px] font-bold tracking-tight">Let’s work, {data.name}.</h1>
+        <div>
+          <p className="eyebrow">Overview</p>
+          <h1 className="page-heading">Let’s work, {data.name}.</h1>
+        </div>
         {refreshing ? (
-          <span className="text-[10px] font-semibold text-[var(--muted)]">Updating…</span>
+          <span className="text-[10px] font-semibold text-[var(--muted)]">
+            Updating…
+          </span>
         ) : null}
       </div>
 
-      <RecompCheckinCard />
+      <div className="dashboard-grid">
+        <RecompCheckinCard />
 
-      <KeyLiftsCard />
+        <KeyLiftsCard />
 
-      {data.tomorrowDay || data.tomorrowName ? (
-        <Link
-          href={
-            data.tomorrowDay
-              ? `/train/${data.tomorrowDay.id}`
-              : "/train"
-          }
-          prefetch={false}
-          className="card reg flex items-center justify-between gap-3 !py-3.5 active:bg-white/5"
-        >
-          <div className="min-w-0">
-            <p className="text-[11px] font-bold uppercase tracking-wide text-[var(--blue)]">
+        {data.tomorrowDay || data.tomorrowName ? (
+          <Link
+            href={data.tomorrowDay ? `/train/${data.tomorrowDay.id}` : "/train"}
+            prefetch={false}
+            className="card reg flex items-center justify-between gap-3 !py-3.5 active:bg-white/5"
+          >
+            <div className="min-w-0">
+              <p className="text-[11px] font-bold uppercase tracking-wide text-[var(--blue)]">
+                Tomorrow
+              </p>
+              <p className="text-lg font-bold tracking-tight">
+                {data.tomorrowDay?.name ?? data.tomorrowName}
+              </p>
+              <p className="text-xs text-[var(--muted)]">
+                {data.tomorrowDay
+                  ? `${data.tomorrowDay.exerciseCount} lift${
+                      data.tomorrowDay.exerciseCount === 1 ? "" : "s"
+                    } · tap to preview`
+                  : "On the schedule · coming soon"}
+              </p>
+            </div>
+            <span className="shrink-0 text-sm font-bold text-[var(--blue)]">
+              →
+            </span>
+          </Link>
+        ) : (
+          <div className="card !py-3.5">
+            <p className="text-[11px] font-bold uppercase tracking-wide text-[var(--muted)]">
               Tomorrow
             </p>
-            <p className="text-lg font-bold tracking-tight">
-              {data.tomorrowDay?.name ?? data.tomorrowName}
-            </p>
+            <p className="text-lg font-bold">Rest day</p>
             <p className="text-xs text-[var(--muted)]">
-              {data.tomorrowDay
-                ? `${data.tomorrowDay.exerciseCount} lift${
-                    data.tomorrowDay.exerciseCount === 1 ? "" : "s"
-                  } · tap to preview`
-                : "On the schedule · coming soon"}
+              Recover and hit nutrition.
             </p>
           </div>
-          <span className="shrink-0 text-sm font-bold text-[var(--blue)]">→</span>
-        </Link>
-      ) : (
-        <div className="card !py-3.5">
-          <p className="text-[11px] font-bold uppercase tracking-wide text-[var(--muted)]">
-            Tomorrow
-          </p>
-          <p className="text-lg font-bold">Rest day</p>
-          <p className="text-xs text-[var(--muted)]">Recover and hit nutrition.</p>
+        )}
+
+        <DailyWeightCard
+          key={`${data.todayStr}-${data.todayWeight}-${data.weightHistory?.length ?? 0}`}
+          date={data.todayStr}
+          initial={data.todayWeight}
+          history={data.weightHistory ?? []}
+          targets={data.targets ?? DEFAULT_TARGETS}
+        />
+
+        <LiftProgressCard />
+
+        <WaterStepsCards
+          key={`${data.todayStr}-${data.waterOz}-${data.steps}`}
+          date={data.todayStr}
+          waterOz={data.waterOz}
+          steps={data.steps}
+          waterGoal={128}
+          targets={data.targets ?? DEFAULT_TARGETS}
+        />
+
+        <div className="grid grid-cols-2 gap-3">
+          <FeatureTile
+            href="/train"
+            Icon={IconDumbbell}
+            title="Training"
+            subtitle={
+              data.todayName
+                ? data.libraryDay
+                  ? data.todayName
+                  : `${data.todayName} · coming soon`
+                : "Rest day"
+            }
+          />
+          <FeatureTile
+            href="/nutrition"
+            Icon={IconUtensils}
+            title="Nutrition"
+            subtitle={targetsLabel(data.targets ?? DEFAULT_TARGETS)}
+          />
+          <FeatureTile
+            href="/protocol"
+            Icon={IconClipboard}
+            title="Protocol"
+            subtitle="Today’s stack"
+          />
+          <FeatureTile
+            href="/settings"
+            Icon={IconGear}
+            title="Settings"
+            subtitle="Targets & alerts"
+          />
         </div>
-      )}
-
-      <DailyWeightCard
-        key={`${data.todayStr}-${data.todayWeight}-${data.weightHistory?.length ?? 0}`}
-        date={data.todayStr}
-        initial={data.todayWeight}
-        history={data.weightHistory ?? []}
-        targets={data.targets ?? DEFAULT_TARGETS}
-      />
-
-      <LiftProgressCard />
-
-      <WaterStepsCards
-        key={`${data.todayStr}-${data.waterOz}-${data.steps}`}
-        date={data.todayStr}
-        waterOz={data.waterOz}
-        steps={data.steps}
-        waterGoal={128}
-        targets={data.targets ?? DEFAULT_TARGETS}
-      />
-
-      <div className="grid grid-cols-2 gap-3">
-        <FeatureTile
-          href="/train"
-          Icon={IconDumbbell}
-          title="Training"
-          subtitle={
-            data.todayName
-              ? data.libraryDay
-                ? data.todayName
-                : `${data.todayName} · coming soon`
-              : "Rest day"
-          }
-        />
-        <FeatureTile
-          href="/nutrition"
-          Icon={IconUtensils}
-          title="Nutrition"
-          subtitle={targetsLabel(data.targets ?? DEFAULT_TARGETS)}
-        />
-        <FeatureTile href="/protocol" Icon={IconClipboard} title="Protocol" subtitle="Today’s stack" />
-        <FeatureTile href="/settings" Icon={IconGear} title="Settings" subtitle="Targets & alerts" />
       </div>
-
     </div>
   );
 }
@@ -364,4 +382,3 @@ function FeatureTile({
     </Link>
   );
 }
-
