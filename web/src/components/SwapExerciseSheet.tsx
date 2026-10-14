@@ -247,16 +247,33 @@ export function SwapExerciseSheet({
               </p>
               {myMatches.map((m) => {
                 const banned = restrictionFor(m.name);
+                const photo = exercisePhoto(m.name);
                 return (
-                  <div
+                  <button
+                    type="button"
                     key={m.name}
-                    className={`swap-option flex items-center gap-3 p-3 ${chosen === m.name ? "selected" : ""}`}
+                    className={`swap-option flex w-full items-center gap-3 p-2 text-left ${chosen === m.name ? "selected" : ""}`}
+                    onClick={() => setSelected(m.name)}
+                    aria-pressed={chosen === m.name}
                   >
-                    <button
-                      type="button"
-                      className="min-w-0 flex-1 text-left"
-                      onClick={() => setSelected(m.name)}
-                    >
+                    <div className="exercise-image relative h-16 w-[86px] shrink-0">
+                      {photo ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img
+                          src={photo}
+                          alt=""
+                          className="h-full w-full object-cover"
+                        />
+                      ) : (
+                        <div
+                          className="grid h-full place-content-center bg-[var(--raised)] text-xl"
+                          aria-hidden
+                        >
+                          💪
+                        </div>
+                      )}
+                    </div>
+                    <div className="min-w-0 flex-1">
                       <p className="truncate text-sm font-bold text-[var(--text)]">
                         {m.name}
                       </p>
@@ -264,14 +281,14 @@ export function SwapExerciseSheet({
                         {m.sets} {m.sets === 1 ? "set" : "sets"} logged
                         {banned ? ` · ${banned}` : ""}
                       </p>
-                    </button>
+                    </div>
                     <span
                       className={`grid h-7 w-7 place-content-center rounded-full border ${chosen === m.name ? "border-[var(--blue)] bg-[var(--blue)] text-[var(--on-blue)]" : "border-[var(--dim)]"}`}
                       aria-hidden
                     >
                       {chosen === m.name ? "✓" : ""}
                     </span>
-                  </div>
+                  </button>
                 );
               })}
             </section>

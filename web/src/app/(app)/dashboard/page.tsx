@@ -24,17 +24,28 @@ import { parseOverrides, parseSlots } from "@/lib/schedule";
 import { resolveWeekdayTodayAndTomorrow } from "@/lib/weekdaySchedule";
 import { syncWorkoutLibraryOnce } from "@/lib/workoutsClient";
 import {
+  IconChevronRight,
   IconClipboard,
   IconDumbbell,
+  IconDroplet,
+  IconFootprint,
   IconGear,
+  IconPlay,
   IconUtensils,
 } from "@/components/icons";
+import { workoutPhoto } from "@/lib/workoutPhotos";
 
 type DashCache = {
   name: string;
   todayStr: string;
   todayName: string | null;
-  libraryDay: { id: string; name: string } | null;
+  libraryDay: {
+    id: string;
+    name: string;
+    subtitle: string;
+    exerciseCount: number;
+    setCount: number;
+  } | null;
   tomorrowName: string | null;
   tomorrowDay: { id: string; name: string; exerciseCount: number } | null;
   waterOz: number;
@@ -44,6 +55,9 @@ type DashCache = {
   checkin: CheckinValues;
   sessionCount: number;
   protein: number;
+  calories: number;
+  carbs: number;
+  fats: number;
   targets: MacroTargets;
 };
 
@@ -83,12 +97,12 @@ export default function DashboardPage() {
           .maybeSingle(),
         supabase
           .from("workout_days")
-          .select("id, name, subtitle, workout_exercises(id)")
+          .select("id, name, subtitle, workout_exercises(id, default_sets)")
           .eq("user_id", user.id),
         supabase
           .from("daily_logs")
           .select(
-            "water_oz, steps_count, actual_protein, morning_weight, bp1_systolic, bp1_diastolic, bp2_systolic, bp2_diastolic, bp_logged_at, checkin_sleep, checkin_energy, checkin_pump",
+            "water_oz, steps_count, actual_calories, actual_protein, actual_carbs_pre, actual_carbs_post, actual_fats, morning_weight, bp1_systolic, bp1_diastolic, bp2_systolic, bp2_diastolic, bp_logged_at, checkin_sleep, checkin_energy, checkin_pump",
           )
           .eq("user_id", user.id)
           .eq("date", todayStr)
@@ -118,6 +132,10 @@ export default function DashboardPage() {
         water_oz?: number;
         steps_count?: number;
         actual_protein?: number;
+        actual_calories?: number;
+        actual_carbs_pre?: number;
+        actual_carbs_post?: number;
+        actual_fats?: number;
         morning_weight?: number;
         bp1_systolic?: number;
         bp1_diastolic?: number;
@@ -135,7 +153,9 @@ export default function DashboardPage() {
         if (msg.includes("bp") || msg.includes("checkin")) {
           const fallback = await supabase
             .from("daily_logs")
-            .select("water_oz, steps_count, actual_protein, morning_weight")
+            .select(
+              "water_oz, steps_count, actual_calories, actual_protein, actual_carbs_pre, actual_carbs_post, actual_fats, morning_weight",
+            )
             .eq("user_id", user.id)
             .eq("date", todayStr)
             .maybeSingle();
@@ -145,12 +165,21 @@ export default function DashboardPage() {
 
       if (cancelled) return;
 
-      const dayList = (days ?? []).map((d) => ({
-        id: d.id,
-        name: d.name,
-        subtitle: d.subtitle ?? "",
-        exerciseCount: (d.workout_exercises as unknown[] | null)?.length ?? 0,
-      }));
+      const dayList = (days ?? []).map((d) => {
+        const exercises =
+          (d.workout_exercises as
+            { id: string; default_sets?: number }[] | null) ?? [];
+        return {
+          id: d.id,
+          name: d.name,
+          subtitle: d.subtitle ?? "",
+          exerciseCount: exercises.length,
+          setCount: exercises.reduce(
+            (sum, ex) => sum + (Number(ex.default_sets) || 0),
+            0,
+          ),
+        };
+      });
       const dateOverrides = parseOverrides(sched?.date_overrides);
       const scheduleSlots = parseSlots(sched?.day_ids);
       const sessionBriefs = (sessions ?? []).map((s) => ({
@@ -170,6 +199,13 @@ export default function DashboardPage() {
         ? {
             id: weekdayToday.scheduled.id,
             name: weekdayToday.scheduled.name,
+            subtitle: weekdayToday.scheduled.subtitle ?? "",
+            exerciseCount:
+              dayList.find((d) => d.id === weekdayToday.scheduled!.id)
+                ?.exerciseCount ?? 0,
+            setCount:
+              dayList.find((d) => d.id === weekdayToday.scheduled!.id)
+                ?.setCount ?? 0,
           }
         : null;
       const todayName = weekdayToday.isRest ? null : weekdayToday.label;
@@ -214,9 +250,7 @@ export default function DashboardPage() {
         name: profile?.display_name || user.email?.split("@")[0] || "Athlete",
         todayStr,
         todayName,
-        libraryDay: libraryDay
-          ? { id: libraryDay.id, name: libraryDay.name }
-          : null,
+        libraryDay,
         tomorrowName,
         tomorrowDay,
         waterOz: Number(todayLog?.water_oz) || 0,
@@ -226,6 +260,11 @@ export default function DashboardPage() {
         checkin,
         sessionCount,
         protein: Number(todayLog?.actual_protein) || 0,
+        calories: Number(todayLog?.actual_calories) || 0,
+        carbs:
+          (Number(todayLog?.actual_carbs_pre) || 0) +
+          (Number(todayLog?.actual_carbs_post) || 0),
+        fats: Number(todayLog?.actual_fats) || 0,
         targets,
       };
       writeTabCache("dashboard", next);
@@ -247,12 +286,32 @@ export default function DashboardPage() {
     );
   }
 
+  const formattedDate = new Date(
+    `${data.todayStr}T12:00:00`,
+  ).toLocaleDateString(undefined, {
+    weekday: "long",
+    month: "short",
+    day: "numeric",
+  });
+  const stepPct = Math.min(100, Math.round((data.steps / 10000) * 100));
+  const waterPct = Math.min(100, Math.round((data.waterOz / 128) * 100));
+  const caloriePct = Math.min(
+    100,
+    Math.round(
+      (data.calories / Math.max(1, data.targets.target_calories)) * 100,
+    ),
+  );
+  const proteinPct = Math.min(
+    100,
+    Math.round((data.protein / Math.max(1, data.targets.target_protein)) * 100),
+  );
+
   return (
-    <div className="space-y-5">
+    <div className="home-dashboard space-y-5">
       <div className="flex items-baseline justify-between gap-2">
         <div>
-          <p className="eyebrow">Overview</p>
-          <h1 className="page-heading">Let’s work, {data.name}.</h1>
+          <p className="eyebrow">{formattedDate}</p>
+          <h1 className="page-heading">Ready to train, {data.name}?</h1>
         </div>
         {refreshing ? (
           <span className="text-[10px] font-semibold text-[var(--muted)]">
@@ -261,100 +320,268 @@ export default function DashboardPage() {
         ) : null}
       </div>
 
-      <div className="dashboard-grid">
-        <RecompCheckinCard />
+      {data.libraryDay ? (
+        <section className="home-workout-hero">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={workoutPhoto(data.libraryDay.name)} alt="" />
+          <div className="home-workout-copy">
+            <p className="eyebrow">
+              {data.libraryDay.subtitle || "Today’s workout"}
+            </p>
+            <h2>{data.libraryDay.name}</h2>
+            <div className="home-workout-stats">
+              <span>
+                <strong>{data.libraryDay.exerciseCount}</strong> Exercises
+              </span>
+              <span>
+                <strong>{data.libraryDay.setCount}</strong> Sets
+              </span>
+              <span>
+                <strong>
+                  ~{Math.min(90, Math.max(45, data.libraryDay.setCount * 4))}
+                </strong>{" "}
+                Min
+              </span>
+            </div>
+            <div className="home-workout-actions">
+              <Link
+                href={`/train/${data.libraryDay.id}/session`}
+                className="btn-accent"
+              >
+                <IconPlay size={16} /> Start Workout
+              </Link>
+              <Link
+                href={`/train/${data.libraryDay.id}`}
+                className="home-view-link"
+              >
+                View workout <IconChevronRight size={16} />
+              </Link>
+            </div>
+          </div>
+        </section>
+      ) : (
+        <section className="card">
+          <p className="eyebrow">Today</p>
+          <h2 className="mt-1 text-2xl font-bold">Recovery day</h2>
+          <p className="mt-1 text-sm text-[var(--muted)]">
+            Keep steps, water, and nutrition on track.
+          </p>
+        </section>
+      )}
 
-        <KeyLiftsCard />
+      <div className="home-overview-grid">
+        <div className="space-y-5">
+          <section className="card home-summary-card">
+            <div className="home-card-title">
+              <h2>Daily check-in</h2>
+              <span>Today</span>
+            </div>
+            <div className="home-metric-grid">
+              <div className="home-metric">
+                <span className="metric-icon">▣</span>
+                <p>Weight</p>
+                <strong>
+                  {data.todayWeight
+                    ? `${data.todayWeight.toFixed(1)} lb`
+                    : "Log weight"}
+                </strong>
+              </div>
+              <div className="home-metric">
+                <IconFootprint size={19} className="text-[var(--blue)]" />
+                <p>Steps</p>
+                <strong>
+                  {data.steps ? data.steps.toLocaleString() : "—"}
+                </strong>
+                <div className="progress-track">
+                  <div
+                    className="progress-fill"
+                    style={{ width: `${stepPct}%` }}
+                  />
+                </div>
+              </div>
+              <div className="home-metric">
+                <IconDroplet size={19} className="text-[var(--blue)]" />
+                <p>Water</p>
+                <strong>{data.waterOz} oz</strong>
+                <div className="progress-track">
+                  <div
+                    className="progress-fill"
+                    style={{ width: `${waterPct}%` }}
+                  />
+                </div>
+              </div>
+            </div>
+          </section>
 
-        {data.tomorrowDay || data.tomorrowName ? (
-          <Link
-            href={data.tomorrowDay ? `/train/${data.tomorrowDay.id}` : "/train"}
-            prefetch={false}
-            className="card reg flex items-center justify-between gap-3 !py-3.5 active:bg-white/5"
-          >
-            <div className="min-w-0">
-              <p className="text-[11px] font-bold uppercase tracking-wide text-[var(--blue)]">
+          <LiftProgressCard />
+        </div>
+
+        <div className="space-y-5">
+          <Link href="/nutrition" className="card block home-summary-card">
+            <div className="home-card-title">
+              <h2>Nutrition today</h2>
+              <IconChevronRight size={18} />
+            </div>
+            <MacroLine
+              label="Calories"
+              value={data.calories}
+              target={data.targets.target_calories}
+              unit="kcal"
+              pct={caloriePct}
+            />
+            <MacroLine
+              label="Protein"
+              value={data.protein}
+              target={data.targets.target_protein}
+              unit="g"
+              pct={proteinPct}
+              green
+            />
+          </Link>
+
+          {data.tomorrowDay || data.tomorrowName ? (
+            <Link
+              href={
+                data.tomorrowDay ? `/train/${data.tomorrowDay.id}` : "/train"
+              }
+              prefetch={false}
+              className="card home-next-card active:bg-white/5"
+            >
+              {data.tomorrowDay ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={workoutPhoto(data.tomorrowDay.name)} alt="" />
+              ) : null}
+              <div className="min-w-0 flex-1">
+                <p className="text-[11px] font-bold uppercase tracking-wide text-[var(--blue)]">
+                  Tomorrow
+                </p>
+                <p className="text-lg font-bold tracking-tight">
+                  {data.tomorrowDay?.name ?? data.tomorrowName}
+                </p>
+                <p className="text-xs text-[var(--muted)]">
+                  {data.tomorrowDay
+                    ? `${data.tomorrowDay.exerciseCount} lift${
+                        data.tomorrowDay.exerciseCount === 1 ? "" : "s"
+                      } · tap to preview`
+                    : "On the schedule · coming soon"}
+                </p>
+              </div>
+              <IconChevronRight size={18} className="text-[var(--blue)]" />
+            </Link>
+          ) : (
+            <div className="card !py-3.5">
+              <p className="text-[11px] font-bold uppercase tracking-wide text-[var(--muted)]">
                 Tomorrow
               </p>
-              <p className="text-lg font-bold tracking-tight">
-                {data.tomorrowDay?.name ?? data.tomorrowName}
-              </p>
+              <p className="text-lg font-bold">Rest day</p>
               <p className="text-xs text-[var(--muted)]">
-                {data.tomorrowDay
-                  ? `${data.tomorrowDay.exerciseCount} lift${
-                      data.tomorrowDay.exerciseCount === 1 ? "" : "s"
-                    } · tap to preview`
-                  : "On the schedule · coming soon"}
+                Recover and hit nutrition.
               </p>
             </div>
-            <span className="shrink-0 text-sm font-bold text-[var(--blue)]">
-              →
-            </span>
-          </Link>
-        ) : (
-          <div className="card !py-3.5">
-            <p className="text-[11px] font-bold uppercase tracking-wide text-[var(--muted)]">
-              Tomorrow
-            </p>
-            <p className="text-lg font-bold">Rest day</p>
-            <p className="text-xs text-[var(--muted)]">
-              Recover and hit nutrition.
-            </p>
-          </div>
-        )}
-
-        <DailyWeightCard
-          key={`${data.todayStr}-${data.todayWeight}-${data.weightHistory?.length ?? 0}`}
-          date={data.todayStr}
-          initial={data.todayWeight}
-          history={data.weightHistory ?? []}
-          targets={data.targets ?? DEFAULT_TARGETS}
-        />
-
-        <LiftProgressCard />
-
-        <WaterStepsCards
-          key={`${data.todayStr}-${data.waterOz}-${data.steps}`}
-          date={data.todayStr}
-          waterOz={data.waterOz}
-          steps={data.steps}
-          waterGoal={128}
-          targets={data.targets ?? DEFAULT_TARGETS}
-        />
-
-        <div className="grid grid-cols-2 gap-3">
-          <FeatureTile
-            href="/train"
-            Icon={IconDumbbell}
-            title="Training"
-            subtitle={
-              data.todayName
-                ? data.libraryDay
-                  ? data.todayName
-                  : `${data.todayName} · coming soon`
-                : "Rest day"
-            }
-          />
-          <FeatureTile
-            href="/nutrition"
-            Icon={IconUtensils}
-            title="Nutrition"
-            subtitle={targetsLabel(data.targets ?? DEFAULT_TARGETS)}
-          />
-          <FeatureTile
-            href="/protocol"
-            Icon={IconClipboard}
-            title="Protocol"
-            subtitle="Today’s stack"
-          />
-          <FeatureTile
-            href="/settings"
-            Icon={IconGear}
-            title="Settings"
-            subtitle="Targets & alerts"
-          />
+          )}
         </div>
       </div>
+
+      <details className="home-details">
+        <summary>More tracking and check-ins</summary>
+        <div className="dashboard-grid mt-4">
+          <RecompCheckinCard />
+
+          <KeyLiftsCard />
+
+          <DailyWeightCard
+            key={`${data.todayStr}-${data.todayWeight}-${data.weightHistory?.length ?? 0}`}
+            date={data.todayStr}
+            initial={data.todayWeight}
+            history={data.weightHistory ?? []}
+            targets={data.targets ?? DEFAULT_TARGETS}
+          />
+
+          <LiftProgressCard />
+
+          <WaterStepsCards
+            key={`${data.todayStr}-${data.waterOz}-${data.steps}`}
+            date={data.todayStr}
+            waterOz={data.waterOz}
+            steps={data.steps}
+            waterGoal={128}
+            targets={data.targets ?? DEFAULT_TARGETS}
+          />
+
+          <div className="grid grid-cols-2 gap-3">
+            <FeatureTile
+              href="/train"
+              Icon={IconDumbbell}
+              title="Training"
+              subtitle={
+                data.todayName
+                  ? data.libraryDay
+                    ? data.todayName
+                    : `${data.todayName} · coming soon`
+                  : "Rest day"
+              }
+            />
+            <FeatureTile
+              href="/nutrition"
+              Icon={IconUtensils}
+              title="Nutrition"
+              subtitle={targetsLabel(data.targets ?? DEFAULT_TARGETS)}
+            />
+            <FeatureTile
+              href="/protocol"
+              Icon={IconClipboard}
+              title="Protocol"
+              subtitle="Today’s stack"
+            />
+            <FeatureTile
+              href="/settings"
+              Icon={IconGear}
+              title="Settings"
+              subtitle="Targets & alerts"
+            />
+          </div>
+        </div>
+      </details>
+    </div>
+  );
+}
+
+function MacroLine({
+  label,
+  value,
+  target,
+  unit,
+  pct,
+  green = false,
+}: {
+  label: string;
+  value: number;
+  target: number;
+  unit: string;
+  pct: number;
+  green?: boolean;
+}) {
+  return (
+    <div className="home-macro-line">
+      <div>
+        <p>{label}</p>
+        <strong>
+          {value.toLocaleString()}{" "}
+          <span>
+            / {target.toLocaleString()} {unit}
+          </span>
+        </strong>
+      </div>
+      <div className="progress-track">
+        <div
+          className="progress-fill"
+          style={{
+            width: `${pct}%`,
+            background: green ? "var(--green)" : "var(--blue)",
+          }}
+        />
+      </div>
+      <span>{pct}%</span>
     </div>
   );
 }
