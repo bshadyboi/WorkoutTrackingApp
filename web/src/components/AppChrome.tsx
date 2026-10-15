@@ -12,13 +12,13 @@ import {
   IconGear,
   IconHome,
   IconProgress,
-  IconUtensils,
+  IconHistory,
 } from "@/components/icons";
 
 const links = [
   { href: "/dashboard", label: "Home", Icon: IconHome },
   { href: "/train", label: "Train", Icon: IconDumbbell },
-  { href: "/nutrition", label: "Fuel", Icon: IconUtensils },
+  { href: "/coach", label: "Coach", Icon: IconHistory },
   { href: "/progress", label: "Progress", Icon: IconProgress },
 ];
 
