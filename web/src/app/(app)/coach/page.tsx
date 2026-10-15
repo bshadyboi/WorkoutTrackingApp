@@ -2,6 +2,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { buildWeeklyReport, weeklyCopy, weekStart, setText, type ReportSession } from "@/lib/weeklyReport";
+import { programReport, programCopy } from "@/lib/programReport";
 
 export default function CoachPage() {
   const [history, setHistory] = useState<ReportSession[]>([]);
@@ -47,7 +48,8 @@ export default function CoachPage() {
   const lifts = report.flatMap(s => s.lifts);
   const prs = lifts.filter(l => l.isPR).length;
   const steady = lifts.filter(l => l.status === "Unchanged").length;
-  const copy = weeklyCopy(report, label);
+  const program = useMemo(() => programReport(history, new Date(endMs)), [history, endMs]);
+  const copy = weeklyCopy(report, label) + programCopy(program);
   async function copyReport() {
     try { await navigator.clipboard.writeText(copy); setCopied("Copied!"); window.setTimeout(() => setCopied(""), 2000); }
     catch { setFallback(true); }
@@ -61,6 +63,16 @@ export default function CoachPage() {
     </div>
     {loading ? <p role="status">Loading your training history…</p> : error ? <div role="alert" className="card"><p>{error}</p><button className="btn-secondary mt-3" onClick={() => setRetry(retry + 1)}>Retry</button></div> : <>
       <div className="card grid grid-cols-3 text-center gap-2"><div><strong className="text-2xl">{report.length}</strong><p className="text-xs text-[var(--muted)]">Workouts</p></div><div><strong className="text-2xl text-[var(--green)]">{prs}</strong><p className="text-xs text-[var(--muted)]">PR lift sessions</p></div><div><strong className="text-2xl text-[var(--yellow)]">{steady}</strong><p className="text-xs text-[var(--muted)]">Unchanged</p></div></div>
+      <details open className="card space-y-3">
+        <summary className="cursor-pointer text-xl font-bold">Since starting NT</summary>
+        <p className="text-xs text-[var(--muted)]">{program.start ? `First logged NT workout: ${new Date(program.start).toLocaleDateString()}. Through the selected week.` : "No NT split workouts logged by this week yet."}</p>
+        {program.lifts.map(lift => <article key={lift.name} className="rounded-lg border border-[var(--border)] p-3 space-y-2">
+          <h2 className="font-bold break-words">{lift.name}</h2>
+          {[{ label: "Started", entry: lift.started }, { label: "Latest", entry: lift.latest }, { label: "Best load", entry: lift.best }].map(({label,entry}) => <div key={label} className="flex justify-between gap-3 text-sm"><span className="text-[var(--muted)]">{label}</span><span className="text-right"><strong>{setText(entry.set)}</strong><small className="block text-[var(--muted)]">{new Date(entry.date).toLocaleDateString()}</small></span></div>)}
+          <p className="text-xs font-semibold text-[var(--blue)]">{lift.change}</p>
+        </article>)}
+        {program.start && <p className="text-xs text-[var(--muted)]">Working sets only. Each row uses the highest load, then reps at that load. Weight and rep changes are shown separately, not a strength estimate. New exercises start at their first NT log.</p>}
+      </details>
       <div className="flex gap-1 rounded-lg bg-[var(--card)] p-1" aria-label="Filter lifts">{["All lifts", "PRs", "Unchanged"].map(f => <button key={f} aria-pressed={filter === f} className={`flex-1 rounded-md py-3 text-sm font-bold ${filter === f ? "bg-[var(--blue)] text-[var(--on-blue)]" : "text-[var(--muted)]"}`} onClick={() => setFilter(f)}>{f}</button>)}</div>
       {!report.length && <div className="card"><h2 className="font-bold">No completed workouts this week</h2><p className="text-sm text-[var(--muted)]">Finish a workout or choose an earlier week. Unsynced workouts appear after uploading.</p></div>}
       {report.length > 0 && !lifts.some(l => filter === "All lifts" || (filter === "PRs" ? l.isPR : l.status === "Unchanged")) && <p className="text-sm text-[var(--muted)]">No lifts match this filter.</p>}
