@@ -388,16 +388,6 @@ export default function DashboardPage() {
   });
   const stepPct = Math.min(100, Math.round((data.steps / 10000) * 100));
   const waterPct = Math.min(100, Math.round((data.waterOz / 128) * 100));
-  const caloriePct = Math.min(
-    100,
-    Math.round(
-      (data.calories / Math.max(1, data.targets.target_calories)) * 100,
-    ),
-  );
-  const proteinPct = Math.min(
-    100,
-    Math.round((data.protein / Math.max(1, data.targets.target_protein)) * 100),
-  );
 
   return (
     <div className="home-dashboard space-y-5">
@@ -555,35 +545,19 @@ export default function DashboardPage() {
                     <strong>{data.weeklyAvgWeight.toFixed(1)}</strong> avg lb
                   </span>
                 ) : null}
-                <span>
-                  <strong>{data.weeklyProteinDays}</strong> protein goal days
-                </span>
               </div>
             </section>
           ) : null}
         </div>
 
         <div className="space-y-5">
-          <Link href="/nutrition" className="card block home-summary-card">
+          <Link href="/coach" className="card block home-summary-card">
             <div className="home-card-title">
-              <h2>Nutrition today</h2>
+              <h2>Weekly lift report</h2>
               <IconChevronRight size={18} />
             </div>
-            <MacroLine
-              label="Calories"
-              value={data.calories}
-              target={data.targets.target_calories}
-              unit="kcal"
-              pct={caloriePct}
-            />
-            <MacroLine
-              label="Protein"
-              value={data.protein}
-              target={data.targets.target_protein}
-              unit="g"
-              pct={proteinPct}
-              green
-            />
+            <p className="text-sm text-[var(--muted)]">Review every set, spot PRs and copy your weekly update for your coach.</p>
+            <p className="mt-3 font-bold text-[var(--blue)]">Open coach report →</p>
           </Link>
 
           {data.tomorrowDay || data.tomorrowName ? (
@@ -622,7 +596,7 @@ export default function DashboardPage() {
               </p>
               <p className="text-lg font-bold">Rest day</p>
               <p className="text-xs text-[var(--muted)]">
-                Recover and hit nutrition.
+                Rest up for your next session.
               </p>
             </div>
           )}
@@ -704,42 +678,3 @@ export default function DashboardPage() {
   );
 }
 
-function MacroLine({
-  label,
-  value,
-  target,
-  unit,
-  pct,
-  green = false,
-}: {
-  label: string;
-  value: number;
-  target: number;
-  unit: string;
-  pct: number;
-  green?: boolean;
-}) {
-  return (
-    <div className="home-macro-line">
-      <div>
-        <p>{label}</p>
-        <strong>
-          {value.toLocaleString()}{" "}
-          <span>
-            / {target.toLocaleString()} {unit}
-          </span>
-        </strong>
-      </div>
-      <div className="progress-track">
-        <div
-          className="progress-fill"
-          style={{
-            width: `${pct}%`,
-            background: green ? "var(--green)" : "var(--blue)",
-          }}
-        />
-      </div>
-      <span>{pct}%</span>
-    </div>
-  );
-}
