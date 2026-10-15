@@ -269,6 +269,7 @@ export function WorkoutLogger({
   const [showLeaveConfirm, setShowLeaveConfirm] = useState(false);
   const [editForId, setEditForId] = useState<string | null>(null);
   const [swapForId, setSwapForId] = useState<string | null>(null);
+  const [swapNotice, setSwapNotice] = useState("");
   const [editNameDraft, setEditNameDraft] = useState("");
   const [draftReady, setDraftReady] = useState(false);
   const [draftBanner, setDraftBanner] = useState(false);
@@ -841,21 +842,33 @@ export function WorkoutLogger({
     setEditForId(null);
   }
 
-  function applySwap(exerciseId: string, newName: string) {
+  function showSwapNotice(message: string) {
+    setSwapNotice(message);
+    window.setTimeout(() => setSwapNotice(""), 2600);
+  }
+
+  function applySwap(exerciseId: string, newName: string, notify = true) {
     setNameOverrides((o) => ({ ...o, [exerciseId]: newName }));
     reseedFromHistory(exerciseId, newName);
     setEditNameDraft(newName);
     setSwapForId(null);
     setEditForId(null);
+    if (notify) showSwapNotice(`${newName} replaced for this session`);
   }
 
   async function applySwapAll(exerciseId: string, newName: string) {
-    applySwap(exerciseId, newName);
+    applySwap(exerciseId, newName, false);
     const supabase = createClient();
-    await supabase
+    const { error: swapError } = await supabase
       .from("workout_exercises")
       .update({ name: newName })
       .eq("id", exerciseId);
+    if (swapError) {
+      setError(`Changed for this session only — ${swapError.message}`);
+      showSwapNotice(`${newName} replaced for this session`);
+      return;
+    }
+    showSwapNotice(`${newName} saved to this workout`);
   }
 
   const [addBusy, setAddBusy] = useState(false);
@@ -2211,6 +2224,12 @@ export function WorkoutLogger({
       </div>
 
       {error ? <p className="px-4 pt-3 text-sm text-red-400">{error}</p> : null}
+
+      {swapNotice ? (
+        <div className="fixed inset-x-4 bottom-24 z-[80] mx-auto max-w-sm rounded-md border border-[var(--green)]/40 bg-[var(--card)] px-4 py-3 text-center text-sm font-bold text-[var(--green)] shadow-xl">
+          {swapNotice}
+        </div>
+      ) : null}
 
       {showAdd ? (
         <AddExerciseSheet

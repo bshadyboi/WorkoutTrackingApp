@@ -4,36 +4,21 @@ import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { dateKey } from "@/lib/protocol";
-import {
-  DailyWeightCard,
-  type WeightPoint,
-} from "@/components/WeeklyWeightCard";
+import type { WeightPoint } from "@/components/WeeklyWeightCard";
 import type { CheckinValues } from "@/components/MorningCheckinCard";
-import { WaterStepsCards } from "@/components/WaterStepsCards";
-import { RecompCheckinCard } from "@/components/RecompCheckinCard";
-import { KeyLiftsCard } from "@/components/KeyLiftsCard";
-import { LiftProgressCard } from "@/components/LiftProgressCard";
 import { readTabCache, writeTabCache } from "@/lib/tabCache";
-import {
-  DEFAULT_TARGETS,
-  normalizeTargets,
-  targetsLabel,
-  type MacroTargets,
-} from "@/lib/targets";
+import { normalizeTargets, type MacroTargets } from "@/lib/targets";
 import { parseOverrides, parseSlots } from "@/lib/schedule";
 import { resolveWeekdayTodayAndTomorrow } from "@/lib/weekdaySchedule";
 import { syncWorkoutLibraryOnce } from "@/lib/workoutsClient";
 import {
   IconChevronRight,
-  IconClipboard,
-  IconDumbbell,
   IconDroplet,
   IconFootprint,
-  IconGear,
   IconPlay,
-  IconUtensils,
 } from "@/components/icons";
 import { workoutPhoto } from "@/lib/workoutPhotos";
+import type { SessionDraft } from "@/lib/sessionDraft";
 
 type DashCache = {
   name: string;
@@ -54,6 +39,8 @@ type DashCache = {
   weightHistory: WeightPoint[];
   checkin: CheckinValues;
   sessionCount: number;
+  weeklyAvgWeight: number;
+  weeklyProteinDays: number;
   protein: number;
   calories: number;
   carbs: number;
@@ -61,10 +48,87 @@ type DashCache = {
   targets: MacroTargets;
 };
 
+type ResumeDraft = SessionDraft & { logDate?: string };
+
 export default function DashboardPage() {
   const cached = useRef(readTabCache<DashCache>("dashboard")).current;
   const [data, setData] = useState<DashCache | null>(cached);
   const [refreshing, setRefreshing] = useState(!cached);
+  const [resumeDraft, setResumeDraft] = useState<ResumeDraft | null>(null);
+  const [quickMsg, setQuickMsg] = useState("");
+
+  useEffect(() => {
+    let latest: ResumeDraft | null = null;
+    for (let i = 0; i < localStorage.length; i++) {
+      const storageKey = localStorage.key(i);
+      if (!storageKey?.startsWith("fittrack-draft-")) continue;
+      try {
+        const draft = JSON.parse(
+          localStorage.getItem(storageKey) ?? "",
+        ) as SessionDraft;
+        if (!draft?.dayId || !draft?.savedAt) continue;
+        const dateMatch = storageKey.match(/-(\d{4}-\d{2}-\d{2})$/);
+        const candidate = { ...draft, logDate: dateMatch?.[1] };
+        if (!latest || candidate.savedAt > latest.savedAt) latest = candidate;
+      } catch {
+        /* ignore stale drafts */
+      }
+    }
+    setResumeDraft(latest);
+  }, []);
+
+  async function quickLog(metric: "weight" | "steps" | "water") {
+    if (!data) return;
+    const current =
+      metric === "weight"
+        ? data.todayWeight || ""
+        : metric === "steps"
+          ? data.steps || ""
+          : data.waterOz || "";
+    const label =
+      metric === "weight"
+        ? "Morning weight (lb)"
+        : metric === "steps"
+          ? "Steps today"
+          : "Water today (oz)";
+    const raw = window.prompt(label, String(current));
+    if (raw == null) return;
+    const value = Math.max(0, Number(raw) || 0);
+    const field =
+      metric === "weight"
+        ? "morning_weight"
+        : metric === "steps"
+          ? "steps_count"
+          : "water_oz";
+    const supabase = createClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (!user) return;
+    const { error } = await supabase.from("daily_logs").upsert(
+      {
+        user_id: user.id,
+        date: data.todayStr,
+        ...data.targets,
+        [field]: value,
+      },
+      { onConflict: "user_id,date" },
+    );
+    if (error) {
+      setQuickMsg("Could not save");
+      return;
+    }
+    const next = {
+      ...data,
+      ...(metric === "weight" ? { todayWeight: value } : {}),
+      ...(metric === "steps" ? { steps: value } : {}),
+      ...(metric === "water" ? { waterOz: value } : {}),
+    };
+    setData(next);
+    writeTabCache("dashboard", next);
+    setQuickMsg(`${label.split(" (")[0]} saved`);
+    window.setTimeout(() => setQuickMsg(""), 1800);
+  }
 
   useEffect(() => {
     let cancelled = false;
@@ -85,6 +149,7 @@ export default function DashboardPage() {
         { data: days },
         todayLogRes,
         { data: weightRows },
+        { data: weeklyLogs },
         { data: sessions },
         { data: sched },
       ] = await Promise.all([
@@ -114,6 +179,12 @@ export default function DashboardPage() {
           .gt("morning_weight", 0)
           .order("date", { ascending: false })
           .limit(14),
+        supabase
+          .from("daily_logs")
+          .select("date, morning_weight, actual_protein")
+          .eq("user_id", user.id)
+          .gte("date", dateKey(new Date(Date.now() - 6 * 86400000)))
+          .order("date"),
         supabase
           .from("workout_sessions")
           .select("id, day_name, started_at")
@@ -230,6 +301,14 @@ export default function DashboardPage() {
           (s.day_name ?? "").toLowerCase() !== "rest",
       ).length;
 
+      const weeklyWeights = (weeklyLogs ?? [])
+        .map((r) => Number(r.morning_weight) || 0)
+        .filter((weight) => weight > 0);
+      const weeklyAvgWeight = weeklyWeights.length
+        ? weeklyWeights.reduce((sum, weight) => sum + weight, 0) /
+          weeklyWeights.length
+        : 0;
+
       const targets = normalizeTargets(profile);
 
       const weightHistory: WeightPoint[] = [...(weightRows ?? [])]
@@ -259,6 +338,10 @@ export default function DashboardPage() {
         weightHistory,
         checkin,
         sessionCount,
+        weeklyAvgWeight,
+        weeklyProteinDays: (weeklyLogs ?? []).filter(
+          (r) => Number(r.actual_protein) >= targets.target_protein,
+        ).length,
         protein: Number(todayLog?.actual_protein) || 0,
         calories: Number(todayLog?.actual_calories) || 0,
         carbs:
@@ -320,6 +403,22 @@ export default function DashboardPage() {
         ) : null}
       </div>
 
+      {resumeDraft ? (
+        <Link
+          href={`/train/${resumeDraft.dayId}/session${resumeDraft.logDate ? `?date=${resumeDraft.logDate}` : ""}`}
+          className="home-resume-card"
+        >
+          <span className="home-resume-icon">
+            <IconPlay size={16} />
+          </span>
+          <span className="min-w-0 flex-1">
+            <strong>Resume workout</strong>
+            <small>{resumeDraft.dayName}</small>
+          </span>
+          <IconChevronRight size={18} />
+        </Link>
+      ) : null}
+
       {data.libraryDay ? (
         <section className="home-workout-hero">
           {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -377,7 +476,11 @@ export default function DashboardPage() {
               <span>Today</span>
             </div>
             <div className="home-metric-grid">
-              <div className="home-metric">
+              <button
+                type="button"
+                className="home-metric text-left"
+                onClick={() => void quickLog("weight")}
+              >
                 <span className="metric-icon">▣</span>
                 <p>Weight</p>
                 <strong>
@@ -385,8 +488,13 @@ export default function DashboardPage() {
                     ? `${data.todayWeight.toFixed(1)} lb`
                     : "Log weight"}
                 </strong>
-              </div>
-              <div className="home-metric">
+                <small>Tap to log</small>
+              </button>
+              <button
+                type="button"
+                className="home-metric text-left"
+                onClick={() => void quickLog("steps")}
+              >
                 <IconFootprint size={19} className="text-[var(--blue)]" />
                 <p>Steps</p>
                 <strong>
@@ -398,8 +506,13 @@ export default function DashboardPage() {
                     style={{ width: `${stepPct}%` }}
                   />
                 </div>
-              </div>
-              <div className="home-metric">
+                <small>Tap to log</small>
+              </button>
+              <button
+                type="button"
+                className="home-metric text-left"
+                onClick={() => void quickLog("water")}
+              >
                 <IconDroplet size={19} className="text-[var(--blue)]" />
                 <p>Water</p>
                 <strong>{data.waterOz} oz</strong>
@@ -409,11 +522,35 @@ export default function DashboardPage() {
                     style={{ width: `${waterPct}%` }}
                   />
                 </div>
-              </div>
+                <small>Tap to log</small>
+              </button>
             </div>
+            {quickMsg ? <p className="home-quick-msg">{quickMsg}</p> : null}
           </section>
 
-          <LiftProgressCard />
+          {data.sessionCount ||
+          data.weeklyAvgWeight ||
+          data.weeklyProteinDays ? (
+            <section className="card home-week-card">
+              <div className="home-card-title">
+                <h2>This week</h2>
+                <span>Last 7 days</span>
+              </div>
+              <div>
+                <span>
+                  <strong>{data.sessionCount}</strong> workouts
+                </span>
+                {data.weeklyAvgWeight ? (
+                  <span>
+                    <strong>{data.weeklyAvgWeight.toFixed(1)}</strong> avg lb
+                  </span>
+                ) : null}
+                <span>
+                  <strong>{data.weeklyProteinDays}</strong> protein goal days
+                </span>
+              </div>
+            </section>
+          ) : null}
         </div>
 
         <div className="space-y-5">
@@ -481,67 +618,6 @@ export default function DashboardPage() {
           )}
         </div>
       </div>
-
-      <details className="home-details">
-        <summary>More tracking and check-ins</summary>
-        <div className="dashboard-grid mt-4">
-          <RecompCheckinCard />
-
-          <KeyLiftsCard />
-
-          <DailyWeightCard
-            key={`${data.todayStr}-${data.todayWeight}-${data.weightHistory?.length ?? 0}`}
-            date={data.todayStr}
-            initial={data.todayWeight}
-            history={data.weightHistory ?? []}
-            targets={data.targets ?? DEFAULT_TARGETS}
-          />
-
-          <LiftProgressCard />
-
-          <WaterStepsCards
-            key={`${data.todayStr}-${data.waterOz}-${data.steps}`}
-            date={data.todayStr}
-            waterOz={data.waterOz}
-            steps={data.steps}
-            waterGoal={128}
-            targets={data.targets ?? DEFAULT_TARGETS}
-          />
-
-          <div className="grid grid-cols-2 gap-3">
-            <FeatureTile
-              href="/train"
-              Icon={IconDumbbell}
-              title="Training"
-              subtitle={
-                data.todayName
-                  ? data.libraryDay
-                    ? data.todayName
-                    : `${data.todayName} · coming soon`
-                  : "Rest day"
-              }
-            />
-            <FeatureTile
-              href="/nutrition"
-              Icon={IconUtensils}
-              title="Nutrition"
-              subtitle={targetsLabel(data.targets ?? DEFAULT_TARGETS)}
-            />
-            <FeatureTile
-              href="/protocol"
-              Icon={IconClipboard}
-              title="Protocol"
-              subtitle="Today’s stack"
-            />
-            <FeatureTile
-              href="/settings"
-              Icon={IconGear}
-              title="Settings"
-              subtitle="Targets & alerts"
-            />
-          </div>
-        </div>
-      </details>
     </div>
   );
 }
@@ -583,29 +659,5 @@ function MacroLine({
       </div>
       <span>{pct}%</span>
     </div>
-  );
-}
-
-function FeatureTile({
-  href,
-  Icon,
-  title,
-  subtitle,
-}: {
-  href: string;
-  Icon: (props: { size?: number }) => React.ReactElement;
-  title: string;
-  subtitle: string;
-}) {
-  return (
-    <Link href={href} prefetch className="card flex flex-col gap-2.5 !p-3.5">
-      <span className="flex h-9 w-9 items-center justify-center rounded-md bg-[var(--card-2)] text-[var(--blue)]">
-        <Icon size={19} />
-      </span>
-      <div>
-        <p className="font-bold">{title}</p>
-        <p className="text-xs text-[var(--muted)]">{subtitle}</p>
-      </div>
-    </Link>
   );
 }
