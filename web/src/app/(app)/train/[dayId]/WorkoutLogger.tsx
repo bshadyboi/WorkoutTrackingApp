@@ -1361,7 +1361,7 @@ export function WorkoutLogger({
   return (
     <div className="min-h-dvh pb-28">
       <div
-        className="sticky top-0 z-20 border-b border-[var(--border)] bg-[var(--surface)] px-5 pb-3"
+        className="session-header sticky top-0 z-20 border-b border-[var(--border)] bg-[var(--surface)] px-5 pb-3"
         style={{ paddingTop: "max(14px, env(safe-area-inset-top, 0px))" }}
       >
         <div className="flex items-center justify-between gap-3">
@@ -1433,7 +1433,7 @@ export function WorkoutLogger({
         </div>
       ) : null}
 
-      <div className="px-5 pt-4">
+      <div className="session-body px-5 pt-4">
         <input
           className="w-full bg-transparent text-[22px] font-extrabold tracking-tight outline-none"
           value={sessionDayName}

@@ -8,10 +8,10 @@ import { AppUpdateBanner } from "@/components/AppUpdateBanner";
 import { RestTimerHost } from "@/components/RestTimerHost";
 import { PendingSessionSync } from "@/components/PendingSessionSync";
 import {
-  IconClipboard,
   IconDumbbell,
   IconGear,
   IconHome,
+  IconProgress,
   IconUtensils,
 } from "@/components/icons";
 
@@ -19,7 +19,7 @@ const links = [
   { href: "/dashboard", label: "Home", Icon: IconHome },
   { href: "/train", label: "Train", Icon: IconDumbbell },
   { href: "/nutrition", label: "Fuel", Icon: IconUtensils },
-  { href: "/protocol", label: "Stack", Icon: IconClipboard },
+  { href: "/progress", label: "Progress", Icon: IconProgress },
 ];
 
 /** Title-block label for the sheet the current route is on. */

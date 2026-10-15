@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { FormEvent, useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { LeftShoulderToggle } from "@/components/LeftShoulderToggle";
@@ -176,6 +177,19 @@ export default function SettingsPage() {
           <LeftShoulderToggle />
 
           <PushEnableButton />
+
+          <Link
+            href="/protocol"
+            className="card flex items-center justify-between gap-3"
+          >
+            <div>
+              <p className="font-bold">Supplements & protocol</p>
+              <p className="mt-1 text-xs text-[var(--muted)]">
+                Open your daily stack and schedule.
+              </p>
+            </div>
+            <span className="text-[var(--blue)]">→</span>
+          </Link>
         </div>
 
         <form action="/auth/signout" method="post" className="settings-wide">

@@ -28,7 +28,24 @@ export function IconHome({ size = 22, strokeWidth = 2, className }: IconProps) {
   );
 }
 
-export function IconDumbbell({ size = 22, strokeWidth = 2, className }: IconProps) {
+export function IconProgress({
+  size = 22,
+  strokeWidth = 2,
+  className,
+}: IconProps) {
+  return (
+    <svg {...base(size)} strokeWidth={strokeWidth} className={className}>
+      <path d="M4 19V5M4 19h16" />
+      <path d="m7 15 4-4 3 2 5-6" />
+    </svg>
+  );
+}
+
+export function IconDumbbell({
+  size = 22,
+  strokeWidth = 2,
+  className,
+}: IconProps) {
   return (
     <svg {...base(size)} strokeWidth={strokeWidth} className={className}>
       <path d="M6.5 7v10M17.5 7v10M3.5 9.5v5M20.5 9.5v5M6.5 12h11" />
@@ -36,7 +53,11 @@ export function IconDumbbell({ size = 22, strokeWidth = 2, className }: IconProp
   );
 }
 
-export function IconUtensils({ size = 22, strokeWidth = 2, className }: IconProps) {
+export function IconUtensils({
+  size = 22,
+  strokeWidth = 2,
+  className,
+}: IconProps) {
   return (
     <svg {...base(size)} strokeWidth={strokeWidth} className={className}>
       <path d="M7 3v7a2 2 0 0 1-2 2v0a2 2 0 0 1-2-2V3M5 12v9" />
@@ -45,7 +66,11 @@ export function IconUtensils({ size = 22, strokeWidth = 2, className }: IconProp
   );
 }
 
-export function IconClipboard({ size = 22, strokeWidth = 2, className }: IconProps) {
+export function IconClipboard({
+  size = 22,
+  strokeWidth = 2,
+  className,
+}: IconProps) {
   return (
     <svg {...base(size)} strokeWidth={strokeWidth} className={className}>
       <rect x="5" y="4" width="14" height="17" rx="2.5" />
@@ -65,7 +90,11 @@ export function IconGear({ size = 22, strokeWidth = 2, className }: IconProps) {
   );
 }
 
-export function IconDroplet({ size = 16, strokeWidth = 2, className }: IconProps) {
+export function IconDroplet({
+  size = 16,
+  strokeWidth = 2,
+  className,
+}: IconProps) {
   return (
     <svg {...base(size)} strokeWidth={strokeWidth} className={className}>
       <path d="M12 3.5c3 3.6 5.5 6.5 5.5 9.4A5.5 5.5 0 0 1 12 18.4a5.5 5.5 0 0 1-5.5-5.5c0-2.9 2.5-5.8 5.5-9.4z" />
@@ -73,7 +102,11 @@ export function IconDroplet({ size = 16, strokeWidth = 2, className }: IconProps
   );
 }
 
-export function IconFootprint({ size = 16, strokeWidth = 2, className }: IconProps) {
+export function IconFootprint({
+  size = 16,
+  strokeWidth = 2,
+  className,
+}: IconProps) {
   return (
     <svg {...base(size)} strokeWidth={strokeWidth} className={className}>
       <path d="M7 13.5c-1.6 0-2.5-1.4-2.5-3.6C4.5 6.4 5.8 3.5 8 3.5c1.6 0 2.3 1.5 2.3 3.6 0 2.6-1.3 6.4-3.3 6.4z" />
@@ -83,7 +116,11 @@ export function IconFootprint({ size = 16, strokeWidth = 2, className }: IconPro
   );
 }
 
-export function IconCalendar({ size = 20, strokeWidth = 2, className }: IconProps) {
+export function IconCalendar({
+  size = 20,
+  strokeWidth = 2,
+  className,
+}: IconProps) {
   return (
     <svg {...base(size)} strokeWidth={strokeWidth} className={className}>
       <rect x="3" y="4" width="18" height="17" rx="3" />
@@ -92,7 +129,11 @@ export function IconCalendar({ size = 20, strokeWidth = 2, className }: IconProp
   );
 }
 
-export function IconClock({ size = 16, strokeWidth = 2, className }: IconProps) {
+export function IconClock({
+  size = 16,
+  strokeWidth = 2,
+  className,
+}: IconProps) {
   return (
     <svg {...base(size)} strokeWidth={strokeWidth} className={className}>
       <circle cx="12" cy="12" r="9" />
@@ -101,7 +142,11 @@ export function IconClock({ size = 16, strokeWidth = 2, className }: IconProps) 
   );
 }
 
-export function IconChevronRight({ size = 18, strokeWidth = 2, className }: IconProps) {
+export function IconChevronRight({
+  size = 18,
+  strokeWidth = 2,
+  className,
+}: IconProps) {
   return (
     <svg {...base(size)} strokeWidth={strokeWidth} className={className}>
       <path d="M9 6l6 6-6 6" />
@@ -109,7 +154,11 @@ export function IconChevronRight({ size = 18, strokeWidth = 2, className }: Icon
   );
 }
 
-export function IconChevronLeft({ size = 20, strokeWidth = 2, className }: IconProps) {
+export function IconChevronLeft({
+  size = 20,
+  strokeWidth = 2,
+  className,
+}: IconProps) {
   return (
     <svg {...base(size)} strokeWidth={strokeWidth} className={className}>
       <path d="M15 6l-6 6 6 6" />
@@ -117,7 +166,11 @@ export function IconChevronLeft({ size = 20, strokeWidth = 2, className }: IconP
   );
 }
 
-export function IconChevronDown({ size = 18, strokeWidth = 2, className }: IconProps) {
+export function IconChevronDown({
+  size = 18,
+  strokeWidth = 2,
+  className,
+}: IconProps) {
   return (
     <svg {...base(size)} strokeWidth={strokeWidth} className={className}>
       <path d="M6 9l6 6 6-6" />
@@ -125,7 +178,11 @@ export function IconChevronDown({ size = 18, strokeWidth = 2, className }: IconP
   );
 }
 
-export function IconPencil({ size = 20, strokeWidth = 2, className }: IconProps) {
+export function IconPencil({
+  size = 20,
+  strokeWidth = 2,
+  className,
+}: IconProps) {
   return (
     <svg {...base(size)} strokeWidth={strokeWidth} className={className}>
       <path d="M4 20h4l10-10-4-4L4 16v4z" />
@@ -134,7 +191,11 @@ export function IconPencil({ size = 20, strokeWidth = 2, className }: IconProps)
   );
 }
 
-export function IconHistory({ size = 20, strokeWidth = 2, className }: IconProps) {
+export function IconHistory({
+  size = 20,
+  strokeWidth = 2,
+  className,
+}: IconProps) {
   return (
     <svg {...base(size)} strokeWidth={strokeWidth} className={className}>
       <path d="M3.5 12a8.5 8.5 0 1 0 2.6-6.1" />
@@ -144,7 +205,11 @@ export function IconHistory({ size = 20, strokeWidth = 2, className }: IconProps
   );
 }
 
-export function IconCheck({ size = 18, strokeWidth = 3, className }: IconProps) {
+export function IconCheck({
+  size = 18,
+  strokeWidth = 3,
+  className,
+}: IconProps) {
   return (
     <svg {...base(size)} strokeWidth={strokeWidth} className={className}>
       <path d="M5 12l5 5 9-10" />
@@ -168,7 +233,11 @@ export function IconSwap({ size = 17, strokeWidth = 2, className }: IconProps) {
   );
 }
 
-export function IconPlayCircle({ size = 17, strokeWidth = 2, className }: IconProps) {
+export function IconPlayCircle({
+  size = 17,
+  strokeWidth = 2,
+  className,
+}: IconProps) {
   return (
     <svg {...base(size)} strokeWidth={strokeWidth} className={className}>
       <circle cx="12" cy="12" r="9" />
@@ -225,13 +294,22 @@ export function IconStar({
   filled = false,
 }: IconProps & { filled?: boolean }) {
   return (
-    <svg {...base(size)} strokeWidth={strokeWidth} className={className} fill={filled ? "currentColor" : "none"}>
+    <svg
+      {...base(size)}
+      strokeWidth={strokeWidth}
+      className={className}
+      fill={filled ? "currentColor" : "none"}
+    >
       <path d="M12 3.8l2.5 5.1 5.6.8-4 3.9 1 5.6-5.1-2.7-5.1 2.7 1-5.6-4-3.9 5.6-.8z" />
     </svg>
   );
 }
 
-export function IconPlus({ size = 16, strokeWidth = 2.4, className }: IconProps) {
+export function IconPlus({
+  size = 16,
+  strokeWidth = 2.4,
+  className,
+}: IconProps) {
   return (
     <svg {...base(size)} strokeWidth={strokeWidth} className={className}>
       <path d="M12 5v14M5 12h14" />

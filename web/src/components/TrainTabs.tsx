@@ -60,7 +60,7 @@ type Day = {
   exerciseCount?: number;
   setCount?: number;
 };
-type Hist = {
+export type Hist = {
   id: string;
   dayName: string;
   startedAt: string;
@@ -1210,7 +1210,7 @@ function TrendStat({
   );
 }
 
-function ProgressionTab({ history }: { history: Hist[] }) {
+export function ProgressionTab({ history }: { history: Hist[] }) {
   const [series, setSeries] = useState<LiftSeries[] | null>(null);
   const [sides, setSides] = useState<SideSeries[]>([]);
   const [flagged, setFlagged] = useState<FlaggedNote[]>([]);
