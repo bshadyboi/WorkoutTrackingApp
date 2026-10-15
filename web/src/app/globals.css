@@ -517,6 +517,57 @@ a {
   font-size: 12px;
   font-weight: 700;
 }
+@media (max-width: 639px) {
+  :root {
+    --grid: rgba(140, 175, 230, 0.032);
+  }
+  .session-header {
+    padding-right: 14px !important;
+    padding-bottom: 8px !important;
+    padding-left: 14px !important;
+  }
+  .session-header button {
+    min-height: 36px;
+    height: 36px;
+  }
+  .session-header .font-mono.text-\[22px\] {
+    font-size: 18px;
+  }
+  .session-header > div:last-child {
+    margin-top: 6px;
+  }
+  .session-body {
+    padding-right: 12px !important;
+    padding-left: 12px !important;
+    padding-top: 12px !important;
+  }
+  .logger-card {
+    padding: 12px !important;
+  }
+  .logger-card-header {
+    gap: 8px;
+  }
+  .logger-card-header > .exercise-heading {
+    flex-basis: 100%;
+    gap: 10px;
+  }
+  .logger-card-header .exercise-image {
+    width: 66px;
+    height: 66px;
+  }
+  .logger-card-header .exercise-actions {
+    width: 100%;
+    justify-content: flex-end;
+  }
+  .logger-card-header .exercise-actions > * {
+    min-width: 38px;
+    min-height: 38px;
+    height: 38px;
+  }
+  .logger-card-header .swap-label {
+    font-size: 11px;
+  }
+}
 .swap-overlay {
   position: fixed;
   inset: 0;
