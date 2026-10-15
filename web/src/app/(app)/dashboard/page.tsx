@@ -56,6 +56,11 @@ export default function DashboardPage() {
   const [refreshing, setRefreshing] = useState(!cached);
   const [resumeDraft, setResumeDraft] = useState<ResumeDraft | null>(null);
   const [quickMsg, setQuickMsg] = useState("");
+  const [quickEntry, setQuickEntry] = useState<{
+    metric: "weight" | "steps" | "water";
+    value: string;
+  } | null>(null);
+  const [quickSaving, setQuickSaving] = useState(false);
 
   useEffect(() => {
     let latest: ResumeDraft | null = null;
@@ -77,7 +82,7 @@ export default function DashboardPage() {
     setResumeDraft(latest);
   }, []);
 
-  async function quickLog(metric: "weight" | "steps" | "water") {
+  function openQuickLog(metric: "weight" | "steps" | "water") {
     if (!data) return;
     const current =
       metric === "weight"
@@ -85,15 +90,13 @@ export default function DashboardPage() {
         : metric === "steps"
           ? data.steps || ""
           : data.waterOz || "";
-    const label =
-      metric === "weight"
-        ? "Morning weight (lb)"
-        : metric === "steps"
-          ? "Steps today"
-          : "Water today (oz)";
-    const raw = window.prompt(label, String(current));
-    if (raw == null) return;
+    setQuickEntry({ metric, value: String(current) });
+  }
+
+  async function saveQuickLog(metric: "weight" | "steps" | "water", raw: string) {
+    if (!data || quickSaving) return;
     const value = Math.max(0, Number(raw) || 0);
+    const label = metric === "weight" ? "Morning weight" : metric === "steps" ? "Steps" : "Water";
     const field =
       metric === "weight"
         ? "morning_weight"
@@ -101,10 +104,14 @@ export default function DashboardPage() {
           ? "steps_count"
           : "water_oz";
     const supabase = createClient();
+    setQuickSaving(true);
     const {
       data: { user },
     } = await supabase.auth.getUser();
-    if (!user) return;
+    if (!user) {
+      setQuickSaving(false);
+      return;
+    }
     const { error } = await supabase.from("daily_logs").upsert(
       {
         user_id: user.id,
@@ -116,6 +123,7 @@ export default function DashboardPage() {
     );
     if (error) {
       setQuickMsg("Could not save");
+      setQuickSaving(false);
       return;
     }
     const next = {
@@ -126,7 +134,9 @@ export default function DashboardPage() {
     };
     setData(next);
     writeTabCache("dashboard", next);
-    setQuickMsg(`${label.split(" (")[0]} saved`);
+    setQuickEntry(null);
+    setQuickSaving(false);
+    setQuickMsg(`${label} saved`);
     window.setTimeout(() => setQuickMsg(""), 1800);
   }
 
@@ -479,7 +489,7 @@ export default function DashboardPage() {
               <button
                 type="button"
                 className="home-metric text-left"
-                onClick={() => void quickLog("weight")}
+                onClick={() => openQuickLog("weight")}
               >
                 <span className="metric-icon">▣</span>
                 <p>Weight</p>
@@ -493,7 +503,7 @@ export default function DashboardPage() {
               <button
                 type="button"
                 className="home-metric text-left"
-                onClick={() => void quickLog("steps")}
+                onClick={() => openQuickLog("steps")}
               >
                 <IconFootprint size={19} className="text-[var(--blue)]" />
                 <p>Steps</p>
@@ -511,7 +521,7 @@ export default function DashboardPage() {
               <button
                 type="button"
                 className="home-metric text-left"
-                onClick={() => void quickLog("water")}
+                onClick={() => openQuickLog("water")}
               >
                 <IconDroplet size={19} className="text-[var(--blue)]" />
                 <p>Water</p>
@@ -618,6 +628,78 @@ export default function DashboardPage() {
           )}
         </div>
       </div>
+
+      {quickEntry ? (
+        <div
+          className="quick-log-overlay"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="quick-log-title"
+          onMouseDown={(event) => {
+            if (event.target === event.currentTarget && !quickSaving) setQuickEntry(null);
+          }}
+        >
+          <form
+            className="quick-log-sheet"
+            onSubmit={(event) => {
+              event.preventDefault();
+              void saveQuickLog(quickEntry.metric, quickEntry.value);
+            }}
+          >
+            <div className="quick-log-handle" />
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <p className="eyebrow">Daily check-in</p>
+                <h2 id="quick-log-title" className="mt-1 text-xl font-extrabold">
+                  {quickEntry.metric === "weight"
+                    ? "Morning weight"
+                    : quickEntry.metric === "steps"
+                      ? "Steps today"
+                      : "Water today"}
+                </h2>
+              </div>
+              <button type="button" className="quick-log-close" onClick={() => setQuickEntry(null)} aria-label="Close">
+                ×
+              </button>
+            </div>
+
+            {quickEntry.metric === "water" ? (
+              <div className="quick-log-presets" aria-label="Add water">
+                {[8, 16, 24].map((ounces) => (
+                  <button
+                    type="button"
+                    key={ounces}
+                    onClick={() =>
+                      setQuickEntry((entry) =>
+                        entry ? { ...entry, value: String((Number(entry.value) || 0) + ounces) } : entry,
+                      )
+                    }
+                  >
+                    +{ounces} oz
+                  </button>
+                ))}
+              </div>
+            ) : null}
+
+            <label className="quick-log-input-wrap">
+              <span>{quickEntry.metric === "weight" ? "lb" : quickEntry.metric === "water" ? "oz" : "steps"}</span>
+              <input
+                autoFocus
+                type="number"
+                inputMode={quickEntry.metric === "weight" ? "decimal" : "numeric"}
+                min="0"
+                step={quickEntry.metric === "weight" ? "0.1" : "1"}
+                value={quickEntry.value}
+                onChange={(event) => setQuickEntry({ ...quickEntry, value: event.target.value })}
+                aria-label="Value"
+              />
+            </label>
+            <button type="submit" className="btn-accent w-full" disabled={quickSaving}>
+              {quickSaving ? "Saving…" : "Save"}
+            </button>
+          </form>
+        </div>
+      ) : null}
     </div>
   );
 }

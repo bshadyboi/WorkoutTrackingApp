@@ -177,7 +177,7 @@ export function SwapExerciseSheet({
     >
       <div className="swap-dialog">
         <div
-          className="flex items-center gap-3 border-b border-[var(--border)] px-4 pb-3"
+          className="swap-header flex items-center gap-3 border-b border-[var(--border)] px-4 pb-3"
           style={{ paddingTop: "max(12px, env(safe-area-inset-top, 0px))" }}
         >
           <button
@@ -198,7 +198,7 @@ export function SwapExerciseSheet({
           </div>
         </div>
 
-        <div className="border-b border-[var(--border)] px-4 py-3">
+        <div className="swap-search border-b border-[var(--border)] px-4 py-3">
           <p className="mb-2 truncate text-[11px] text-[var(--muted)]">
             Keep the workout. Change one movement.
           </p>
@@ -463,7 +463,7 @@ export function SwapExerciseSheet({
 
         <div className="swap-footer">
           <p className="eyebrow mb-1">Apply to</p>
-          <div className="mb-3 grid gap-1 sm:grid-cols-2">
+          <div className="mb-3 grid grid-cols-2 gap-1">
             <label>
               <input
                 type="radio"
@@ -473,7 +473,7 @@ export function SwapExerciseSheet({
               />
               <span>
                 <strong className="block">This session only</strong>
-                <small className="text-[var(--muted)]">
+                <small className="swap-scope-detail text-[var(--muted)]">
                   Use it just for today.
                 </small>
               </span>
@@ -487,7 +487,7 @@ export function SwapExerciseSheet({
               />
               <span>
                 <strong className="block">Keep in this workout</strong>
-                <small className="text-[var(--muted)]">
+                <small className="swap-scope-detail text-[var(--muted)]">
                   Use it next time too.
                 </small>
               </span>
