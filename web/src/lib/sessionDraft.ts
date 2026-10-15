@@ -65,10 +65,15 @@ export function loadDraft(dayId: string, logDate?: string): SessionDraft | null 
 
 export function saveDraft(draft: SessionDraft, logDate?: string) {
   if (typeof window === "undefined") return;
-  localStorage.setItem(
-    key(draft.dayId, logDate),
-    JSON.stringify({ ...draft, savedAt: Date.now() })
-  );
+  try {
+    localStorage.setItem(
+      key(draft.dayId, logDate),
+      JSON.stringify({ ...draft, savedAt: Date.now() })
+    );
+  } catch {
+    // A workout must remain usable even if private browsing or a full device
+    // temporarily makes localStorage unavailable.
+  }
 }
 
 export function clearDraft(dayId: string, logDate?: string) {

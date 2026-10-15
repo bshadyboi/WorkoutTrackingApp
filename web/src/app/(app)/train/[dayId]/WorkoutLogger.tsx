@@ -246,6 +246,7 @@ export function WorkoutLogger({
   const [error, setError] = useState("");
   const [startedAt, setStartedAt] = useState(() => Date.now());
   const [elapsed, setElapsed] = useState(0);
+  const [online, setOnline] = useState(true);
   const [notes, setNotes] = useState<Record<string, string>>({});
   const [nameOverrides, setNameOverrides] = useState<Record<string, string>>(
     {},
@@ -480,6 +481,17 @@ export function WorkoutLogger({
     );
     return () => clearInterval(t);
   }, [startedAt]);
+
+  useEffect(() => {
+    const update = () => setOnline(navigator.onLine);
+    update();
+    window.addEventListener("online", update);
+    window.addEventListener("offline", update);
+    return () => {
+      window.removeEventListener("online", update);
+      window.removeEventListener("offline", update);
+    };
+  }, []);
 
   // Resume an in-progress rest after reload / return to app
   useEffect(() => {
@@ -1390,6 +1402,11 @@ export function WorkoutLogger({
             {saving ? "…" : "Finish"}
           </button>
         </div>
+        {!online ? (
+          <p className="mt-2 text-center text-[11px] font-bold text-[var(--yellow)]" role="status">
+            Offline · this workout is saved on your phone
+          </p>
+        ) : null}
         <div className="mt-2.5 flex items-center gap-2.5">
           <div className="h-1 flex-1 overflow-hidden rounded-full bg-[var(--border-solid)]">
             <div
