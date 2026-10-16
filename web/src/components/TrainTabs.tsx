@@ -26,7 +26,6 @@ import {
 import { useRouter } from "next/navigation";
 import {
   IconCalendar,
-  IconCheck,
   IconChevronRight,
   IconClock,
   IconDumbbell,
@@ -162,11 +161,11 @@ export function TrainTabs({
   const liveTodayDone = live.doneToday;
 
   return (
-    <div className="space-y-5">
+    <div className="training-page space-y-5">
       <div className="flex items-center justify-between gap-3">
         <div className="min-w-0">
           <h1 className="text-[26px] font-extrabold leading-tight tracking-tight">
-            Train
+            Your training
           </h1>
           {programLine ? (
             <p className="mt-0.5 truncate text-[13px] font-semibold text-[var(--muted)]">
@@ -213,7 +212,7 @@ export function TrainTabs({
         </div>
       ) : null}
 
-      <div className="flex gap-1 rounded-md border border-white/5 bg-[var(--surface)] p-1">
+      <div className="training-tabs section-tabs" role="tablist" aria-label="Training view">
         {(
           [
             ["workouts", "Workouts"],
@@ -229,6 +228,8 @@ export function TrainTabs({
                 ? "bg-[var(--raised)] font-bold text-[var(--text)]"
                 : "font-semibold text-[var(--muted)]"
             }`}
+            role="tab"
+            aria-selected={tab === key}
             onClick={() => setTab(key)}
           >
             {label}
@@ -271,18 +272,6 @@ type WeekDayInfo = {
   resolved: ReturnType<typeof resolveWeekdayWorkout>;
 };
 
-/**
- * Short word for a day in the week strip: "Push A · Chest…" → "Push".
- * Initials collided — Push A and Pull A both read "PA" — and the weekday
- * above each cell already says which A/B session it is.
- */
-function dayLabel(name: string) {
-  const head = name.split("·")[0]?.trim() ?? name;
-  const first = head.split(/\s+/).filter(Boolean)[0] ?? "";
-  if (!first) return "•";
-  return first.length <= 4 ? first : first.slice(0, 3);
-}
-
 const WEEKDAY_SHORT = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
 function WeekStrip({
@@ -293,47 +282,15 @@ function WeekStrip({
   todayKey: string;
 }) {
   return (
-    <div className="flex justify-between rounded-md border border-[var(--border)] bg-[var(--card)] px-3.5 py-3">
-      {weekInfo.map((d) => {
-        const isToday = d.key === todayKey;
+    <div className="training-week" aria-label="This week's schedule">
+      {weekInfo.map(d => {
+        const today = d.key === todayKey;
         const done = d.resolved.doneToday && !d.resolved.isRest;
-        const rest = d.resolved.isRest;
-        return (
-          <div key={d.key} className="flex flex-col items-center gap-1.5">
-            <span
-              className={`text-[10.5px] font-bold ${
-                isToday ? "text-[var(--blue)]" : "text-[var(--dim)]"
-              }`}
-            >
-              {WEEKDAY_SHORT[d.date.getDay()]}
-            </span>
-            {done ? (
-              <span
-                className={`flex h-[30px] w-[30px] items-center justify-center rounded-full bg-[var(--green)] text-[var(--on-green)] ${
-                  isToday
-                    ? "ring-2 ring-[var(--blue)]/60 ring-offset-2 ring-offset-[var(--card)]"
-                    : ""
-                }`}
-              >
-                <IconCheck size={14} />
-              </span>
-            ) : rest ? (
-              <span
-                className={`h-[30px] w-[30px] rounded-full border border-dashed border-[var(--border-solid)] bg-[var(--surface)] ${
-                  isToday ? "!border-solid !border-2 !border-[var(--blue)]" : ""
-                }`}
-              />
-            ) : isToday ? (
-              <span className="flex h-[30px] w-[30px] items-center justify-center rounded-full border-2 border-[var(--blue)] bg-[var(--blue)]/15 text-[var(--blue)]">
-                <IconDumbbell size={14} strokeWidth={2.4} />
-              </span>
-            ) : (
-              <span className="flex h-[30px] min-w-[34px] items-center justify-center rounded-full bg-[var(--card-2)] px-1 text-[10px] font-bold text-[var(--muted)]">
-                {dayLabel(d.resolved.label)}
-              </span>
-            )}
-          </div>
-        );
+        return <Link key={d.key} href="/train/schedule" className={today ? "today" : ""} aria-current={today ? "date" : undefined} aria-label={`${d.date.toLocaleDateString()}: ${d.resolved.label}${done ? ", completed" : ""}`}>
+          <span>{WEEKDAY_SHORT[d.date.getDay()]}</span>
+          <small>{d.date.toLocaleDateString(undefined, {month: "short", day: "numeric"})}</small>
+          <i className={done ? "done" : d.resolved.isRest ? "rest" : "planned"} />
+        </Link>;
       })}
     </div>
   );
@@ -450,7 +407,7 @@ function WorkoutsTab({
                 {todayDone ? "Rest complete" : "Rest / Recovery"}
               </p>
               <p className="mt-1 text-[15px] text-[var(--muted)]">
-                Off day — Zone-2 walk and/or prehab. Hit steps and nutrition.
+                Take time to recover. Your workouts are ready below.
               </p>
             </div>
             {!todayDone ? (
@@ -566,35 +523,6 @@ function WorkoutsTab({
         />
       </section>
 
-      <div className="grid grid-cols-3 gap-2">
-        <div className="rounded-md border border-white/5 bg-[var(--surface)] px-3 py-2.5">
-          <p className="text-[17px] font-extrabold tabular-nums">
-            {stats.weekSessions}/{stats.scheduled || "—"}
-          </p>
-          <p className="text-[10.5px] font-semibold text-[var(--muted)]">
-            Sessions
-          </p>
-        </div>
-        <div className="rounded-md border border-white/5 bg-[var(--surface)] px-3 py-2.5">
-          <p className="text-[17px] font-extrabold tabular-nums">
-            {stats.weekVolume >= 1000
-              ? `${(stats.weekVolume / 1000).toFixed(1)}k`
-              : Math.round(stats.weekVolume)}
-          </p>
-          <p className="text-[10.5px] font-semibold text-[var(--muted)]">
-            Week lb
-          </p>
-        </div>
-        <div className="rounded-md border border-white/5 bg-[var(--surface)] px-3 py-2.5">
-          <p className="text-[17px] font-extrabold tabular-nums">
-            {stats.streak} wk
-          </p>
-          <p className="text-[10.5px] font-semibold text-[var(--muted)]">
-            Streak
-          </p>
-        </div>
-      </div>
-
       <section className="space-y-2.5">
         <div className="flex items-center justify-between gap-2">
           <h2 className="text-[17px] font-bold">Your workouts</h2>
@@ -653,9 +581,38 @@ function WorkoutsTab({
           href="/train/manage"
           className="btn-secondary flex min-h-[44px] w-full items-center justify-center text-sm"
         >
-          + Add workout day
+          Manage workouts
         </Link>
       </section>
+
+      <div className="grid grid-cols-3 gap-2">
+        <div className="rounded-md border border-white/5 bg-[var(--surface)] px-3 py-2.5">
+          <p className="text-[17px] font-extrabold tabular-nums">
+            {stats.weekSessions}/{stats.scheduled || "—"}
+          </p>
+          <p className="text-[10.5px] font-semibold text-[var(--muted)]">
+            Sessions
+          </p>
+        </div>
+        <div className="rounded-md border border-white/5 bg-[var(--surface)] px-3 py-2.5">
+          <p className="text-[17px] font-extrabold tabular-nums">
+            {stats.weekVolume >= 1000
+              ? `${(stats.weekVolume / 1000).toFixed(1)}k`
+              : Math.round(stats.weekVolume)}
+          </p>
+          <p className="text-[10.5px] font-semibold text-[var(--muted)]">
+            Week lb
+          </p>
+        </div>
+        <div className="rounded-md border border-white/5 bg-[var(--surface)] px-3 py-2.5">
+          <p className="text-[17px] font-extrabold tabular-nums">
+            {stats.streak} wk
+          </p>
+          <p className="text-[10.5px] font-semibold text-[var(--muted)]">
+            Streak
+          </p>
+        </div>
+      </div>
 
       <section className="space-y-2.5">
         <h2 className="text-[17px] font-bold">History</h2>

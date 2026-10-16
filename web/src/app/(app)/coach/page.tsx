@@ -1,7 +1,10 @@
+/* eslint-disable @next/next/no-img-element */
 "use client";
 import { useEffect, useMemo, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { buildWeeklyReport, weeklyCopy, weekStart, setText, type ReportSession } from "@/lib/weeklyReport";
+import { exercisePhoto } from "@/lib/exercisePhotos";
+import { workoutPhoto } from "@/lib/workoutPhotos";
 import { programReport, programCopy } from "@/lib/programReport";
 
 export default function CoachPage() {
@@ -54,8 +57,8 @@ export default function CoachPage() {
     try { await navigator.clipboard.writeText(copy); setCopied("Copied!"); window.setTimeout(() => setCopied(""), 2000); }
     catch { setFallback(true); }
   }
-  return <div className="space-y-5 min-w-0">
-    <header><p className="eyebrow">Coach</p><h1 className="text-3xl font-extrabold">Weekly lift report</h1><p className="text-sm text-[var(--muted)]">Your sets, progress and notes. Ready to share.</p></header>
+  return <div className="coach-page space-y-5 min-w-0">
+    <header><h1 className="text-3xl font-extrabold">Weekly lift report</h1><p className="text-sm text-[var(--muted)]">Your sets, progress and notes. Ready to share.</p></header>
     <div className="flex items-center justify-between gap-2 rounded-xl border border-[var(--border)] bg-[var(--card)]">
       <button className="p-4" aria-label="Previous week" onClick={() => { setOffset(offset - 1); setFallback(false); }}>←</button>
       <span className="text-center text-sm font-bold">{label}</span>
@@ -66,13 +69,20 @@ export default function CoachPage() {
       <details open className="card space-y-3">
         <summary className="cursor-pointer text-xl font-bold">Since starting NT</summary>
         <p className="text-xs text-[var(--muted)]">{program.start ? `First logged NT workout: ${new Date(program.start).toLocaleDateString()}. Through the selected week.` : "No NT split workouts logged by this week yet."}</p>
-        {program.lifts.map(lift => <article key={lift.name} className="rounded-lg border border-[var(--border)] p-3 space-y-2">
-          <h2 className="font-bold break-words">{lift.name}</h2>
-          {[{ label: "Started", entry: lift.started }, { label: "Latest", entry: lift.latest }, { label: "Best load", entry: lift.best }].map(({label,entry}) => <div key={label} className="flex justify-between gap-3 text-sm"><span className="text-[var(--muted)]">{label}</span><span className="text-right"><strong>{setText(entry.set)}</strong><small className="block text-[var(--muted)]">{new Date(entry.date).toLocaleDateString()}</small></span></div>)}
-          <p className="text-xs font-semibold text-[var(--blue)]">{lift.change}</p>
-        </article>)}
+        <div className="coach-lift-grid">{program.lifts.map(lift => <article key={lift.name} className="coach-lift-card">
+          {exercisePhoto(lift.name) && <img src={exercisePhoto(lift.name)!} alt="" loading="lazy" />}
+          <div className="min-w-0 flex-1">
+            <h2 className="font-bold break-words">{lift.name}</h2>
+            <div className="coach-comparison">
+              {[{label: "Started", entry: lift.started}, {label: "Latest", entry: lift.latest}].map(({label,entry}) => <div key={label}><span>{label}</span><strong>{setText(entry.set)}</strong></div>)}
+            </div>
+            <p className="mt-2 text-xs font-semibold text-[var(--green)]">{lift.change}</p>
+            <details className="mt-2 text-xs text-[var(--muted)]"><summary>Dates & best load</summary><p className="mt-2">Started {new Date(lift.started.date).toLocaleDateString()} · Latest {new Date(lift.latest.date).toLocaleDateString()}</p><p>Best load: {setText(lift.best.set)} · {new Date(lift.best.date).toLocaleDateString()}</p></details>
+          </div>
+        </article>)}</div>
         {program.start && <p className="text-xs text-[var(--muted)]">Working sets only. Each row uses the highest load, then reps at that load. Weight and rep changes are shown separately, not a strength estimate. New exercises start at their first NT log.</p>}
       </details>
+      <h2 className="text-xl font-bold">This week’s sets</h2>
       <div className="flex gap-1 rounded-lg bg-[var(--card)] p-1" aria-label="Filter lifts">{["All lifts", "PRs", "Unchanged"].map(f => <button key={f} aria-pressed={filter === f} className={`flex-1 rounded-md py-3 text-sm font-bold ${filter === f ? "bg-[var(--blue)] text-[var(--on-blue)]" : "text-[var(--muted)]"}`} onClick={() => setFilter(f)}>{f}</button>)}</div>
       {!report.length && <div className="card"><h2 className="font-bold">No completed workouts this week</h2><p className="text-sm text-[var(--muted)]">Finish a workout or choose an earlier week. Unsynced workouts appear after uploading.</p></div>}
       {report.length > 0 && !lifts.some(l => filter === "All lifts" || (filter === "PRs" ? l.isPR : l.status === "Unchanged")) && <p className="text-sm text-[var(--muted)]">No lifts match this filter.</p>}
@@ -80,7 +90,7 @@ export default function CoachPage() {
         const visible = session.lifts.filter(l => filter === "All lifts" || (filter === "PRs" ? l.isPR : l.status === "Unchanged"));
         if (!visible.length) return null;
         return <details open key={`${session.id}-${filter}`} className="card space-y-3">
-          <summary className="cursor-pointer font-bold text-lg break-words">{session.day_name}<span className="block text-xs font-normal text-[var(--muted)]">{new Date(session.started_at).toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric" })} · {session.lifts.length} exercises</span></summary>
+          <summary className="coach-session-heading cursor-pointer font-bold text-lg break-words"><img src={workoutPhoto(session.day_name)} alt="" loading="lazy" /><span>{session.day_name}<span className="block text-xs font-normal text-[var(--muted)]">{new Date(session.started_at).toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric" })} · {session.lifts.length} exercises</span></span></summary>
           {visible.map(l => <article key={l.name} className="rounded-xl border border-[var(--border)] p-3 min-w-0">
             <div className="flex flex-wrap items-center gap-2 mb-3"><h2 className="font-bold break-words">{l.name}</h2><span className={`text-[10px] font-bold uppercase rounded px-2 py-1 bg-[var(--raised)] ${l.isPR ? "text-[var(--green)]" : l.status === "Unchanged" ? "text-[var(--yellow)]" : "text-[var(--muted)]"}`}>{l.status}</span></div>
             <table className="w-full table-fixed text-xs sm:text-sm"><thead className="text-[var(--muted)]"><tr><th className="w-1/5 text-left py-2">Set</th><th>Last time</th><th>This session</th></tr></thead><tbody>{l.rows.map((r,i) => <tr key={i} className="border-t border-[var(--border)]"><td className="py-2">{r.current.set_number} {r.current.side}{r.current.is_warmup ? " W" : ""}</td><td className="text-center break-words p-1">{setText(r.previous)}</td><td className="text-center break-words p-1 font-bold">{setText(r.current)}</td></tr>)}</tbody></table>
@@ -89,7 +99,7 @@ export default function CoachPage() {
           {session.notes && <p className="whitespace-pre-wrap text-sm text-[var(--muted)]">Notes: {session.notes}</p>}
         </details>;
       })}
-      {report.length > 0 && <section className="card space-y-3"><h2 className="font-bold text-lg">Coach summary</h2><p className="text-sm">{report.length} workouts logged. {prs} lift sessions with a PR; {steady} unchanged compared with the previous session.</p><p className="text-xs text-[var(--muted)]">PRs use earlier working-set history; first logs are baselines. Unchanged compares load and reps, not effort or a confirmed plateau. Copy includes every lift, regardless of filter.</p><button className="btn-accent w-full" onClick={() => void copyReport()}>{copied || "Copy full weekly report"}</button><span role="status" className="sr-only">{copied}</span>{fallback && <label className="block text-sm">Select and copy your report<textarea readOnly value={copy} onFocus={e => e.target.select()} className="field mt-2 w-full h-64" /></label>}</section>}
+      {report.length > 0 && <section className="card space-y-3"><h2 className="font-bold text-lg">Coach summary</h2><p className="text-sm">{report.length} workouts logged. {prs} lift sessions with a PR; {steady} unchanged compared with the previous session.</p><p className="text-xs text-[var(--muted)]">PRs use earlier working-set history; first logs are baselines. Unchanged compares load and reps, not effort or a confirmed plateau. Copy includes every lift, regardless of filter.</p><button className="btn-accent w-full" onClick={() => void copyReport()}>{copied || "Copy report for coach"}</button><span role="status" className="sr-only">{copied}</span>{fallback && <label className="block text-sm">Select and copy your report<textarea readOnly value={copy} onFocus={e => e.target.select()} className="field mt-2 w-full h-64" /></label>}</section>}
     </>}
   </div>;
 }
