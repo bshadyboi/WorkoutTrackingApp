@@ -27,13 +27,10 @@ export function PushEnableButton() {
     "idle"
   );
   const [msg, setMsg] = useState("");
+  const [busy, setBusy] = useState(false);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
-    if (!("serviceWorker" in navigator) || !("PushManager" in window)) {
-      setStatus("unsupported");
-      return;
-    }
     const standalone =
       window.matchMedia("(display-mode: standalone)").matches ||
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -43,13 +40,19 @@ export function PushEnableButton() {
       setStatus("need-install");
       return;
     }
-    void navigator.serviceWorker.ready.then(async (reg) => {
+    if (!("serviceWorker" in navigator) || !("PushManager" in window) || !("Notification" in window)) {
+      setStatus("unsupported");
+      return;
+    }
+    void navigator.serviceWorker.getRegistration().then(async (reg) => {
+      if (!reg) return;
       const sub = await reg.pushManager.getSubscription();
-      if (sub) setStatus("on");
-    });
+      if (sub && Notification.permission === "granted") setStatus("on");
+    }).catch(() => setMsg("Could not check this device. Try enabling notifications."));
   }, []);
 
   async function enable() {
+    if (busy) return;
     setMsg("");
     const pub = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY;
     if (!pub) {
@@ -58,6 +61,7 @@ export function PushEnableButton() {
       return;
     }
     try {
+      setBusy(true);
       // Permission FIRST — iOS only honors the request inside the tap gesture,
       // before any awaited work consumes the user activation.
       setMsg("Requesting permission…");
@@ -108,10 +112,12 @@ export function PushEnableButton() {
         return;
       }
       setStatus("on");
-      setMsg("Notifications on — rest timer & weekly check-ins.");
+      setMsg("Device registered for rest alerts. Send a test below to check delivery.");
     } catch (e) {
       setMsg(e instanceof Error ? e.message : "Failed");
       setStatus("error");
+    } finally {
+      setBusy(false);
     }
   }
 
@@ -142,17 +148,13 @@ export function PushEnableButton() {
           <p className="text-sm font-semibold">Notifications</p>
           <p className="text-[11px] text-[var(--muted)]">
             {status === "on"
-              ? "On — rest done & Sunday check-ins"
-              : "Rest alerts & weekly check-ins"}
+              ? "Permission and device subscription found"
+              : "Rest-finished notifications"}
           </p>
         </div>
-        {status === "on" ? (
-          <span className="btn-pill bg-[var(--green)] text-[var(--on-green)]">On</span>
-        ) : (
-          <button type="button" className="btn-accent !px-3 !py-2 text-xs" onClick={() => void enable()}>
-            Enable
-          </button>
-        )}
+        <button type="button" disabled={busy} className="btn-accent !px-3 !py-2 text-xs" onClick={() => void enable()}>
+          {busy ? "Enabling…" : status === "on" ? "Re-enable" : "Enable notifications"}
+        </button>
       </div>
       {msg ? <p className="text-[11px] text-[var(--muted)]">{msg}</p> : null}
     </div>
