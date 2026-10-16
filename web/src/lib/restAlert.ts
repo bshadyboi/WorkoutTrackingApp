@@ -84,19 +84,19 @@ export async function ensurePushSubscription() {
       });
     }
     const json = sub.toJSON();
-    await fetch("/api/push/subscribe", {
+    const response = await fetch("/api/push/subscribe", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(json),
       keepalive: true,
     });
-    return true;
+    return response.ok;
   } catch {
     return false;
   }
 }
 
-function beep() {
+export function beep() {
   try {
     const Ctx =
       window.AudioContext ||

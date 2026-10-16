@@ -4,7 +4,7 @@ import Link from "next/link";
 import { FormEvent, useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { LeftShoulderToggle } from "@/components/LeftShoulderToggle";
-import { PushEnableButton } from "@/components/PushEnableButton";
+import { RestAlertSettings } from "@/components/RestAlertSettings";
 import {
   DEFAULT_TARGETS,
   normalizeTargets,
@@ -176,7 +176,7 @@ export default function SettingsPage() {
         <div className="space-y-5">
           <LeftShoulderToggle />
 
-          <PushEnableButton />
+          <RestAlertSettings />
 
           <Link
             href="/protocol"
