@@ -20,19 +20,8 @@ const links = [
   { href: "/train", label: "Train", Icon: IconDumbbell },
   { href: "/coach", label: "Coach", Icon: IconHistory },
   { href: "/progress", label: "Progress", Icon: IconProgress },
+  { href: "/settings", label: "Settings", Icon: IconGear },
 ];
-
-/** Title-block label for the sheet the current route is on. */
-function sheetFor(pathname: string) {
-  if (pathname.startsWith("/settings"))
-    return { name: "SETTINGS", no: null as string | null };
-  const i = links.findIndex((l) => isActive(pathname, l.href));
-  if (i < 0) return { name: "FITTRACK", no: null };
-  return {
-    name: links[i].label.toUpperCase(),
-    no: String(i + 1).padStart(2, "0"),
-  };
-}
 
 function isActive(pathname: string, href: string) {
   return (
@@ -85,7 +74,7 @@ function Nav({ pathname }: { pathname: string }) {
               onClick={() => go(l.href)}
               aria-current={active ? "page" : undefined}
               className={`relative flex min-h-[56px] flex-1 flex-col items-center justify-center gap-1 rounded-md px-1 active:bg-white/5 ${
-                active ? "text-[var(--accent)]" : "text-[var(--dim)]"
+                active ? "text-[var(--blue)]" : "text-[var(--dim)]"
               }`}
               style={{ WebkitTapHighlightColor: "transparent" }}
             >
@@ -96,7 +85,7 @@ function Nav({ pathname }: { pathname: string }) {
                 {l.label}
               </span>
               {active ? (
-                <span className="absolute bottom-0.5 h-[2px] w-7 bg-[var(--accent)]" />
+                <span className="absolute bottom-0.5 h-[2px] w-7 bg-[var(--blue)]" />
               ) : null}
             </button>
           );
@@ -116,7 +105,6 @@ export function AppChrome({
   const pathname = usePathname();
   const isSession = /\/train\/[^/]+\/session\/?$/.test(pathname);
   const isDayPreview = /^\/train\/[^/]+\/?$/.test(pathname);
-  const sheet = sheetFor(pathname);
 
   return (
     <div className={`app-shell ${isSession ? "app-shell-session" : ""}`}>
@@ -131,7 +119,7 @@ export function AppChrome({
         </Link>
         <p className="eyebrow mt-10 mb-4">Your blueprint</p>
         <nav className="space-y-2" aria-label="Desktop primary">
-          {links.map(({ href, label, Icon }) => (
+          {links.filter(l => l.href !== "/settings").map(({ href, label, Icon }) => (
             <Link
               key={href}
               href={href}
@@ -162,35 +150,10 @@ export function AppChrome({
           className="app-header sticky top-0 z-20 border-b border-[var(--border-solid)] bg-[var(--bg)]/95 px-4 py-2.5 backdrop-blur-sm"
           style={{ paddingTop: "max(12px, env(safe-area-inset-top, 0px))" }}
         >
-          <div className="flex items-center justify-between gap-3 font-mono text-[11px] uppercase tracking-[0.14em] text-[var(--muted)]">
-            <Link
-              href="/dashboard"
-              prefetch={false}
-              className="min-w-0 truncate"
-            >
-              <span className="font-bold text-[var(--text)]">FitTrack</span>
-              <span> · {sheet.name}</span>
-            </Link>
-            <div className="flex shrink-0 items-center gap-3">
-              {sheet.no ? (
-                <span>
-                  Sheet{" "}
-                  <span className="font-bold text-[var(--text)]">
-                    {sheet.no}
-                  </span>
-                  /{String(links.length).padStart(2, "0")}
-                </span>
-              ) : null}
-              <Link
-                href="/settings"
-                prefetch={false}
-                className="flex h-8 w-8 items-center justify-center rounded-[4px] border border-[var(--border-solid)] text-[var(--muted)]"
-                aria-label={`Settings for ${displayName.split(" ")[0]}`}
-              >
-                <IconGear size={15} />
-              </Link>
-            </div>
-          </div>
+          <Link href="/dashboard" className="blueprint-brand" aria-label="FitTrack home">
+            <span className="brand-mark" aria-hidden><i /><i /><i /></span>
+            <span><strong>FitTrack</strong><small>Blueprint 2.0</small></span>
+          </Link>
         </header>
       ) : null}
 

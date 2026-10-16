@@ -1149,3 +1149,94 @@ a {
     scroll-behavior: auto !important;
   }
 }
+
+/* Blueprint 2.0 — shared mobile surfaces and photo-led training. */
+:root {
+  --bg: #031521;
+  --surface: #061c2b;
+  --card: #071e2d;
+  --card-2: #0b293c;
+  --raised: #12364d;
+  --field: #061b29;
+  --border: #173b51;
+  --border-solid: #28516a;
+  --blue: #48a9ff;
+  --blue-dim: #2085df24;
+  --accent: #ffb53e;
+  --green: #39cd80;
+}
+body { background-image: none; }
+.app-shell, .app-main { min-width: 0; }
+.app-main > * { max-width: 100%; }
+.card { background: linear-gradient(135deg, #0a2434, #061a28); border-radius: 9px; box-shadow: none; }
+.btn-accent { background: linear-gradient(135deg, #ffb134, #ffc15c); border: 1px solid #ffc45f; }
+.btn-secondary { background: linear-gradient(135deg, #0d2d44, #061d2e); }
+.app-header { position: relative; border-bottom: 0; padding-bottom: 0; background: transparent; }
+.blueprint-brand { display: inline-flex; align-items: center; gap: 12px; padding: 10px 2px 2px; }
+.blueprint-brand strong { display: block; font-size: 23px; line-height: 1.1; letter-spacing: -.04em; }
+.blueprint-brand small { display: block; font-size: 11px; letter-spacing: .03em; margin-top: 3px; color: var(--muted); }
+.page-heading { font-size: clamp(28px, 4vw, 36px); }
+.reg::after { display: none; }
+.mobile-nav { padding: 0 !important; background: #071e2df5; border-top: 1px solid var(--border-solid); padding-bottom: env(safe-area-inset-bottom, 0px) !important; backdrop-filter: blur(16px); }
+.mobile-nav > div { max-width: 760px; border: 0; background: transparent; padding: 5px 6px; border-radius: 0; }
+.mobile-nav button > span:nth-child(2) { font-family: inherit; text-transform: none; letter-spacing: 0; font-size: 11px; }
+.mobile-nav button > span:last-child.absolute { display: none; }
+.training-week { display: grid; grid-template-columns: repeat(7,minmax(0,1fr)); gap: 2px; }
+.training-week a { display: flex; min-width: 0; flex-direction: column; align-items: center; justify-content: center; gap: 4px; padding: 9px 1px; border: 1px solid var(--border); border-radius: 8px; background: var(--surface); font-size: 12px; }
+.training-week small { font-size: 9px; color: var(--muted); white-space: nowrap; }
+.training-week .today { background: linear-gradient(140deg,#114a76,#092332); border-color: var(--blue); }
+.training-week i { height: 3px; width: 12px; border-radius: 5px; background: var(--border-solid); }
+.training-week i.done { background: var(--green); }
+.training-week i.planned { background: var(--blue); }
+.training-week i.rest { background: transparent; }
+.section-tabs button[aria-selected="true"] { background: linear-gradient(110deg,#176ab3,#124979); color: #fff; }
+.workout-hero { display: flex; flex-direction: column; justify-content: space-between; min-height: 240px; border-radius: 10px; padding: 16px !important; }
+.workout-hero > .hero-photo { object-position: center 40%; }
+.workout-hero::before { background: linear-gradient(180deg,#00121bad 0%,#00121b10 45%,#00121bc9 85%); }
+.workout-hero h3 { font-size: 25px; max-width: 100%; text-shadow: 0 2px 8px #000; }
+.workout-hero .hero-actions { max-width: none; width: 100%; }
+.workout-library > a { min-height: 140px; position: relative; isolation: isolate; overflow: hidden; align-items: flex-start; padding: 14px !important; border: 1px solid var(--border-solid); border-radius: 9px; }
+.workout-library .workout-cover { position: absolute; z-index: -2; inset: 0; width: 100%; height: 100%; object-fit: cover; border-radius: 0; }
+.workout-library > a::before { content: ''; position: absolute; z-index: -1; inset: 0; background: linear-gradient(90deg,#001521c9,#00152108),linear-gradient(0deg,#00152199,transparent); }
+.workout-library .workout-info { padding: 0; text-shadow: 0 2px 5px #000; }
+.workout-library .workout-info p:first-child { font-size: 19px; }
+.workout-library .workout-chevron { display: block; align-self: center; color: #fff; }
+.workout-library .workout-badge { position: absolute; bottom: 12px; top: auto; right: 12px; background: #06283be6; }
+.coach-lift-grid { display: grid; gap: 10px; }
+.coach-lift-card { display: flex; align-items: flex-start; gap: 12px; padding: 10px; border: 1px solid var(--border-solid); background: linear-gradient(120deg,#0b2638,#051a27); border-radius: 9px; }
+.coach-lift-card > img { width: 86px; height: 104px; object-fit: cover; border-radius: 7px; }
+.coach-comparison { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); margin-top: 14px; }
+.coach-comparison > div { padding-right: 8px; }
+.coach-comparison > div + div { border-left: 1px solid var(--border-solid); padding-left: 10px; padding-right: 0; }
+.coach-comparison span { display: block; font-size: 12px; color: var(--muted); }
+.coach-comparison strong { display: block; font-size: 14px; margin-top: 3px; }
+.coach-session-heading { display: flex; align-items: center; gap: 12px; }
+.coach-session-heading > img { width: 78px; height: 72px; border-radius: 7px; object-fit: cover; }
+.coach-page > details.card { padding: 0; border: 0; background: none; }
+.coach-page > details.card > summary { padding: 5px 0; }
+.strength-detail { max-width: 700px; }
+.strength-detail select { min-height: 46px; font-weight: 600; }
+.progress-more { border-top: 1px solid var(--border); }
+.blueprint-session .session-header { background: #031521f5; }
+.blueprint-session .session-header .font-mono { font-family: inherit; font-size: 30px; margin-top: 6px; }
+.blueprint-session .logger-card { background: linear-gradient(140deg,#0b2536,#061b29); border-radius: 10px; }
+.blueprint-session .logger-footer { border-color: var(--blue); background: #061d2ef5; }
+.blueprint-session .logger-footer .text-3xl { color: var(--text); }
+.home-workout-hero { min-height: 340px; }
+.home-workout-copy h2 { font-size: 30px; }
+@media (max-width: 639px) {
+  .app-main { padding-top: 20px; }
+  .training-tabs button { min-height: 38px; font-size: 12px; }
+  .logger-card-header .exercise-image { width: 92px; height: 92px; object-fit: cover; border-radius: 8px; }
+  .logger-card-header .exercise-actions { justify-content: flex-start; padding-left: 102px; }
+  .blueprint-session .session-header button { border-radius: 8px; }
+  .blueprint-session .session-header > div:first-child > div { max-width: calc(100% - 140px); }
+  .blueprint-session .session-header .font-mono { font-size: 28px; }
+  .home-overview-grid { gap: 14px; }
+  .coach-comparison strong { font-size: 13px; }
+  input, select, textarea { font-size: 16px; }
+}
+@media (min-width: 900px) {
+  .coach-lift-grid { grid-template-columns: repeat(2,minmax(0,1fr)); }
+  .workout-library > a { min-height: 190px; }
+}

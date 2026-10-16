@@ -2,12 +2,15 @@
 
 import { useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
+import { LiftProgressCard } from "@/components/LiftProgressCard";
+import { BpWeightTrendCard } from "@/components/BpWeightTrendCard";
 import { ProgressionTab, type Hist } from "@/components/TrainTabs";
 
 const SESSION_FIELDS =
   "id, day_name, started_at, duration_seconds, set_logs(weight, reps, is_warmup)";
 
 export default function ProgressPage() {
+  const [tab, setTab] = useState("Strength");
   const [history, setHistory] = useState<Hist[] | null>(null);
   const [error, setError] = useState("");
 
@@ -81,12 +84,11 @@ export default function ProgressPage() {
   return (
     <div className="space-y-6">
       <div>
-        <p className="eyebrow">Your results</p>
-        <h1 className="page-heading">Progress</h1>
-        <p className="page-subtitle">
-          Strength, consistency, balance, and recovery trends.
-        </p>
+        <h1 className="page-heading">Your progress</h1>
       </div>
+      <div className="section-tabs" role="tablist" aria-label="Progress view">{["Strength", "Weight & BP"].map(t => <button key={t} role="tab" aria-selected={tab === t} onClick={() => setTab(t)}>{t}</button>)}</div>
+      {tab === "Strength" ? <LiftProgressCard expanded /> : <BpWeightTrendCard />}
+      <details className="progress-more"><summary className="cursor-pointer py-3 text-sm font-semibold text-[var(--muted)]">More trends & recovery</summary>
       {error ? <p className="text-sm text-[var(--yellow)]">{error}</p> : null}
       {history === null ? (
         <div className="space-y-3">
@@ -96,6 +98,7 @@ export default function ProgressPage() {
       ) : (
         <ProgressionTab history={history} />
       )}
+      </details>
     </div>
   );
 }

@@ -1,3 +1,4 @@
+/* eslint-disable @next/next/no-img-element */
 "use client";
 
 import { useRouter } from "next/navigation";
@@ -228,6 +229,8 @@ export function WorkoutLogger({
   );
   /** Movements added during this session (kept in the draft until finish). */
   const [addedExercises, setAddedExercises] = useState<Exercise[]>([]);
+  const [focusedExercise, setFocusedExercise] = useState<string | null>(null);
+  const [showAllExercises, setShowAllExercises] = useState(false);
   const [showAdd, setShowAdd] = useState(false);
   const sorted = useMemo(
     () =>
@@ -1371,7 +1374,7 @@ export function WorkoutLogger({
   const swapEx = swapForId ? sorted.find((e) => e.id === swapForId) : null;
 
   return (
-    <div className="min-h-dvh pb-28">
+    <div className="blueprint-session min-h-dvh pb-28">
       <div
         className="session-header sticky top-0 z-20 border-b border-[var(--border)] bg-[var(--surface)] px-5 pb-3"
         style={{ paddingTop: "max(14px, env(safe-area-inset-top, 0px))" }}
@@ -1385,7 +1388,8 @@ export function WorkoutLogger({
           >
             <IconX size={18} />
           </button>
-          <div className="text-center">
+          <div className="min-w-0 text-center">
+            <p className="truncate text-sm font-bold">{sessionDayName}</p>
             <p className="font-mono text-[22px] font-extrabold leading-tight tabular-nums tracking-tight">
               {timerText}
             </p>
@@ -1553,7 +1557,12 @@ export function WorkoutLogger({
           </section>
         ) : null}
 
-        {main.map((ex) => {
+        {main.length > 0 && <div id="exercise-focus" className="flex items-center gap-2 scroll-mt-32">
+          <label className="min-w-0 flex-1"><span className="sr-only">Current exercise</span><select className="field !py-2 text-sm" value={main.some(ex => ex.id === focusedExercise) ? focusedExercise! : main[0].id} onChange={e => { setFocusedExercise(e.target.value); setShowAllExercises(false); }}>{main.map((ex,i) => <option key={ex.id} value={ex.id}>{i+1}. {displayName(ex)}</option>)}</select></label>
+          <button type="button" className="btn-secondary !px-3 !py-2 text-xs" aria-pressed={showAllExercises} onClick={() => setShowAllExercises(v=>!v)}>{showAllExercises ? "Focus view" : "Show all"}</button>
+        </div>}
+
+        {main.filter(ex => showAllExercises || ex.id === (main.some(item => item.id === focusedExercise) ? focusedExercise : main[0]?.id)).map((ex) => {
           const sets = setsByExercise[ex.id] ?? [];
           const name = displayName(ex);
           const cat = catalogEntry(name) ?? catalogEntry(ex.name);
@@ -2230,6 +2239,21 @@ export function WorkoutLogger({
             </section>
           );
         })}
+
+        {!showAllExercises && main.length > 0 && (() => {
+          const index = Math.max(0, main.findIndex(ex => ex.id === focusedExercise));
+          const next = main[index + 1];
+          const jump = (id: string) => { setFocusedExercise(id); document.getElementById("exercise-focus")?.scrollIntoView({block: "start"}); };
+          return <div className="space-y-3">
+            {next && <div className="card flex items-center gap-3 !p-3">
+              {exercisePhoto(displayName(next)) && <img src={exercisePhoto(displayName(next))!} alt="" className="h-16 w-20 rounded-md object-cover" />}
+              <div><p className="text-xs text-[var(--muted)]">Up next</p><p className="font-bold">{displayName(next)}</p></div>
+            </div>}
+            <div className="flex gap-2">{index > 0 && <button type="button" className="btn-secondary" onClick={() => jump(main[index-1].id)}>Previous</button>}
+              {next ? <button type="button" className="btn-accent flex-1" onClick={() => jump(next.id)}>Next exercise →</button> : <button type="button" className="btn-accent flex-1" disabled={saving} onClick={requestFinish}>Review & finish</button>}
+            </div>
+          </div>;
+        })()}
 
         <button
           type="button"
