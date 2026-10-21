@@ -29,7 +29,7 @@ export default async function TrainSessionPage({
   if (!day) notFound();
 
   const [previous, bestByExercise, lastNotes] = await Promise.all([
-    getPreviousSetsByExercise(user.id),
+    getPreviousSetsByExercise(user.id, /^NT\b/i.test(day.name)),
     getAllTimeBestByExercise(user.id),
     getLastNoteByExercise(user.id),
   ]);
@@ -51,3 +51,4 @@ export default async function TrainSessionPage({
     />
   );
 }
+

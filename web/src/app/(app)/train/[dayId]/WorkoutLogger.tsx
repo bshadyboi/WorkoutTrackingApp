@@ -32,7 +32,7 @@ import { dateKey } from "@/lib/protocol";
 import { Explain } from "@/components/Explain";
 import { isUnilateral, rightSideKey } from "@/lib/unilateral";
 import { leftArmNote, leftShoulderLimited } from "@/lib/shoulderLimits";
-import { parseRepRange, suggestOverload } from "@/lib/overload";
+import { parseRepRange, suggestOverload, suggestNTTarget } from "@/lib/overload";
 import { renameExerciseEverywhere } from "@/lib/exerciseRename";
 import { forgetMyExercises } from "@/lib/myExercises";
 import { exercisePhoto } from "@/lib/exercisePhotos";
@@ -231,6 +231,8 @@ export function WorkoutLogger({
   const [addedExercises, setAddedExercises] = useState<Exercise[]>([]);
   const [focusedExercise, setFocusedExercise] = useState<string | null>(null);
   const [showAllExercises, setShowAllExercises] = useState(false);
+  const [loadIncrements, setLoadIncrements] = useState<Record<string, number>>({});
+  useEffect(() => { try { setLoadIncrements(JSON.parse(localStorage.getItem("ft-load-increments") || "{}")); } catch { /* Defaults require an explicit increment. */ } }, []);
   const [showAdd, setShowAdd] = useState(false);
   const sorted = useMemo(
     () =>
@@ -1602,7 +1604,6 @@ export function WorkoutLogger({
               <div className="logger-card-header">
                 <div className="exercise-heading">
                   {photo ? (
-                    /* eslint-disable-next-line @next/next/no-img-element */
                     <img
                       src={photo}
                       alt=""
@@ -1708,6 +1709,15 @@ export function WorkoutLogger({
                 </div>
               </div>
 
+              {ntDay && !isCardio && <div className="target-settings">
+                <p className="text-sm font-semibold">NT targets · {ex.working_rep_range} · {NT_RIR_TARGET} RIR</p>
+                <label className="mt-2 flex items-center justify-between gap-3 text-xs text-[var(--muted)]">Equipment increment
+                  <select aria-label={`Weight increment for ${name}`} className="field !w-auto !py-2" value={loadIncrements[name] ?? 0} onChange={e => { const next = { ...loadIncrements, [name]: Number(e.target.value) }; setLoadIncrements(next); try { localStorage.setItem("ft-load-increments", JSON.stringify(next)); } catch { /* Session choice still works. */ } }}>
+                    <option value={0}>Choose lb</option>{[1,2.5,5,10,15,20].map(n => <option key={n} value={n}>{n} lb</option>)}
+                  </select>
+                </label>
+                <p className="mt-2 text-xs text-[var(--muted)]">Suggestions use your saved NT range and recorded RIR. Tap a set target to apply it; edit any number.</p>
+              </div>}
               {dimension ? (
                 <p className="dim font-mono text-[12.5px] font-medium">
                   <span className="whitespace-nowrap">{dimension}</span>
@@ -1764,29 +1774,28 @@ export function WorkoutLogger({
                       activeRest?.exerciseId === ex.id &&
                       activeRest.afterSet === i &&
                       activeRestLeft > 0;
+                    const historyIndex = ntDay ? sets.slice(0, i).filter(s => !s.isWarmup).length : i;
                     const prevList =
                       previousByExercise[name] ??
-                      previousByExercise[ex.name] ??
+                      (name === ex.name ? previousByExercise[ex.name] : undefined) ??
                       [];
                     const prevRaw =
-                      prevList[i] ?? prevList[prevList.length - 1];
+                      ntDay ? prevList[historyIndex] : (prevList[i] ?? prevList[prevList.length - 1]);
                     const sided = oneSided(ex) && !set.isWarmup && !isCardio;
                     const prevRList = sided
                       ? (previousByExercise[rightSideKey(name)] ??
-                        previousByExercise[rightSideKey(ex.name)] ??
+                        (name === ex.name ? previousByExercise[rightSideKey(ex.name)] : undefined) ??
                         [])
                       : [];
                     const prevRawR = sided
-                      ? (prevRList[i] ??
-                        prevRList[prevRList.length - 1] ??
-                        prevRaw)
+                      ? (ntDay ? prevRList[historyIndex] : (prevRList[i] ?? prevRList[prevRList.length - 1] ?? prevRaw))
                       : undefined;
                     // Crown sets carry their own range; everything else uses the
                     // working range for the movement.
                     const suggestion =
                       set.isWarmup || isCardio
                         ? null
-                        : suggestOverload({
+                        : ntDay ? suggestNTTarget({ previous: prevRaw, previousSets: prevList, expectedSets: ex.default_sets, repRange: ex.working_rep_range, targetRir: NT_RIR_TARGET, increment: loadIncrements[name] ?? 0, noLoadIncrease: sided && leftLimited }) : suggestOverload({
                             previous: prevRaw,
                             repRange:
                               ex.has_crown_set && i === 0
@@ -1795,7 +1804,7 @@ export function WorkoutLogger({
                             noLoadIncrease: sided && leftLimited,
                           });
                     const suggestionR = sided
-                      ? suggestOverload({
+                      ? ntDay ? suggestNTTarget({ previous: prevRawR, previousSets: prevRList, expectedSets: ex.default_sets, repRange: ex.working_rep_range, targetRir: NT_RIR_TARGET, increment: loadIncrements[name] ?? 0 }) : suggestOverload({
                           previous: prevRawR,
                           repRange:
                             ex.has_crown_set && i === 0
@@ -1823,6 +1832,7 @@ export function WorkoutLogger({
 
                     return (
                       <div key={set.setNumber}>
+                        {ntDay && suggestion && !set.isWarmup && <details className="set-target-detail"><summary>Set {set.setNumber} target · {targetLabel}</summary><p>{suggestion.detail}</p>{sided && suggestionR && <p>Right: {suggestionR.detail}</p>}</details>}
                         <div
                           className={`grid grid-cols-[36px_minmax(0,1fr)_64px_56px_44px] items-center gap-1.5 rounded-md px-0.5 py-1.5 ${
                             set.completed
@@ -2007,7 +2017,7 @@ export function WorkoutLogger({
                         {set.completed && !set.isWarmup && !isCardio ? (
                           <div className="flex flex-wrap items-center gap-2 px-1 pb-1 pt-1.5">
                             <span className="inline-flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-[0.1em] text-[var(--muted)]">
-                              Left in tank
+                              RIR · optional
                               <Explain term="rir" />
                             </span>
                             {/* One arm at a time is two different sets: the left
@@ -2026,7 +2036,7 @@ export function WorkoutLogger({
                                     {arm}
                                   </span>
                                 ) : null}
-                                {[0, 1, 2, 3].map((n) => {
+                                {[0, 1, 2, 3, 4].map((n) => {
                                   const current =
                                     arm === "R" ? set.rirR : set.rir;
                                   const on = current === n;
@@ -2034,7 +2044,7 @@ export function WorkoutLogger({
                                     <button
                                       key={n}
                                       type="button"
-                                      aria-label={`${arm === "R" ? "Right" : arm === "L" ? "Left" : ""} ${n === 3 ? "3 or more" : n} reps left`}
+                                      aria-label={`${arm === "R" ? "Right" : arm === "L" ? "Left" : ""} ${n === 4 ? "4 or more" : n} reps left`}
                                       aria-pressed={on}
                                       onClick={() => {
                                         const value = on ? undefined : n;
@@ -2063,7 +2073,7 @@ export function WorkoutLogger({
                                           : "bg-[var(--raised)] text-[var(--muted)]"
                                       }`}
                                     >
-                                      {n === 3 ? "3+" : n}
+                                      {n === 4 ? "4+" : n}
                                     </button>
                                   );
                                 })}
@@ -2759,3 +2769,4 @@ export function WorkoutLogger({
     </div>
   );
 }
+

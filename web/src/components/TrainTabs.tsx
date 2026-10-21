@@ -165,7 +165,7 @@ export function TrainTabs({
       <div className="flex items-center justify-between gap-3">
         <div className="min-w-0">
           <h1 className="text-[26px] font-extrabold leading-tight tracking-tight">
-            Your training
+            Your plan
           </h1>
           {programLine ? (
             <p className="mt-0.5 truncate text-[13px] font-semibold text-[var(--muted)]">
@@ -1590,3 +1590,4 @@ function buildMonthCells(month: Date) {
   for (let d = 1; d <= daysInMonth; d++) cells.push(new Date(year, m, d, 12));
   return cells;
 }
+

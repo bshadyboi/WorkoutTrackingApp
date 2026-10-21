@@ -58,7 +58,7 @@ export default function CoachPage() {
     catch { setFallback(true); }
   }
   return <div className="coach-page space-y-5 min-w-0">
-    <header><h1 className="text-3xl font-extrabold">Weekly lift report</h1><p className="text-sm text-[var(--muted)]">Your sets, progress and notes. Ready to share.</p></header>
+    <header><h1 className="text-3xl font-extrabold">Training insights</h1><p className="text-sm text-[var(--muted)]">Your NT progress, weekly sets and personal records.</p></header>
     <div className="flex items-center justify-between gap-2 rounded-xl border border-[var(--border)] bg-[var(--card)]">
       <button className="p-4" aria-label="Previous week" onClick={() => { setOffset(offset - 1); setFallback(false); }}>←</button>
       <span className="text-center text-sm font-bold">{label}</span>
@@ -99,7 +99,8 @@ export default function CoachPage() {
           {session.notes && <p className="whitespace-pre-wrap text-sm text-[var(--muted)]">Notes: {session.notes}</p>}
         </details>;
       })}
-      {report.length > 0 && <section className="card space-y-3"><h2 className="font-bold text-lg">Coach summary</h2><p className="text-sm">{report.length} workouts logged. {prs} lift sessions with a PR; {steady} unchanged compared with the previous session.</p><p className="text-xs text-[var(--muted)]">PRs use earlier working-set history; first logs are baselines. Unchanged compares load and reps, not effort or a confirmed plateau. Copy includes every lift, regardless of filter.</p><button className="btn-accent w-full" onClick={() => void copyReport()}>{copied || "Copy report for coach"}</button><span role="status" className="sr-only">{copied}</span>{fallback && <label className="block text-sm">Select and copy your report<textarea readOnly value={copy} onFocus={e => e.target.select()} className="field mt-2 w-full h-64" /></label>}</section>}
+      {report.length > 0 && <section className="card space-y-3"><h2 className="font-bold text-lg">Weekly summary</h2><p className="text-sm">{report.length} workouts logged. {prs} lift sessions with a PR; {steady} unchanged compared with the previous session.</p><p className="text-xs text-[var(--muted)]">PRs use earlier working-set history; first logs are baselines. Unchanged compares load and reps, not effort or a confirmed plateau. Copy includes every lift, regardless of filter.</p><button className="btn-accent w-full" onClick={() => void copyReport()}>{copied || "Copy training summary"}</button><span role="status" className="sr-only">{copied}</span>{fallback && <label className="block text-sm">Select and copy your report<textarea readOnly value={copy} onFocus={e => e.target.select()} className="field mt-2 w-full h-64" /></label>}</section>}
     </>}
   </div>;
 }
+

@@ -179,3 +179,40 @@ function suggestOverloadUncapped(input: {
     detail: `Last ${fmtWeight(prev.weight)} × ${prev.reps} — add a rep before adding load.`,
   };
 }
+
+
+/** NT suggestions are optional; the saved program prescription is never edited. */
+export function suggestNTTarget(input: {
+  previous?: { weight: number; reps: number; rir?: number | null };
+  previousSets: { weight: number; reps: number; rir?: number | null }[];
+  expectedSets: number;
+  repRange: string;
+  targetRir: number;
+  increment: number;
+  noLoadIncrease?: boolean;
+}): OverloadSuggestion | null {
+  const range = parseRepRange(input.repRange);
+  if (!range) return null;
+  const p = input.previous;
+  if (!p || !Number.isFinite(p.weight) || p.weight < 0 || !Number.isFinite(p.reps) || p.reps <= 0) {
+    return { kind: "open", weight: null, reps: range.low, label: `Aim ${range.low}–${range.high} reps`, detail: "No matching set history yet. Choose your starting weight and log a baseline." };
+  }
+  const hold = (detail: string): OverloadSuggestion => ({ kind: "hold", weight: p.weight, reps: Math.min(p.reps, range.high), label: `Repeat ${fmtWeight(p.weight)} × ${Math.min(p.reps, range.high)}`, detail });
+  const validRir = (rir: unknown): rir is number => typeof rir === "number" && Number.isFinite(rir) && rir >= 0 && rir <= 4;
+  if (!validRir(p.rir)) return hold("RIR wasn't recorded. Repeat this set as a starting target, or adjust it yourself; no effort level is assumed.");
+  if (p.reps < range.low) return hold(`Last set was below ${range.low} reps. Review the load before trying to progress; the target is editable.`);
+  if (p.rir < input.targetRir) return hold(`Last set had ${p.rir} RIR, below the configured ${input.targetRir} RIR target. Repeat or adjust the load rather than forcing an increase.`);
+  if (p.reps < range.high) {
+    if (p.rir <= input.targetRir) return hold(`You reached the configured ${input.targetRir} RIR target. Repeat this performance before adding reps.`);
+    const reps = p.reps + 1;
+    return { kind: "add-reps", weight: p.weight, reps, label: `Try ${fmtWeight(p.weight)} × ${reps}`, detail: `Last set: ${p.reps} reps at ${p.rir} RIR. Try one extra rep within ${range.low}–${range.high}; keep the target editable.` };
+  }
+  if (input.noLoadIncrease) return hold("The left-side load limit is on. Keep the weight unchanged.");
+  if (p.weight === 0) return hold("Top of the prescribed range reached. Keep this bodyweight target; change the exercise difficulty manually if appropriate.");
+  const group = input.previousSets.slice(0, input.expectedSets);
+  const ready = input.expectedSets > 0 && group.length === input.expectedSets && group.every(s => s.weight === p.weight && s.reps >= range.high && validRir(s.rir) && s.rir >= input.targetRir);
+  if (!ready) return hold("This set reached the top. Keep the load until every prescribed set at this weight reaches the top with RIR recorded at or above the target.");
+  if (!Number.isFinite(input.increment) || input.increment <= 0) return hold("Choose your equipment's weight increment before increasing load.");
+  const weight = Math.round((p.weight + input.increment) * 100) / 100;
+  return { kind: "add-load", weight, reps: range.low, label: `Try ${fmtWeight(weight)} × ${range.low}`, detail: `All ${input.expectedSets} sets reached ${range.high} reps with sufficient recorded RIR. Add your selected ${input.increment} lb increment and return to ${range.low} reps.` };
+}

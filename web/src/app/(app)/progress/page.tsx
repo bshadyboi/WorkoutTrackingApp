@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { LiftProgressCard } from "@/components/LiftProgressCard";
@@ -88,6 +89,7 @@ export default function ProgressPage() {
       </div>
       <div className="section-tabs" role="tablist" aria-label="Progress view">{["Strength", "Weight & BP"].map(t => <button key={t} role="tab" aria-selected={tab === t} onClick={() => setTab(t)}>{t}</button>)}</div>
       {tab === "Strength" ? <LiftProgressCard expanded /> : <BpWeightTrendCard />}
+      <Link href="/coach" className="btn-secondary w-full">Since starting NT · Weekly insights →</Link>
       <details className="progress-more"><summary className="cursor-pointer py-3 text-sm font-semibold text-[var(--muted)]">More trends & recovery</summary>
       {error ? <p className="text-sm text-[var(--yellow)]">{error}</p> : null}
       {history === null ? (
@@ -102,3 +104,4 @@ export default function ProgressPage() {
     </div>
   );
 }
+

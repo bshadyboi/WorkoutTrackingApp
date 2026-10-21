@@ -12,21 +12,21 @@ import {
   IconGear,
   IconHome,
   IconProgress,
-  IconHistory,
+  IconCalendar,
 } from "@/components/icons";
 
 const links = [
-  { href: "/dashboard", label: "Home", Icon: IconHome },
-  { href: "/train", label: "Train", Icon: IconDumbbell },
-  { href: "/coach", label: "Coach", Icon: IconHistory },
+  { href: "/dashboard", label: "Today", Icon: IconHome },
+  { href: "/train", label: "Plan", Icon: IconCalendar },
+  { href: "/train/start", label: "Train", Icon: IconDumbbell },
   { href: "/progress", label: "Progress", Icon: IconProgress },
-  { href: "/settings", label: "Settings", Icon: IconGear },
 ];
 
 function isActive(pathname: string, href: string) {
-  return (
-    pathname === href || (href !== "/dashboard" && pathname.startsWith(href))
-  );
+  if (href === "/train") return pathname === "/train" || pathname.startsWith("/train/manage") || pathname.startsWith("/train/schedule");
+  if (href === "/train/start") return pathname.startsWith("/train/") && !pathname.startsWith("/train/manage") && !pathname.startsWith("/train/schedule");
+  if (href === "/progress") return pathname.startsWith("/progress") || pathname.startsWith("/coach");
+  return pathname === href;
 }
 
 function Nav({ pathname }: { pathname: string }) {
@@ -104,7 +104,7 @@ export function AppChrome({
 }) {
   const pathname = usePathname();
   const isSession = /\/train\/[^/]+\/session\/?$/.test(pathname);
-  const isDayPreview = /^\/train\/[^/]+\/?$/.test(pathname);
+  const isDayPreview = /^\/train\/[^/]+\/?$/.test(pathname) && !["/train/start", "/train/manage", "/train/schedule"].includes(pathname);
 
   return (
     <div className={`app-shell ${isSession ? "app-shell-session" : ""}`}>
@@ -152,8 +152,9 @@ export function AppChrome({
         >
           <Link href="/dashboard" className="blueprint-brand" aria-label="FitTrack home">
             <span className="brand-mark" aria-hidden><i /><i /><i /></span>
-            <span><strong>FitTrack</strong><small>Blueprint 2.0</small></span>
+            <span><strong>FitTrack</strong><small>Your plan. Your progress.</small></span>
           </Link>
+          <Link href="/settings" className="header-settings" aria-label="Settings"><IconGear size={21} /></Link>
         </header>
       ) : null}
 
@@ -178,3 +179,4 @@ export function AppChrome({
     </div>
   );
 }
+
