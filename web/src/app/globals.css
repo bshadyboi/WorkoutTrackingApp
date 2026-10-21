@@ -1240,3 +1240,45 @@ body { background-image: none; }
   .coach-lift-grid { grid-template-columns: repeat(2,minmax(0,1fr)); }
   .workout-library > a { min-height: 190px; }
 }
+
+
+/* Charcoal / electric blue: selected FitTrack training design. */
+:root {
+  --bg: #101215; --surface: #15181d; --card: #1b1f25; --card-2: #222830;
+  --raised: #29323d; --field: #12171d; --border: #2a323c; --border-solid: #3c4857;
+  --text: #f5f7fa; --muted: #adb7c4; --dim: #95a3b5;
+  --blue: #5aa8ff; --blue-dim: #5aa8ff1f; --on-blue: #071523;
+  --accent: #5aa8ff; --accent-dim: #5aa8ff20; --on-accent: #071523;
+  --green: #43dc91; --on-green: #062719;
+}
+.card, .blueprint-session .logger-card, .coach-lift-card { background: var(--card); }
+.app-header { display: flex; align-items: center; justify-content: space-between; }
+.header-settings { display: grid; place-items: center; width: 44px; height: 44px; border: 1px solid var(--border); border-radius: 50%; color: var(--muted); }
+.blueprint-brand small { color: var(--muted); font-size: 10px; }
+.btn-accent { background: var(--accent); border: 1px solid var(--accent); }
+.btn-accent:hover { background: #84bdff; }
+.btn-secondary { background: var(--card-2); }
+.section-tabs button[aria-selected="true"], .training-week .today { background: var(--blue-dim); color: var(--text); }
+.mobile-nav, .blueprint-session .session-header, .blueprint-session .logger-footer { background: #15181df5; }
+.desktop-sidebar { background: var(--surface); }
+.sidebar-link.active { background: var(--blue-dim); }
+.workout-library > a::before { background: linear-gradient(90deg,#101215e0,#10121515),linear-gradient(0deg,#10121588,transparent); }
+.workout-hero::before { background: linear-gradient(180deg,#101215a0,#10121515 45%,#101215dc); }
+.home-workout-hero::after { background: linear-gradient(0deg,#15181d 40%,#15181dce 58%,transparent 90%); }
+.home-workout-hero { border-color: var(--border-solid); }
+.target-settings { background: var(--blue-dim); border: 1px solid #5aa8ff55; border-radius: 10px; padding: 12px; }
+.set-target-detail { margin: 10px 0 6px; border-radius: 8px; background: var(--blue-dim); padding: 10px; font-size: 12px; }
+.set-target-detail summary { color: var(--blue); font-weight: 700; cursor: pointer; }
+.set-target-detail p { color: var(--muted); margin-top: 8px; line-height: 1.5; }
+.blueprint-session .logger-card input { min-width: 0; }
+@media (max-width: 639px) {
+  .app-main { padding-left: 14px; padding-right: 14px; }
+  .app-main-flush { padding-left: 0; padding-right: 0; }
+  .home-workout-hero { min-height: 330px; }
+  .home-workout-copy { left: 16px; right: 16px; bottom: 16px; }
+  .coach-lift-card > img { width: 74px; }
+  .blueprint-session .logger-card input { font-size: 16px; }
+}
+@media (min-width: 1024px) {
+  .home-workout-hero::after { background: linear-gradient(90deg,#15181d 12%,#15181ded 43%,#15181d22 80%); }
+}

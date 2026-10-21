@@ -97,7 +97,7 @@ export async function ensureProtocolStack(userId: string) {
   );
 }
 
-export async function getPreviousSetsByExercise(userId: string) {
+export async function getPreviousSetsByExercise(userId: string, preserveSetOrder = false) {
   const supabase = await createClient();
   const { data: sessions } = await supabase
     .from("workout_sessions")
@@ -129,7 +129,7 @@ export async function getPreviousSetsByExercise(userId: string) {
       if (map[name]) continue;
       const warmName = /warm[\s-]?up/i.test(name);
       const working = sets.filter((s) => !s.is_warmup);
-      const use = warmName ? sets : working.length ? working : sets;
+      const use = preserveSetOrder && !warmName ? working : warmName ? sets : working.length ? working : sets;
       // Heaviest set first, whatever order it happened in.
       //
       // The next session is seeded from these, set for set. Logged in the order
@@ -138,7 +138,7 @@ export async function getPreviousSetsByExercise(userId: string) {
       // done tired. Sorting by load puts the best set where it belongs: first,
       // while fresh, as the one to beat.
       const warmups = use.filter((x) => x.is_warmup);
-      const ordered = warmName
+      const ordered = warmName || preserveSetOrder
         ? use.sort((a, b) => a.set_number - b.set_number)
         : [
             ...use
@@ -214,3 +214,4 @@ export async function getLastNoteByExercise(userId: string) {
 
   return lastNoteByExercise(data ?? []);
 }
+

@@ -394,7 +394,7 @@ export default function DashboardPage() {
       <div className="flex items-baseline justify-between gap-2">
         <div>
           <p className="eyebrow">{formattedDate}</p>
-          <h1 className="page-heading">Ready to train, {data.name}?</h1>
+          <h1 className="page-heading">Ready, {data.name}?</h1>
         </div>
         {refreshing ? (
           <span className="text-[10px] font-semibold text-[var(--muted)]">
@@ -556,8 +556,8 @@ export default function DashboardPage() {
               <h2>Weekly lift report</h2>
               <IconChevronRight size={18} />
             </div>
-            <p className="text-sm text-[var(--muted)]">Review every set, spot PRs and copy your weekly update for your coach.</p>
-            <p className="mt-3 font-bold text-[var(--blue)]">Open coach report →</p>
+            <p className="text-sm text-[var(--muted)]">See your weekly sets, PRs and progress since starting NT.</p>
+            <p className="mt-3 font-bold text-[var(--blue)]">View training insights →</p>
           </Link>
 
           {data.tomorrowDay || data.tomorrowName ? (
@@ -677,4 +677,5 @@ export default function DashboardPage() {
     </div>
   );
 }
+
 
