@@ -6,7 +6,7 @@ export type DraftSet = {
   previous?: string;
   /** Warm-up / feeder — ignored for prev working loads & progress */
   isWarmup?: boolean;
-  /** Reps in reserve the lifter tapped after the set; 3 stands for "3+". */
+  /** Reps in reserve the lifter tapped after the set; 4 stands for "4+". */
   rir?: number;
   /** One-sided exercises: `rir` is the left arm, this the right. */
   rirR?: number;
@@ -63,16 +63,18 @@ export function loadDraft(dayId: string, logDate?: string): SessionDraft | null 
   }
 }
 
-export function saveDraft(draft: SessionDraft, logDate?: string) {
-  if (typeof window === "undefined") return;
+export function saveDraft(draft: SessionDraft, logDate?: string): boolean {
+  if (typeof window === "undefined") return false;
   try {
     localStorage.setItem(
       key(draft.dayId, logDate),
       JSON.stringify({ ...draft, savedAt: Date.now() })
     );
+    return true;
   } catch {
     // A workout must remain usable even if private browsing or a full device
     // temporarily makes localStorage unavailable.
+    return false;
   }
 }
 

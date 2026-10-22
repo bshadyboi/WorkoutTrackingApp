@@ -62,14 +62,16 @@ export function listPendingSessions(): PendingSession[] {
 function write(list: PendingSession[]) {
   try {
     window.localStorage.setItem(KEY, JSON.stringify(list));
+    window.dispatchEvent(new Event("ft-pending-changed"));
+    return true;
   } catch {
-    /* storage full or unavailable — nothing useful to do here */
+    return false;
   }
 }
 
 export function queuePendingSession(
   entry: Omit<PendingSession, "id" | "queuedAt">
-): PendingSession {
+): PendingSession | null {
   const queued: PendingSession = {
     ...entry,
     id:
@@ -78,7 +80,7 @@ export function queuePendingSession(
         : `p_${Date.now()}_${Math.random().toString(36).slice(2)}`,
     queuedAt: Date.now(),
   };
-  write([...listPendingSessions(), queued]);
+  if (!write([...listPendingSessions(), queued])) return null;
   return queued;
 }
 
@@ -88,10 +90,10 @@ export function removePendingSession(id: string) {
 
 /**
  * Upload everything queued. Stops at the first offline-looking failure so the
- * queue keeps its order and nothing is dropped; a row rejected on its merits
- * (bad data, deleted account) is discarded rather than retried forever.
+ * queue keeps its order and nothing is dropped. Rejected uploads remain on
+ * the device for a later retry.
  */
-export async function flushPendingSessions(): Promise<{
+async function flushQueue(): Promise<{
   uploaded: number;
   remaining: number;
 }> {
@@ -119,8 +121,7 @@ export async function flushPendingSessions(): Promise<{
 
       if (sessionErr || !session) {
         if (isOfflineError(sessionErr)) break;
-        removePendingSession(pending.id);
-        continue;
+        break;
       }
 
       if (pending.sets.length) {
@@ -148,8 +149,7 @@ export async function flushPendingSessions(): Promise<{
         if (setsErr) {
           await supabase.from("workout_sessions").delete().eq("id", session.id);
           if (isOfflineError(setsErr)) break;
-          removePendingSession(pending.id);
-          continue;
+          break;
         }
       }
 
@@ -157,9 +157,15 @@ export async function flushPendingSessions(): Promise<{
       uploaded++;
     } catch (err) {
       if (isOfflineError(err)) break;
-      removePendingSession(pending.id);
+      break;
     }
   }
 
   return { uploaded, remaining: listPendingSessions().length };
+}
+
+let activeFlush: ReturnType<typeof flushQueue> | null = null;
+export function flushPendingSessions() {
+  if (!activeFlush) activeFlush = flushQueue().finally(() => { activeFlush = null; });
+  return activeFlush;
 }
