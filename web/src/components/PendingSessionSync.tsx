@@ -40,11 +40,16 @@ export function PendingSessionSync() {
     function onOnline() {
       void sync();
     }
+    const updateCount = () => setPending(listPendingSessions().length);
+    window.addEventListener("ft-pending-changed", updateCount);
     window.addEventListener("online", onOnline);
-    return () => window.removeEventListener("online", onOnline);
+    return () => {
+      window.removeEventListener("ft-pending-changed", updateCount);
+      window.removeEventListener("online", onOnline);
+    };
   }, [sync]);
 
-  if (justSynced > 0) {
+  if (justSynced > 0 && pending === 0) {
     return (
       <div className="mb-3 rounded-md border border-[var(--green)]/30 bg-[var(--green)]/10 px-3.5 py-2.5 text-[12.5px] font-semibold text-[var(--green)]">
         Synced {justSynced} workout{justSynced === 1 ? "" : "s"} saved offline.
@@ -58,7 +63,7 @@ export function PendingSessionSync() {
     <div className="mb-3 flex items-center gap-2.5 rounded-md border border-[var(--yellow)]/30 bg-[var(--yellow)]/10 px-3.5 py-2.5">
       <p className="flex-1 text-[12.5px] font-semibold text-[var(--yellow)]">
         {pending} workout{pending === 1 ? "" : "s"} saved on this device
-        {syncing ? " · uploading…" : " · will upload when you're online"}
+        {syncing ? " · Syncing…" : " · Waiting to sync. Open online or retry."}
       </p>
       {!syncing ? (
         <button

@@ -72,6 +72,8 @@ import {
   suggestedBarLb,
   type BarLb,
 } from "@/lib/barPrefs";
+import { WorkoutFinishSummary } from "@/components/WorkoutFinishSummary";
+import { summarizeLift } from "@/lib/workoutFinish";
 import type { BestSet } from "@/lib/wins";
 import type { ParsedNote } from "@/lib/sessionNotes";
 
@@ -232,7 +234,7 @@ export function WorkoutLogger({
   const [focusedExercise, setFocusedExercise] = useState<string | null>(null);
   const [showAllExercises, setShowAllExercises] = useState(false);
   const [loadIncrements, setLoadIncrements] = useState<Record<string, number>>({});
-  useEffect(() => { try { setLoadIncrements(JSON.parse(localStorage.getItem("ft-load-increments") || "{}")); } catch { /* Defaults require an explicit increment. */ } }, []);
+  useEffect(() => { try { const value = JSON.parse(localStorage.getItem("ft-load-increments") || "{}"); if (value && typeof value === "object" && !Array.isArray(value)) setLoadIncrements(value); } catch { /* Defaults require an explicit increment. */ } }, []);
   const [showAdd, setShowAdd] = useState(false);
   const sorted = useMemo(
     () =>
@@ -247,6 +249,9 @@ export function WorkoutLogger({
     [baseSorted, addedExercises],
   );
 
+  const [finishedMinutes, setFinishedMinutes] = useState(0);
+  const [finishSummary, setFinishSummary] = useState<"saved" | "queued" | null>(null);
+  const [draftSaved, setDraftSaved] = useState<boolean | null>(null);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const [startedAt, setStartedAt] = useState(() => Date.now());
@@ -449,9 +454,9 @@ export function WorkoutLogger({
 
   // Autosave draft when there's real progress (crash recovery)
   useEffect(() => {
-    if (!draftReady) return;
+    if (!draftReady || finishSummary || ratingSessionId) return;
     if (!hasProgress) return;
-    saveDraft(
+    const saved = saveDraft(
       {
         dayId,
         dayName: sessionDayName,
@@ -465,7 +470,10 @@ export function WorkoutLogger({
       },
       logDate,
     );
+    setDraftSaved(saved);
   }, [
+    finishSummary,
+    ratingSessionId,
     addedExercises,
     draftReady,
     hasProgress,
@@ -617,7 +625,7 @@ export function WorkoutLogger({
   }
 
   function saveAndLeave() {
-    saveDraft(
+    const saved = saveDraft(
       {
         dayId,
         dayName: sessionDayName,
@@ -631,6 +639,12 @@ export function WorkoutLogger({
       },
       logDate,
     );
+    if (!saved) {
+      setDraftSaved(false);
+      setError("Could not save on this device. Keep this screen open and try again.");
+      setShowLeaveConfirm(false);
+      return;
+    }
     setShowLeaveConfirm(false);
     router.push(`/train/${dayId}`);
   }
@@ -644,13 +658,13 @@ export function WorkoutLogger({
   // Warn on tab close / refresh while in session
   useEffect(() => {
     const onBeforeUnload = (e: BeforeUnloadEvent) => {
-      if (!hasProgress && elapsed < 15) return;
+      if (finishSummary || ratingSessionId || (!hasProgress && elapsed < 15)) return;
       e.preventDefault();
       e.returnValue = "";
     };
     window.addEventListener("beforeunload", onBeforeUnload);
     return () => window.removeEventListener("beforeunload", onBeforeUnload);
-  }, [hasProgress, elapsed]);
+  }, [hasProgress, elapsed, finishSummary, ratingSessionId]);
 
   // Intercept browser back → same leave modal
   useEffect(() => {
@@ -1097,13 +1111,18 @@ export function WorkoutLogger({
    * needs a server session id, so a queued workout skips that step.
    */
   function finishOffline() {
-    queuePendingSession({ session: buildSessionMeta(), sets: buildSetRows() });
+    const queued = queuePendingSession({ session: buildSessionMeta(), sets: buildSetRows() });
+    if (!queued) {
+      setSaving(false);
+      setError("Could not save offline on this device. Keep this screen open and reconnect to finish.");
+      return;
+    }
     clearDraft(dayId, logDate);
     clearActiveRest();
     sessionStorage.removeItem("ft-tab:train");
     sessionStorage.removeItem("ft-tab:dashboard");
     setSaving(false);
-    router.push("/train");
+    setFinishSummary("queued");
   }
 
   function finish() {
@@ -1112,6 +1131,7 @@ export function WorkoutLogger({
       setError("Complete at least one set before finishing.");
       return;
     }
+    setFinishedMinutes(Math.max(1, Math.round((Date.now() - startedAt) / 60000)));
     setSaving(true);
     setError("");
 
@@ -1253,6 +1273,7 @@ export function WorkoutLogger({
       sessionStorage.removeItem("ft-tab:train");
       sessionStorage.removeItem("ft-tab:dashboard");
       setRatingSessionId(session.id);
+      setFinishSummary("saved");
     });
   }
 
@@ -1377,6 +1398,9 @@ export function WorkoutLogger({
 
   return (
     <div className="blueprint-session min-h-dvh pb-28">
+      <p role="status" className={`px-4 py-2 text-xs font-semibold ${draftSaved === false ? "text-[var(--yellow)]" : "text-[var(--muted)]"}`}>
+        {saving ? "Saving workout…" : finishSummary === "saved" || ratingSessionId ? "Saved to your account" : finishSummary === "queued" ? "Saved on this device · Waiting to sync" : draftSaved === false ? "Not saved on this device — keep this screen open" : draftSaved ? "Draft saved on this device · Uploads when you finish" : "Ready to log"}
+      </p>
       <div
         className="session-header sticky top-0 z-20 border-b border-[var(--border)] bg-[var(--surface)] px-5 pb-3"
         style={{ paddingTop: "max(14px, env(safe-area-inset-top, 0px))" }}
@@ -1410,7 +1434,7 @@ export function WorkoutLogger({
         </div>
         {!online ? (
           <p className="mt-2 text-center text-[11px] font-bold text-[var(--yellow)]" role="status">
-            Offline · this workout is saved on your phone
+            Offline · finish to queue this workout for upload
           </p>
         ) : null}
         <div className="mt-2.5 flex items-center gap-2.5">
@@ -1465,7 +1489,7 @@ export function WorkoutLogger({
         />
         <p className="mt-0.5 text-[13px] text-[var(--muted)]">
           {dateLabel}
-          {logDate ? " · backfill" : ""} · autosaved · tap name to rename
+          {logDate ? " · backfill" : ""} · tap name to rename
         </p>
       </div>
 
@@ -1895,7 +1919,7 @@ export function WorkoutLogger({
                                         ? String(suggestion.weight)
                                         : set.weight,
                                     reps: String(suggestion?.reps ?? ""),
-                                    ...(sided && suggestionR
+                                    ...(sided && suggestionR && suggestionR.reps != null
                                       ? {
                                           weightR:
                                             suggestionR.weight != null
@@ -1906,9 +1930,9 @@ export function WorkoutLogger({
                                       : {}),
                                   })
                                 }
-                                className="block w-full truncate text-left text-[11px] font-bold text-[var(--blue)] underline decoration-dotted underline-offset-2 active:text-[var(--green)]"
+                                className="block min-h-11 w-full rounded-md bg-[var(--blue)]/10 px-1 py-2 text-left text-[11px] font-bold leading-snug text-[var(--blue)] active:bg-[var(--blue)]/20"
                               >
-                                {targetLabel}
+                                Use target · {targetLabel}
                               </button>
                             ) : (
                               <p
@@ -2304,7 +2328,7 @@ export function WorkoutLogger({
             </p>
             <p className="mt-2 text-sm text-[var(--muted)]">
               {completedSetCount > 0
-                ? `${completedSetCount} set${completedSetCount === 1 ? "" : "s"} logged. You can undo on the next screen if you tapped by mistake.`
+                ? `${completedSetCount} set${completedSetCount === 1 ? "" : "s"} logged. Review your summary, then continue to check-in to undo if needed.`
                 : "Complete at least one set before finishing."}
             </p>
             <div className="mt-5 space-y-2.5">
@@ -2653,7 +2677,34 @@ export function WorkoutLogger({
         </div>
       ) : null}
 
-      {ratingSessionId ? (
+      {finishSummary && <WorkoutFinishSummary
+        dayName={sessionDayName}
+        minutes={finishedMinutes}
+        queued={finishSummary === "queued"}
+        lifts={sorted.flatMap(ex => {
+          const name = displayName(ex);
+          if (isWarmupExerciseName(name) || !parseRepRange(ex.working_rep_range)) return [];
+          const done = (setsByExercise[ex.id] ?? []).filter(s => s.completed && !s.isWarmup);
+          if (!done.length) return [];
+          const sided = oneSided(ex);
+          return (sided ? ["L", "R"] : [""]).map(side => {
+            const key = side === "R" ? rightSideKey(name) : name;
+            return { name: side ? `${name} · ${side}` : name, ...summarizeLift({
+              sets: done.map(s => ({ weight: Number(side === "R" ? s.weightR : s.weight), reps: Number(side === "R" ? s.repsR : s.reps), rir: side === "R" ? s.rirR : s.rir })),
+              previous: previousByExercise[key] ?? [],
+              best: sided ? undefined : bestByExercise[name],
+              repRange: ex.working_rep_range, expectedSets: ex.default_sets,
+              increment: loadIncrements[name] ?? 0, nt: ntDay, noLoadIncrease: side === "L" && leftLimited,
+            }) };
+          });
+        })}
+        onContinue={() => {
+          if (finishSummary === "queued") { router.push("/train"); router.refresh(); }
+          setFinishSummary(null);
+        }}
+      />}
+
+      {ratingSessionId && !finishSummary ? (
         <div
           className="fixed inset-0 z-[70] flex items-end justify-center bg-black/80 p-4 sm:items-center"
           role="dialog"
