@@ -1,0 +1,13 @@
+const fs=require('node:fs'), vm=require('node:vm'), assert=require('node:assert/strict'), ts=require('typescript');
+let calls=0;const filters=[];
+const set=(name,extra={})=>({exercise_name:name,set_number:1,weight:100,reps:10,is_completed:true,...extra});
+const session=(id,date,rows)=>({id,started_at:date,day_name:'NT Upper A',set_logs:rows});
+const old=session('old','2026-10-01T12:00:00Z',[set('Cable Fly')]);
+const recent=session('new','2026-10-20T12:00:00Z',[set(' cable fly ',{set_number:2,weight:110}),set('Cable Fly',{weight:90}),set('Curl',{side:'L',weight:20}),set('Curl',{side:'R',weight:25}),set('Warm-up Row'),set('Unused',{is_completed:false}),set('Feeder',{is_warmup:true})]);
+const client={auth:{getUser:async()=>({data:{user:{id:'owner'}}})},from:()=>{const q={select:()=>q,eq:(k,v)=>{filters.push([k,v]);return q},not:()=>q,order:()=>q,range:async(offset)=>{calls++;return {data:offset===0?Array.from({length:100},(_,i)=>({...recent,id:String(i)})):[old]}}};return q}};
+const out={};vm.runInNewContext(ts.transpileModule(fs.readFileSync('src/lib/recentExercises.ts','utf8'),{compilerOptions:{module:ts.ModuleKind.CommonJS,target:ts.ScriptTarget.ES2020}}).outputText,{exports:out,require:()=>({createClient:()=>client})});
+const list=out.buildRecentExercises([old,recent]);
+assert.equal(list.length,2);assert.equal(list[0].lastAt,recent.started_at);assert.equal(list[0].lastSets[0].weight,110);assert.equal(list[1].lastSets.length,2);assert.equal(list[1].lastSets[1].weight,25);
+assert.equal(out.buildRecentExercises([session('r','2026-10-21',[set('Curl [R]')]),recent]).filter(x=>x.name==='Curl').length,1);
+assert.equal(out.buildRecentExercises([session('bad','invalid',[set('No date')])]).length,0);
+(async()=>{await out.getRecentExercises();assert.equal(calls,2,'loads older history pages');assert.ok(filters.every(([k,v])=>k==='user_id'&&v==='owner'));console.log('PASS: date order, deduplication, latest set, L/R, warmups/incomplete exclusion, legacy names, pagination, account filter');})().catch(e=>{console.error(e);process.exitCode=1});

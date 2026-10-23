@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { scanMachine, verdictFor, type ScanResult } from "@/lib/scanMachine";
-import { getMyExercises, type MyExercise } from "@/lib/myExercises";
+import { getRecentExercises, type RecentExercise } from "@/lib/recentExercises";
 import { restrictionFor } from "@/lib/contraindicated";
 import {
   getSwapRecommendations,
@@ -117,17 +117,28 @@ export function SwapExerciseSheet({
   const [scan, setScan] = useState<ScanResult | null>(null);
   const [scanError, setScanError] = useState("");
   /** Movements this lifter has logged before, catalogued or not. */
-  const [mine, setMine] = useState<MyExercise[]>([]);
+  const [mine, setMine] = useState<RecentExercise[]>([]);
+
+  const [historyLoading, setHistoryLoading] = useState(true);
+  const [historyError, setHistoryError] = useState("");
+  const [historyAttempt, setHistoryAttempt] = useState(0);
+  const [visibleRecent, setVisibleRecent] = useState(8);
 
   useEffect(() => {
     let cancelled = false;
-    void getMyExercises().then((list) => {
+    setHistoryLoading(true);
+    setHistoryError("");
+    void getRecentExercises().then((list) => {
       if (!cancelled) setMine(list);
+    }).catch((error: unknown) => {
+      if (!cancelled) setHistoryError(error instanceof Error ? error.message : "Could not load recent exercises.");
+    }).finally(() => {
+      if (!cancelled) setHistoryLoading(false);
     });
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [historyAttempt]);
 
   async function runScan(file: File) {
     setScanning(true);
@@ -159,13 +170,16 @@ export function SwapExerciseSheet({
     const q = query.trim().toLowerCase();
     return mine
       .filter((m) => m.name.toLowerCase() !== current)
-      .filter((m) => (searching ? m.name.toLowerCase().includes(q) : true))
-      .slice(0, searching ? 8 : 6);
+      .filter((m) => (q ? m.name.toLowerCase().includes(q) : true));
   }, [mine, currentName, query, searching]);
   const recommendations = library.filter((s) => s.recommended);
   const similar = library.filter((s) => s.similar && !s.recommended);
   const list = searching ? searchHits : null;
 
+  const customName = query.trim().replace(/\s+/g, " ");
+  const exactMatch = [currentName, ...mine.map(m => m.name), ...searchHits.map(m => m.name)]
+    .some(name => name.trim().toLowerCase() === customName.toLowerCase());
+  const canCreate = customName.length >= 2 && customName.length <= 100 && !exactMatch;
   const chosen = selected;
 
   return (
@@ -211,7 +225,8 @@ export function SwapExerciseSheet({
               autoCorrect="off"
               autoComplete="off"
               spellCheck={false}
-              onChange={(e) => setQuery(e.target.value)}
+              onChange={(e) => { setQuery(e.target.value); setSelected(null); setVisibleRecent(8); }}
+              maxLength={100}
             />
             <button
               type="button"
@@ -240,12 +255,22 @@ export function SwapExerciseSheet({
         </div>
 
         <div className="min-h-0 flex-1 overflow-y-auto px-3 pb-4 pt-3">
+          {canCreate && <section className="mb-4 rounded-md border border-[var(--blue)]/40 bg-[var(--blue)]/10 p-3">
+            <button type="button" className="min-h-11 w-full break-words text-left text-sm font-bold text-[var(--blue)]" aria-pressed={chosen === customName} onClick={() => setSelected(customName)}>
+              {chosen === customName ? "✓ Selected" : "+ Use custom exercise"}: {customName}
+            </button>
+            <p className="mt-1 text-xs text-[var(--muted)]">No separate form needed. Choose where to apply it below. It appears in Recently used after you finish a workout with it logged.</p>
+            {restrictionFor(customName) && <p className="mt-2 text-xs text-[var(--yellow)]">{restrictionFor(customName)}</p>}
+          </section>}
+          {historyLoading && <p role="status" className="px-2 py-3 text-sm text-[var(--muted)]">Loading your recent exercises…</p>}
+          {historyError && <div role="status" className="px-2 py-3 text-sm text-[var(--muted)]">{historyError} <button type="button" className="min-h-11 px-2 font-bold text-[var(--blue)]" onClick={() => setHistoryAttempt(n => n + 1)}>Retry</button></div>}
+          {!historyLoading && !historyError && !myMatches.length && <p className="px-2 py-3 text-sm text-[var(--muted)]">{query.trim() ? "No recent exercises match this search." : "No other exercises in your completed workout history yet."}</p>}
           {myMatches.length ? (
             <section className="mb-4">
               <p className="px-2 pb-1 text-[11px] font-bold uppercase tracking-wide text-[var(--muted)]">
-                Your exercises
+                Recently used · newest first
               </p>
-              {myMatches.map((m) => {
+              {myMatches.slice(0, visibleRecent).map((m) => {
                 const banned = restrictionFor(m.name);
                 const photo = exercisePhoto(m.name);
                 return (
@@ -277,10 +302,11 @@ export function SwapExerciseSheet({
                       <p className="truncate text-sm font-bold text-[var(--text)]">
                         {m.name}
                       </p>
-                      <p className="truncate text-[11px] text-[var(--muted)]">
-                        {m.sets} {m.sets === 1 ? "set" : "sets"} logged
-                        {banned ? ` · ${banned}` : ""}
+                      <p className="text-[11px] text-[var(--muted)]">
+                        {new Date(m.lastAt).toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" })} · {m.dayName}
                       </p>
+                      {m.lastSets.length > 0 && <p className="mt-1 text-[11px] text-[var(--muted)]">Last set: {m.lastSets.map(s => `${s.side ? s.side + " " : ""}${s.weight} lb × ${s.reps}`).join(" · ")}</p>}
+                      {banned && <p className="text-[11px] text-[var(--yellow)]">{banned}</p>}
                     </div>
                     <span
                       className={`grid h-7 w-7 place-content-center rounded-full border ${chosen === m.name ? "border-[var(--blue)] bg-[var(--blue)] text-[var(--on-blue)]" : "border-[var(--dim)]"}`}
@@ -291,6 +317,7 @@ export function SwapExerciseSheet({
                   </button>
                 );
               })}
+              {myMatches.length > visibleRecent && <button type="button" className="min-h-11 w-full px-2 py-3 text-sm font-bold text-[var(--blue)]" onClick={() => setVisibleRecent(n => n + 8)}>Show more recent exercises</button>}
             </section>
           ) : null}
 
@@ -404,7 +431,7 @@ export function SwapExerciseSheet({
               </p>
               {list && list.length === 0 ? (
                 <p className="px-2 py-6 text-sm text-[var(--muted)]">
-                  No matches — try a muscle or a shorter name.
+                  No catalog matches. Use your custom exercise above, or try another name.
                 </p>
               ) : (
                 list?.map((item) => (
@@ -520,3 +547,4 @@ export function SwapExerciseSheet({
     </div>
   );
 }
+
