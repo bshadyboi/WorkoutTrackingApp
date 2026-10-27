@@ -228,3 +228,26 @@ export function ntTopSetHistory<T extends { weight: number; reps: number }>(sets
   return [...eligible].sort((a, b) => b.weight - a.weight || b.reps - a.reps)
     .concat(sets.filter(s => !eligible.includes(s)));
 }
+
+
+/** Optional set-two target from today's completed top set; never adds load. */
+export function suggestNTSecondSet(input: {
+  top?: { weight: number; reps: number; rir?: number | null };
+  repRange: string;
+  increment: number;
+}): OverloadSuggestion | null {
+  const range = parseRepRange(input.repRange);
+  const top = input.top;
+  if (!range || !top || !Number.isFinite(top.weight) || top.weight < 0 || !Number.isFinite(top.reps) || top.reps <= 0) return null;
+  const rir = top.rir;
+  const validRir = typeof rir === "number" && Number.isFinite(rir) && rir >= 0 && rir <= 4;
+  const needsBackoff = top.reps < range.low || (validRir && rir === 0);
+  if (needsBackoff && top.weight > 0) {
+    if (!Number.isFinite(input.increment) || input.increment <= 0 || input.increment >= top.weight) {
+      return { kind: "open", weight: null, reps: range.low, label: "Choose a lighter set-two load", detail: "Your top set reached failure or fell below the rep minimum. Choose your equipment increment or enter a lighter load yourself." };
+    }
+    const weight = Math.round((top.weight - input.increment) * 100) / 100;
+    return { kind: "hold", weight, reps: range.low, label: `Try ${fmtWeight(weight)} × ${range.low}`, detail: `Today's top set was ${fmtWeight(top.weight)} × ${top.reps}${validRir ? ` at ${rir} RIR` : ""}. Try one selected equipment step lighter for set two, then adjust for how you feel. This is a starting target, not a predicted result.` };
+  }
+  return { kind: "hold", weight: top.weight, reps: Math.min(range.high, Math.max(range.low, top.reps)), label: `Repeat ${fmtWeight(top.weight)} × ${Math.min(range.high, Math.max(range.low, top.reps))}`, detail: validRir ? `Based on today's top set at ${rir} RIR. Start with the same weight; lower it manually if fatigue affects your reps or form. No load increase for set two.` : "Top-set RIR wasn't recorded. Same weight is only a starting point; log RIR or adjust the load manually. No effort level is assumed." };
+}

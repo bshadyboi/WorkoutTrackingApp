@@ -1,0 +1,13 @@
+const fs=require('node:fs'),vm=require('node:vm'),ts=require('typescript'),assert=require('node:assert/strict');
+const out={};vm.runInNewContext(ts.transpileModule(fs.readFileSync('src/lib/overload.ts','utf8'),{compilerOptions:{module:ts.ModuleKind.CommonJS,target:ts.ScriptTarget.ES2020}}).outputText,{exports:out});
+const run=(top,increment=5)=>out.suggestNTSecondSet({top,increment,repRange:'6-10'});
+assert.equal(run({weight:160,reps:8,rir:1}).weight,160);
+assert.equal(run({weight:160,reps:6,rir:0}).weight,155);
+assert.equal(run({weight:160,reps:5,rir:2}).weight,155);
+assert.equal(run({weight:160,reps:8}).weight,160);
+assert.equal(run({weight:160,reps:6,rir:0},0).kind,'open');
+assert.equal(run({weight:2.5,reps:5,rir:0},5).kind,'open');
+assert.equal(run({weight:0,reps:8,rir:0}).weight,0);
+assert.equal(run({weight:NaN,reps:8}),null);
+assert.equal(run(undefined),null);
+console.log('PASS: set-two holds, failure/below-range backoff, missing RIR, unavailable increment, bodyweight, invalid/missing top set');
