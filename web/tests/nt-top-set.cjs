@@ -1,0 +1,10 @@
+const fs=require('node:fs'),vm=require('node:vm'),ts=require('typescript'),assert=require('node:assert/strict');
+const out={};vm.runInNewContext(ts.transpileModule(fs.readFileSync('src/lib/overload.ts','utf8'),{compilerOptions:{module:ts.ModuleKind.CommonJS,target:ts.ScriptTarget.ES2020}}).outputText,{exports:out});
+const previous=[{weight:155,reps:10},{weight:160,reps:6}];
+assert.equal(out.ntTopSetHistory(previous,'6-10')[0].weight,160);
+assert.equal(previous[0].weight,155);
+assert.equal(out.ntTopSetHistory(previous,'8-12')[0].weight,155);
+assert.equal(out.ntTopSetHistory(previous,'6-10',true)[0].weight,155);
+assert.equal(out.ntTopSetHistory([{weight:145,reps:8},{weight:130,reps:12}],'8-12')[0].weight,145);
+assert.equal(out.ntTopSetHistory([],'8-12').length,0);
+console.log('PASS: heavier second set becomes top target, rep floor respected, restricted side unchanged, history not mutated');

@@ -32,7 +32,7 @@ import { dateKey } from "@/lib/protocol";
 import { Explain } from "@/components/Explain";
 import { isUnilateral, rightSideKey } from "@/lib/unilateral";
 import { leftArmNote, leftShoulderLimited } from "@/lib/shoulderLimits";
-import { parseRepRange, suggestOverload, suggestNTTarget } from "@/lib/overload";
+import { parseRepRange, suggestOverload, suggestNTTarget, ntTopSetHistory } from "@/lib/overload";
 import { renameExerciseEverywhere } from "@/lib/exerciseRename";
 import { forgetMyExercises } from "@/lib/myExercises";
 import { exercisePhoto } from "@/lib/exercisePhotos";
@@ -357,7 +357,8 @@ export function WorkoutLogger({
   >(() => {
     const init: Record<string, DraftSet[]> = {};
     for (const ex of baseSorted) {
-      const prev = previousByExercise[ex.name] ?? [];
+      const rawPrev = previousByExercise[ex.name] ?? [];
+      const prev = ntDay ? ntTopSetHistory(rawPrev, ex.working_rep_range, isUnilateral(ex)) : rawPrev;
       const warmEx = isWarmupExerciseName(ex.name);
       const uni = isUnilateral(ex);
       const prevRList = uni
@@ -962,7 +963,8 @@ export function WorkoutLogger({
       unilateral: pick.sided,
     };
     const uni = isUnilateral(ex);
-    const prev = previousByExercise[ex.name] ?? [];
+    const rawPrev = previousByExercise[ex.name] ?? [];
+      const prev = ntDay ? ntTopSetHistory(rawPrev, ex.working_rep_range, isUnilateral(ex)) : rawPrev;
     const prevR = uni ? (previousByExercise[rightSideKey(ex.name)] ?? []) : [];
     const warmEx = isWarmupExerciseName(ex.name);
 
@@ -1740,7 +1742,7 @@ export function WorkoutLogger({
                     <option value={0}>Choose lb</option>{[1,2.5,5,10,15,20].map(n => <option key={n} value={n}>{n} lb</option>)}
                   </select>
                 </label>
-                <p className="mt-2 text-xs text-[var(--muted)]">Suggestions use your saved NT range and recorded RIR. Tap a set target to apply it; edit any number.</p>
+                <p className="mt-2 text-xs text-[var(--muted)]">First working set is your top set after warm-ups. Targets use the heaviest matching prior set that met your NT rep minimum; the second set is editable. RIR still controls progression. Tap a set target to apply it; edit any number.</p>
               </div>}
               {dimension ? (
                 <p className="dim font-mono text-[12.5px] font-medium">
@@ -1803,16 +1805,16 @@ export function WorkoutLogger({
                       previousByExercise[name] ??
                       (name === ex.name ? previousByExercise[ex.name] : undefined) ??
                       [];
-                    const prevRaw =
-                      ntDay ? prevList[historyIndex] : (prevList[i] ?? prevList[prevList.length - 1]);
                     const sided = oneSided(ex) && !set.isWarmup && !isCardio;
+                    const prevRaw =
+                      ntDay ? ntTopSetHistory(prevList, ex.working_rep_range, sided && leftLimited)[historyIndex] : (prevList[i] ?? prevList[prevList.length - 1]);
                     const prevRList = sided
                       ? (previousByExercise[rightSideKey(name)] ??
                         (name === ex.name ? previousByExercise[rightSideKey(ex.name)] : undefined) ??
                         [])
                       : [];
                     const prevRawR = sided
-                      ? (ntDay ? prevRList[historyIndex] : (prevRList[i] ?? prevRList[prevRList.length - 1] ?? prevRaw))
+                      ? (ntDay ? ntTopSetHistory(prevRList, ex.working_rep_range)[historyIndex] : (prevRList[i] ?? prevRList[prevRList.length - 1] ?? prevRaw))
                       : undefined;
                     // Crown sets carry their own range; everything else uses the
                     // working range for the movement.
@@ -1856,7 +1858,7 @@ export function WorkoutLogger({
 
                     return (
                       <div key={set.setNumber}>
-                        {ntDay && suggestion && !set.isWarmup && <details className="set-target-detail"><summary>Set {set.setNumber} target · {targetLabel}</summary><p>{suggestion.detail}</p>{sided && suggestionR && <p>Right: {suggestionR.detail}</p>}</details>}
+                        {ntDay && suggestion && !set.isWarmup && <details className="set-target-detail"><summary>{historyIndex === 0 ? "Top set" : "Second working set"} target · {targetLabel}</summary><p>{suggestion.detail}</p>{sided && suggestionR && <p>Right: {suggestionR.detail}</p>}</details>}
                         <div
                           className={`grid grid-cols-[36px_minmax(0,1fr)_64px_56px_44px] items-center gap-1.5 rounded-md px-0.5 py-1.5 ${
                             set.completed
@@ -2820,4 +2822,5 @@ export function WorkoutLogger({
     </div>
   );
 }
+
 
