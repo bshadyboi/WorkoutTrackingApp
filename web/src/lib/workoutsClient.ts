@@ -367,6 +367,38 @@ export async function applyProgram(
   }
 }
 
+/** Targeted NT plan edit: preserve exercise IDs, swaps, and completed history. */
+async function updateNTTwoSetPlan() {
+  const supabase = createClient();
+  const { data: auth } = await supabase.auth.getUser();
+  if (!auth.user) return;
+  const key = `ft-nt-two-sets-v1:${auth.user.id}`;
+  if (localStorage.getItem(key) === "1") return;
+  const { data: days, error } = await supabase.from("workout_days").select("id, name")
+    .eq("user_id", auth.user.id).like("name", "NT %");
+  if (error || !days?.length) return;
+  for (const day of days) {
+    const { data: exercises, error: readError } = await supabase.from("workout_exercises")
+      .select("id, name, muscle, working_rep_range").eq("workout_day_id", day.id);
+    if (readError) return;
+    for (const ex of exercises ?? []) {
+      if (/hanging leg raises?/i.test(ex.name)) {
+        const { error } = await supabase.from("workout_exercises").delete().eq("id", ex.id).eq("workout_day_id", day.id);
+        if (error) return;
+      } else if (ex.muscle !== "Cardio" && !/warm[\s-]?up|stairmaster/i.test(ex.name)) {
+        const range = (ex.working_rep_range ?? "").replace(/^\s*\d+\s*[×x]\s*/, "");
+        const { error } = await supabase.from("workout_exercises").update({ default_sets: 2,
+          working_rep_range: range ? `2×${range}` : "", has_crown_set: false, crown_rep_range: "" })
+          .eq("id", ex.id).eq("workout_day_id", day.id);
+        if (error) return;
+      }
+    }
+  }
+  localStorage.setItem(key, "1");
+  sessionStorage.removeItem("ft-tab:train");
+  sessionStorage.removeItem("ft-tab:dashboard");
+}
+
 /**
  * One-time sync: ensure current (or default) program templates exist.
  * Does not wipe other programs unless never synced.
@@ -374,6 +406,9 @@ export async function applyProgram(
 export async function syncWorkoutLibraryOnce() {
   if (typeof window === "undefined") return;
 
+  await updateNTTwoSetPlan();
+  // Explicit NT selection must not be replaced by the legacy automatic switch.
+  if (await getActiveProgramId() === "nt-coaching") return;
   await applyLeftShoulderSwaps();
 
   // Soft-switch to Derrick Recomp; keep Elevate / PPL templates in Manage
@@ -586,3 +621,4 @@ export async function setElevateWeek(
   }
   return { ok: true };
 }
+

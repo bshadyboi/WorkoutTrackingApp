@@ -216,3 +216,15 @@ export function suggestNTTarget(input: {
   const weight = Math.round((p.weight + input.increment) * 100) / 100;
   return { kind: "add-load", weight, reps: range.low, label: `Try ${fmtWeight(weight)} × ${range.low}`, detail: `All ${input.expectedSets} sets reached ${range.high} reps with sufficient recorded RIR. Add your selected ${input.increment} lb increment and return to ${range.low} reps.` };
 }
+
+
+/** Rank only valid working history; never borrow the other arm's load. */
+export function ntTopSetHistory<T extends { weight: number; reps: number }>(sets: T[], repRange: string, restricted = false): T[] {
+  if (restricted) return sets;
+  const range = parseRepRange(repRange);
+  if (!range) return sets;
+  const eligible = sets.filter(s => Number.isFinite(s.weight) && s.weight >= 0 && Number.isFinite(s.reps) && s.reps >= range.low);
+  // Sets below the prescribed floor do not establish a heavier starting target.
+  return [...eligible].sort((a, b) => b.weight - a.weight || b.reps - a.reps)
+    .concat(sets.filter(s => !eligible.includes(s)));
+}

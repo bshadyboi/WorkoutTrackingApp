@@ -49,7 +49,6 @@ export const NT_RIR_TARGET = 1;
 
 /** The core finisher that closes every lifting day. */
 const AB_CRUNCH = work("Cable Ab Crunch", "Core", 2, "20", "V-bar handle on the pulldown machine");
-const HANGING_LEG_RAISE = work("Hanging Leg Raise", "Core", 2, "15", "Bodyweight");
 
 const STAIRMASTER = work(
   "Stairmaster (Level 6)",
@@ -81,11 +80,10 @@ const UPPER_WORK: WorkoutTemplate["exercises"] = [
   // Four sets was tried and the shoulder complained three sessions running, so
   // this is back to the two the coach wrote. Volume is not worth a cuff.
   work("One-Arm Cable Lateral Raise", "Side Delts", 2, "12–15", "Per side · keep the left light and controlled"),
-  work("One-Arm Cable Rear Delt Fly", "Rear Delts", 3, "12–15", "Per side"),
+  work("One-Arm Cable Rear Delt Fly", "Rear Delts", 2, "12–15", "Per side"),
   work("Single Arm Tricep Pushdown", "Triceps", 2, "10–12", "Per arm"),
   work("Preacher Curl", "Biceps", 2, "10–12"),
   AB_CRUNCH,
-  HANGING_LEG_RAISE,
   STAIRMASTER,
 ];
 
@@ -95,11 +93,10 @@ const LOWER_WORK: WorkoutTemplate["exercises"] = [
   work("Hack Squat", "Quads", 2, "8–12"),
   work("Leg Extension", "Quads", 2, "10–12"),
   work("Lying Leg Curl", "Hamstrings", 2, "10–12"),
-  work("Romanian Deadlift", "Hamstrings", 3, "8–12", "Dumbbell or barbell"),
+  work("Romanian Deadlift", "Hamstrings", 2, "8–12", "Dumbbell or barbell"),
   work("Seated Calf Raise", "Calves", 2, "12–20"),
   work("Hip Abductor Machine", "Glutes", 2, "12–15"),
   AB_CRUNCH,
-  HANGING_LEG_RAISE,
 ];
 
 function upper(name: string): WorkoutTemplate {
@@ -141,3 +138,4 @@ export const NT_TIP =
   "Upper A → Lower A → Rest → Upper B → Lower B → Upper C → Active recovery. " +
   "The upper days are identical on purpose: the progression is beating last week's reps or weight, so log every set. " +
   "Cuff prehab before upper work, 25 min stairmaster at level 6 to warm up, 10–12k steps every day, progress photos every two weeks.";
+
