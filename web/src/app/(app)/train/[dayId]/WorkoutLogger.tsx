@@ -32,7 +32,7 @@ import { dateKey } from "@/lib/protocol";
 import { Explain } from "@/components/Explain";
 import { isUnilateral, rightSideKey } from "@/lib/unilateral";
 import { leftArmNote, leftShoulderLimited } from "@/lib/shoulderLimits";
-import { parseRepRange, suggestOverload, suggestNTTarget, ntTopSetHistory } from "@/lib/overload";
+import { parseRepRange, suggestOverload, suggestNTTarget, suggestNTSecondSet, ntTopSetHistory } from "@/lib/overload";
 import { renameExerciseEverywhere } from "@/lib/exerciseRename";
 import { forgetMyExercises } from "@/lib/myExercises";
 import { exercisePhoto } from "@/lib/exercisePhotos";
@@ -1671,7 +1671,7 @@ export function WorkoutLogger({
                     {(() => {
                       // What he told himself last time, in front of him before
                       // the first set rather than filed in an old session.
-                      const past = lastNotes[name] ?? lastNotes[ex.name];
+                      const past = lastNotes[name] ?? (name === ex.name ? lastNotes[ex.name] : undefined);
                       if (!past) return null;
                       const when = new Date(
                         `${past.date}T12:00:00`,
@@ -1682,7 +1682,7 @@ export function WorkoutLogger({
                       return (
                         <p className="mt-1.5 rounded-[4px] border-l-2 border-[var(--blue)] bg-[var(--surface)] px-2 py-1.5 text-[12px] leading-snug text-[var(--muted)]">
                           <span className="font-bold text-[var(--blue)]">
-                            {when}:
+                            Last session note · {when}{past.dayName ? ` · ${past.dayName}` : ""}:
                           </span>{" "}
                           {past.note}
                         </p>
@@ -1818,10 +1818,16 @@ export function WorkoutLogger({
                       : undefined;
                     // Crown sets carry their own range; everything else uses the
                     // working range for the movement.
+                    const topSet = sets.find(s => !s.isWarmup);
+                    const liveSecond = ntDay && historyIndex === 1 && topSet?.completed && !set.completed && !set.isWarmup && !isCardio;
+                    const fromTop = (right = false) => suggestNTSecondSet({
+                      top: topSet ? { weight: Number(right ? topSet.weightR : topSet.weight), reps: Number(right ? topSet.repsR : topSet.reps), rir: right ? topSet.rirR : topSet.rir } : undefined,
+                      repRange: ex.working_rep_range, increment: loadIncrements[name] ?? 0,
+                    });
                     const suggestion =
                       set.isWarmup || isCardio
                         ? null
-                        : ntDay ? suggestNTTarget({ previous: prevRaw, previousSets: prevList, expectedSets: ex.default_sets, repRange: ex.working_rep_range, targetRir: NT_RIR_TARGET, increment: loadIncrements[name] ?? 0, noLoadIncrease: sided && leftLimited }) : suggestOverload({
+                        : liveSecond ? fromTop() : ntDay ? suggestNTTarget({ previous: prevRaw, previousSets: prevList, expectedSets: ex.default_sets, repRange: ex.working_rep_range, targetRir: NT_RIR_TARGET, increment: loadIncrements[name] ?? 0, noLoadIncrease: sided && leftLimited }) : suggestOverload({
                             previous: prevRaw,
                             repRange:
                               ex.has_crown_set && i === 0
@@ -1830,7 +1836,7 @@ export function WorkoutLogger({
                             noLoadIncrease: sided && leftLimited,
                           });
                     const suggestionR = sided
-                      ? ntDay ? suggestNTTarget({ previous: prevRawR, previousSets: prevRList, expectedSets: ex.default_sets, repRange: ex.working_rep_range, targetRir: NT_RIR_TARGET, increment: loadIncrements[name] ?? 0 }) : suggestOverload({
+                      ? liveSecond ? fromTop(true) : ntDay ? suggestNTTarget({ previous: prevRawR, previousSets: prevRList, expectedSets: ex.default_sets, repRange: ex.working_rep_range, targetRir: NT_RIR_TARGET, increment: loadIncrements[name] ?? 0 }) : suggestOverload({
                           previous: prevRawR,
                           repRange:
                             ex.has_crown_set && i === 0
@@ -1858,7 +1864,7 @@ export function WorkoutLogger({
 
                     return (
                       <div key={set.setNumber}>
-                        {ntDay && suggestion && !set.isWarmup && <details className="set-target-detail"><summary>{historyIndex === 0 ? "Top set" : "Second working set"} target · {targetLabel}</summary><p>{suggestion.detail}</p>{sided && suggestionR && <p>Right: {suggestionR.detail}</p>}</details>}
+                        {ntDay && suggestion && !set.isWarmup && <details className="set-target-detail"><summary>{historyIndex === 0 ? "Top set" : liveSecond ? "Set two · based on today" : "Second working set"} target · {targetLabel}</summary><p>{suggestion.detail}</p>{sided && suggestionR && <p>Right: {suggestionR.detail}</p>}</details>}
                         <div
                           className={`grid grid-cols-[36px_minmax(0,1fr)_64px_56px_44px] items-center gap-1.5 rounded-md px-0.5 py-1.5 ${
                             set.completed
@@ -2822,5 +2828,6 @@ export function WorkoutLogger({
     </div>
   );
 }
+
 
 
